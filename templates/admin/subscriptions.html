@@ -1,0 +1,184 @@
+{% extends "admin/base.html" %}
+{% block title %}Subscriptions{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Subscriptions</li>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-0" data-i18n="adm_sub_title">Subscriptions</h4>
+    <p class="text-muted small mb-0" data-i18n="adm_sub_sub">Free vs Pro counts, revenue, and expiry dates</p>
+  </div>
+</div>
+
+<!-- Revenue Stats -->
+<div class="row g-3 mb-4" id="revenueRow">
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-icon mb-2" style="background:#f0fdf4"><i class="bi bi-people-fill text-success fs-4"></i></div>
+      <div class="fs-3 fw-bold text-success" id="r-monthly-subs">—</div>
+      <div class="small text-muted" data-i18n="adm_monthly_subs">Monthly Subscribers</div>
+      <div class="small text-success fw-medium" id="r-mrr">—</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-icon mb-2" style="background:#faf5ff">
+        <i class="bi bi-star-fill fs-4" style="color:#7c3aed"></i>
+      </div>
+      <div class="fs-3 fw-bold" style="color:#7c3aed" id="r-yearly-subs">—</div>
+      <div class="small text-muted" data-i18n="adm_yearly_subs">Yearly Subscribers</div>
+      <div class="small fw-medium" style="color:#7c3aed" id="r-yearly-rev">—</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-icon mb-2" style="background:#eff6ff">
+        <i class="bi bi-currency-dollar text-primary fs-4"></i>
+      </div>
+      <div class="fs-3 fw-bold text-primary" id="r-total-rev">—</div>
+      <div class="small text-muted" data-i18n="adm_total_rev">Total Revenue (est.)</div>
+      <div class="small text-muted">Monthly + Yearly</div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-xl-3">
+    <div class="card stat-card p-3">
+      <div class="stat-icon mb-2" style="background:#fff7ed">
+        <i class="bi bi-check-circle-fill text-warning fs-4"></i>
+      </div>
+      <div class="fs-3 fw-bold text-warning" id="r-active-total">—</div>
+      <div class="small text-muted">Active Subscriptions</div>
+      <div class="small text-muted">ABA KHQR payments</div>
+    </div>
+  </div>
+</div>
+
+<!-- Pricing Reference -->
+<div class="card table-card p-3 mb-4">
+  <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i><span data-i18n="adm_aba_plans">ABA KHQR Pricing Plans</span></h6>
+  <div class="row g-2">
+    <div class="col-md-6">
+      <div class="border rounded-3 p-3 d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#eff6ff;width:42px;height:42px">
+          <i class="bi bi-calendar-month text-primary"></i>
+        </div>
+        <div>
+          <div class="fw-semibold" data-i18n="adm_monthly_plan">Monthly Plan</div>
+          <div class="fs-5 fw-bold text-primary">$9.99 <span class="text-muted small fw-normal">/ month</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="border rounded-3 p-3 d-flex align-items-center gap-3" style="background:#faf5ff">
+        <div class="stat-icon" style="background:#ede9fe;width:42px;height:42px">
+          <i class="bi bi-calendar-year" style="color:#7c3aed"></i>
+        </div>
+        <div>
+          <div class="fw-semibold" data-i18n="adm_yearly_plan">Yearly Plan</div>
+          <div class="fs-5 fw-bold" style="color:#7c3aed">$79.99 <span class="text-muted small fw-normal">/ year</span>
+            <span class="badge bg-success ms-1" style="font-size:.7rem">33% off</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Subscriptions Table -->
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>User</th>
+          <th>Plan</th>
+          <th>Status</th>
+          <th data-i18n="adm_col_renewal">Renewal Date</th>
+          <th data-i18n="adm_col_autorenew">Auto-Renew</th>
+          <th>Since</th>
+        </tr>
+      </thead>
+      <tbody id="subsTable">
+        <tr><td colspan="7" class="text-center py-4 text-muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex align-items-center justify-content-between p-3 border-top">
+    <small class="text-muted" id="subsPagInfo">—</small>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="subsBtn-prev"
+              onclick="loadSubs(subsPage - 1)" disabled>
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" id="subsBtn-next"
+              onclick="loadSubs(subsPage + 1)" disabled>
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let subsPage = 1;
+
+async function loadSubs(page = 1) {
+  subsPage = page;
+  const r = await apiFetch(`/api/admin/subscriptions?page=${page}&limit=20`);
+  if (!r) return;
+  const d = await r.json();
+
+  // Revenue cards
+  document.getElementById('r-monthly-subs').textContent  = d.revenue.monthly_subscribers;
+  document.getElementById('r-mrr').textContent           = `$${d.revenue.monthly_mrr.toFixed(2)} MRR`;
+  document.getElementById('r-yearly-subs').textContent   = d.revenue.yearly_subscribers;
+  document.getElementById('r-yearly-rev').textContent    = `$${d.revenue.yearly_revenue.toFixed(2)} ARR`;
+  document.getElementById('r-total-rev').textContent     = `$${d.revenue.total_arr.toFixed(2)}`;
+  document.getElementById('r-active-total').textContent  = d.total;
+
+  // Pagination
+  document.getElementById('subsPagInfo').textContent =
+    `Showing ${d.subscriptions.length} of ${d.total} (page ${d.page}/${d.pages})`;
+  document.getElementById('subsBtn-prev').disabled = d.page <= 1;
+  document.getElementById('subsBtn-next').disabled = !d.has_next;
+
+  const tbody = document.getElementById('subsTable');
+  if (!d.subscriptions.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No active subscriptions.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = d.subscriptions.map(s => `
+    <tr>
+      <td class="text-muted small">#${s.id}</td>
+      <td>
+        <div class="fw-medium">${s.user_name || '—'}</div>
+        <div class="text-muted small">${s.user_email || '—'}</div>
+      </td>
+      <td>
+        ${s.plan === 'yearly'
+          ? '<span class="badge badge-pro">Yearly</span>'
+          : '<span class="badge bg-info">Monthly</span>'}
+      </td>
+      <td>
+        ${s.status === 'active'
+          ? '<span class="badge bg-success">Active</span>'
+          : s.status === 'trialing'
+            ? '<span class="badge bg-warning text-dark">Trial</span>'
+            : `<span class="badge bg-secondary">${s.status}</span>`}
+      </td>
+      <td class="small">${fmtDate(s.period_end)}</td>
+      <td>
+        ${!s.cancel_at_end
+          ? '<span class="badge bg-success">Yes</span>'
+          : '<span class="badge bg-secondary">No</span>'}
+      </td>
+      <td class="small text-muted">${fmtDate(s.created_at)}</td>
+    </tr>
+  `).join('');
+}
+
+loadSubs();
+</script>
+{% endblock %}

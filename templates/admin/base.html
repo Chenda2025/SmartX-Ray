@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Admin{% endblock %} — SmartX-Ray</title>
+
+  <!-- ── Fonts ──────────────────────────────────────────────────────────── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- ── Icons ──────────────────────────────────────────────────────────── -->
+  <!-- Tabler Icons (new design system) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  <!-- Bootstrap Icons (backward-compat for existing child pages) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+
+  <!-- ── Bootstrap CSS (backward-compat for existing child pages) ───────── -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+
+  <!-- ── Design System ──────────────────────────────────────────────────── -->
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/admin.css">
+
+  <!-- ── Override Bootstrap defaults to match new tokens ───────────────── -->
+  <style>
+    /* Ensure Inter wins over Bootstrap's system-ui stack */
+    body, .btn, .form-control, .form-select, .table, .modal-body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+    }
+
+    /* Khmer language override */
+    :lang(km), [lang="km"], .km {
+      font-family: 'Noto Sans Khmer', sans-serif !important;
+    }
+
+    /* Disable Bootstrap's body background so tokens.css controls it */
+    body { background-color: var(--color-page-bg) !important; }
+
+    /* Bootstrap btn radius → tokens */
+    .btn { border-radius: var(--radius-btn) !important; }
+
+    /* Bootstrap card radius → tokens */
+    .card { border-radius: var(--radius-card) !important; border-color: var(--color-border) !important; }
+
+    /* Bootstrap table hover uses our indigo tint */
+    .table-hover > tbody > tr:hover > * { background-color: #F0F4FF !important; }
+
+    /* Remove Bootstrap's default body padding that clashes with sidebar */
+    #main > .p-4, #main > .container-fluid { padding: var(--content-padding, 24px) !important; }
+
+    /* Bootstrap's .badge overwrites our custom ones — reset */
+    .badge { border-radius: var(--radius-badge) !important; }
+
+    /* Ensure sidebar sits above Bootstrap modals */
+    #sidebar { z-index: 1045 !important; }
+    #sidebarOverlay { z-index: 1040 !important; }
+  </style>
+
+  {% block extra_head %}{% endblock %}
+</head>
+
+<body data-bs-theme="light">
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     SIDEBAR OVERLAY  (tap to close on mobile / tablet)
+     ════════════════════════════════════════════════════════════════════════ -->
+<div id="sidebarOverlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     SIDEBAR
+     ════════════════════════════════════════════════════════════════════════ -->
+<nav id="sidebar">
+
+  <!-- Brand -->
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <i class="ti ti-lungs" style="font-size:18px"></i>
+    </div>
+    <div>
+      <div class="brand-name">SmartX-Ray</div>
+      <div class="brand-sub" data-i18n="adm_brand_sub">Admin Panel</div>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <ul class="nav flex-column mt-1" style="padding: 6px 0; flex: 1;">
+
+    <!-- Overview -->
+    <div class="nav-section" data-i18n="adm_nav_overview">Overview</div>
+
+    <li class="nav-item">
+      <a href="/admin/dashboard"
+         class="nav-link {% if active == 'dashboard' %}active{% endif %}">
+        <i class="ti ti-home nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_dashboard">Dashboard</span>
+      </a>
+    </li>
+
+    <!-- Management -->
+    <div class="nav-section mt-1" data-i18n="adm_nav_management">Management</div>
+
+    <li class="nav-item">
+      <a href="/admin/users"
+         class="nav-link {% if active == 'users' %}active{% endif %}">
+        <i class="ti ti-users nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_users">Users</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="/admin/ads"
+         class="nav-link {% if active == 'ads' %}active{% endif %}">
+        <i class="ti ti-speakerphone nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_ads">Ad Manager</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="/admin/subscriptions"
+         class="nav-link {% if active == 'subscriptions' %}active{% endif %}">
+        <i class="ti ti-credit-card nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_subs">Subscriptions</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="/admin/marketplace"
+         class="nav-link {% if active == 'marketplace' %}active{% endif %}">
+        <i class="ti ti-stethoscope nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_marketplace">Marketplace</span>
+        <span class="nav-badge" id="sidebarPendingBadge" style="display:none"></span>
+      </a>
+    </li>
+
+    <!-- System -->
+    <div class="nav-section mt-1" data-i18n="adm_nav_system">System</div>
+
+    <li class="nav-item">
+      <a href="/admin/logs"
+         class="nav-link {% if active == 'logs' %}active{% endif %}">
+        <i class="ti ti-activity nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_logs">System Logs</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="/health" target="_blank"
+         class="nav-link">
+        <i class="ti ti-heart-rate-monitor nav-icon"></i>
+        <span class="nav-label" data-i18n="adm_nav_health">Health Check</span>
+      </a>
+    </li>
+
+    <li class="nav-item">
+      <a href="/admin/telegram" class="nav-link {% if active == 'telegram' %}active{% endif %}">
+        <i class="ti ti-brand-telegram nav-icon"></i>
+        <span class="nav-label">Telegram Alerts</span>
+      </a>
+    </li>
+
+  </ul>
+
+  <!-- Footer — user row -->
+  <div class="sidebar-footer">
+    <!-- Back to app link -->
+    <a href="/" class="nav-link" style="margin-bottom:4px; font-size:12px; opacity:.7;">
+      <i class="ti ti-arrow-left nav-icon" style="font-size:13px"></i>
+      <span class="nav-label" data-i18n="adm_back_app">Back to App</span>
+    </a>
+
+    <!-- User row -->
+    <div class="sidebar-user" onclick="adminLogout()" title="Logout">
+      <div class="avatar avatar-sm" id="sidebarAvatar"
+           style="background:var(--color-indigo); color:#fff; font-size:11px; flex-shrink:0">
+        AD
+      </div>
+      <div style="flex:1; min-width:0;">
+        <div class="user-name" id="sidebarEmail">Admin</div>
+        <div class="user-role" data-i18n="adm_brand_sub">Admin Panel</div>
+      </div>
+      <i class="ti ti-logout logout-icon"></i>
+    </div>
+  </div>
+
+</nav><!-- /#sidebar -->
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MAIN CONTENT AREA
+     ════════════════════════════════════════════════════════════════════════ -->
+<div id="main">
+
+  <!-- ── TOPBAR ─────────────────────────────────────────────────────────── -->
+  <div id="topbar">
+
+    <!-- Hamburger (shown on tablet/phone) -->
+    <button class="topbar-hamburger" id="hamburgerBtn"
+            onclick="toggleSidebar()" aria-label="Toggle sidebar">
+      <i class="ti ti-menu-2"></i>
+    </button>
+
+    <!-- Page title + breadcrumb -->
+    <div style="flex:1; min-width:0;">
+      <div class="topbar-title">
+        {% block topbar_title %}
+          <span data-i18n="adm_nav_dashboard">Dashboard</span>
+        {% endblock %}
+      </div>
+      <nav class="admin-breadcrumb hide-xs" aria-label="breadcrumb" style="margin-top:1px">
+        <a href="/admin/dashboard">Admin</a>
+        <span class="sep"><i class="ti ti-chevron-right" style="font-size:10px"></i></span>
+        <span class="current">{% block breadcrumb %}Dashboard{% endblock %}</span>
+      </nav>
+    </div>
+
+    <!-- Right side controls -->
+    <div class="topbar-right">
+
+      <!-- Alert bell -->
+      <a href="/admin/logs?severity=high" class="topbar-icon-btn" id="topbarAlertBtn"
+         title="High-severity alerts">
+        <i class="ti ti-bell"></i>
+        <span class="dot danger" id="topbarAlertDot" style="display:none"></span>
+      </a>
+
+      <!-- Health indicator -->
+      <a href="/health" target="_blank" class="topbar-icon-btn"
+         title="System Health">
+        <i class="ti ti-heart-rate-monitor"></i>
+        <span class="dot" id="topbarHealthDot"></span>
+      </a>
+
+      <!-- Language toggle -->
+      <button id="adminLangBtn" class="lang-toggle"
+              onclick="adminToggleLang()" title="Switch language / ប្ដូរភាសា">
+        ខ្មែរ
+      </button>
+
+      <!-- Admin email (hidden on phone) -->
+      <span class="topbar-email hide-xs" id="topbarEmail">Admin</span>
+
+      <!-- Logout -->
+      <button class="btn btn-sm btn-outline-danger" onclick="adminLogout()"
+              style="font-size:12px; padding:5px 12px; white-space:nowrap;">
+        <i class="ti ti-power" style="font-size:13px"></i>
+        <span class="hide-xs" data-i18n="adm_logout" style="margin-left:4px">Logout</span>
+      </button>
+
+    </div>
+  </div><!-- /#topbar -->
+
+  <!-- ── PAGE CONTENT ───────────────────────────────────────────────────── -->
+  <div class="admin-content p-4">
+    {% block content %}{% endblock %}
+  </div>
+
+</div><!-- /#main -->
+
+
+<!-- ── Toast container ────────────────────────────────────────────────── -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ── Shared confirmation modal ──────────────────────────────────────── -->
+{% include 'shared/modal.html' %}
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     SCRIPTS
+     ════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Bootstrap JS (backward-compat for modals on existing child pages) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- i18n engine -->
+<script src="/static/js/i18n.js"></script>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   ADMIN CORE JS
+   ─────────────────────────────────────────────────────────────────────────
+   All admin pages share these helpers via base.html.
+   No external dependencies — pure vanilla JS.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Auth ──────────────────────────────────────────────────────────────────
+const ADMIN_KEY = 'admin_token';
+
+function getToken()   { return localStorage.getItem(ADMIN_KEY); }
+function setToken(t)  { localStorage.setItem(ADMIN_KEY, t); }
+function clearToken() { localStorage.removeItem(ADMIN_KEY); }
+
+function goLogin() {
+  clearToken();
+  window.location.href = '/admin/login';
+}
+
+function adminLogout() {
+  clearToken();
+  window.location.href = '/admin/login';
+}
+
+// ── Authenticated fetch ───────────────────────────────────────────────────
+async function apiFetch(url, opts = {}) {
+  const token = getToken();
+  if (!token) { goLogin(); return null; }
+
+  opts.headers = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    ...(opts.headers || {}),
+  };
+
+  let r;
+  try {
+    r = await fetch(url, opts);
+  } catch (err) {
+    toast('Network error — check your connection.', 'error');
+    return null;
+  }
+
+  if (r.status === 401 || r.status === 403) {
+    goLogin();
+    return null;
+  }
+
+  return r;
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────
+// type: 'success' | 'error' | 'warning' | 'info'
+function toast(msg, type = 'success', duration = 3800) {
+  const icons = {
+    success: 'ti-circle-check',
+    error:   'ti-alert-circle',
+    warning: 'ti-alert-triangle',
+    info:    'ti-info-circle',
+  };
+
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `
+    <i class="ti ${icons[type] || icons.info}"
+       style="font-size:16px; flex-shrink:0; color:var(--color-${type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'amber' : 'indigo'})"></i>
+    <span style="flex:1">${msg}</span>
+    <button onclick="this.parentElement.remove()"
+            style="background:none;border:none;cursor:pointer;color:var(--color-hint);font-size:14px;padding:0;margin-left:4px;">
+      <i class="ti ti-x"></i>
+    </button>`;
+
+  const container = document.getElementById('toastContainer');
+  container.appendChild(el);
+  setTimeout(() => { el.style.animation = 'toast-out .2s ease forwards'; setTimeout(() => el.remove(), 200); }, duration);
+}
+
+// Bootstrap-compatible alias (some child pages call toast with Bootstrap types)
+function bsToast(msg, type = 'success') {
+  const map = { success: 'success', danger: 'error', warning: 'warning', info: 'info' };
+  toast(msg, map[type] || 'info');
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────
+function fmtDate(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'short', day: '2-digit',
+    });
+  } catch (_) { return iso; }
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('en-US', {
+      year: 'numeric', month: 'short', day: '2-digit',
+      hour: '2-digit', minute: '2-digit',
+    });
+  } catch (_) { return iso; }
+}
+
+function timeAgo(iso) {
+  if (!iso) return '—';
+  const s   = Math.floor((Date.now() - new Date(iso)) / 1000);
+  if (s < 60)   return `${s}s ago`;
+  if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+  if (s < 86400)return `${Math.floor(s / 3600)}h ago`;
+  return `${Math.floor(s / 86400)}d ago`;
+}
+
+// ── Number helpers ────────────────────────────────────────────────────────
+function fmtNum(n) {
+  if (n === null || n === undefined) return '—';
+  return Number(n).toLocaleString('en-US');
+}
+
+function fmtCurrency(n) {
+  if (n === null || n === undefined) return '—';
+  return '$' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Avatar color ──────────────────────────────────────────────────────────
+// Generates a consistent HSL background from a string (name/email)
+function avatarColor(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = str.charCodeAt(i) + ((h << 5) - h);
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue}, 58%, 44%)`;
+}
+
+function avatarInitials(name) {
+  if (!name) return '??';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+// ── Language toggle ───────────────────────────────────────────────────────
+function adminToggleLang() {
+  I18n.toggle();
+  _syncLangBtn();
+}
+
+function _syncLangBtn() {
+  const btn = document.getElementById('adminLangBtn');
+  if (btn) btn.textContent = I18n.getLang() === 'km' ? 'EN' : 'ខ្មែរ';
+}
+
+// ── Sidebar toggle (mobile / tablet) ─────────────────────────────────────
+function toggleSidebar() {
+  const sidebar  = document.getElementById('sidebar');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const isOpen   = sidebar.classList.contains('show');
+
+  if (isOpen) {
+    sidebar.classList.remove('show');
+    overlay.style.display = 'none';
+    document.body.style.overflow = '';
+  } else {
+    sidebar.classList.add('show');
+    overlay.style.display = 'block';
+    document.body.style.overflow = 'hidden';   // prevent scroll behind drawer
+  }
+}
+
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('show');
+  document.getElementById('sidebarOverlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+// Close sidebar on Escape key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSidebar();
+});
+
+// ── Topbar: populate email + avatar ──────────────────────────────────────
+(function _populateTopbar() {
+  const t = getToken();
+  if (!t) { goLogin(); return; }
+
+  let email = 'Admin';
+  try {
+    const payload = JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    email = payload.email || payload.sub || 'Admin';
+  } catch (_) {}
+
+  // Topbar email
+  const topbarEl = document.getElementById('topbarEmail');
+  if (topbarEl) topbarEl.textContent = email;
+
+  // Sidebar user row
+  const sidebarEl = document.getElementById('sidebarEmail');
+  if (sidebarEl) sidebarEl.textContent = email;
+
+  // Sidebar avatar
+  const avatarEl = document.getElementById('sidebarAvatar');
+  if (avatarEl) {
+    avatarEl.textContent    = avatarInitials(email.split('@')[0]);
+    avatarEl.style.background = avatarColor(email);
+  }
+})();
+
+// ── Language button sync on load ──────────────────────────────────────────
+(function _syncLangOnLoad() {
+  _syncLangBtn();
+  // Apply translations to page on load
+  if (typeof I18n !== 'undefined' && I18n.applyAll) {
+    I18n.applyAll();
+  }
+})();
+
+// ── Pending doctors badge ─────────────────────────────────────────────────
+// Fetch stats silently and show red badge in sidebar if pending > 0
+(async function _fetchPendingBadge() {
+  try {
+    const r = await apiFetch('/api/admin/stats');
+    if (!r || !r.ok) return;
+    const d = await r.json();
+    const pending = d?.marketplace?.pending_approvals ?? 0;
+    const badge   = document.getElementById('sidebarPendingBadge');
+    const dot     = document.getElementById('topbarAlertDot');
+
+    if (pending > 0 && badge) {
+      badge.textContent = pending;
+      badge.style.display = 'inline-flex';
+    }
+
+    // Also check for high-severity logs — show alert dot on bell icon
+    // (fetched lazily; no extra request here, just re-use pending signal)
+    if (dot && pending > 0) {
+      dot.style.display = 'block';
+    }
+  } catch (_) { /* silent */ }
+})();
+
+// ── toast-out keyframe (added dynamically once) ───────────────────────────
+(function _addToastOutKeyframe() {
+  if (document.getElementById('toast-out-style')) return;
+  const s = document.createElement('style');
+  s.id = 'toast-out-style';
+  s.textContent = '@keyframes toast-out { to { opacity:0; transform:translateX(12px); } }';
+  document.head.appendChild(s);
+})();
+
+</script>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>

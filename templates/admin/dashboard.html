@@ -1,0 +1,697 @@
+{% extends "admin/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_dashboard">Dashboard</span>{% endblock %}
+{% block breadcrumb %}<span class="current" data-i18n="adm_nav_dashboard">Dashboard</span>{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPONENT 1 — Page Header  (.page-header)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page-header">
+  <div class="page-header-left">
+    <h4 class="page-title" data-i18n="adm_dash_title">Dashboard Overview</h4>
+    <p class="page-sub" data-i18n="adm_dash_sub">SmartX-Ray — Cambodia Medical AI Platform</p>
+  </div>
+  <div class="page-header-right">
+    <button class="btn btn-sm btn-outline" onclick="loadDashboard()" id="refreshBtn">
+      <i class="ti ti-refresh" id="refreshIcon"></i>
+      <span data-i18n="adm_refresh">Refresh</span>
+    </button>
+    <a href="/health" target="_blank" class="btn btn-sm btn-outline">
+      <i class="ti ti-heart-rate-monitor"></i>
+      <span class="hide-xs" data-i18n="adm_nav_health">Health</span>
+    </a>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPONENT 2 — Alert Banner  (.admin-alert)
+     Hidden by default; shown when pending doctors > 0 or system is degraded.
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="admin-alert warning" id="alertBanner" style="display:none; margin-bottom:20px">
+  <i class="ti ti-alert-triangle alert-icon"></i>
+  <div class="alert-body">
+    <div class="alert-title" id="alertTitle">Action required</div>
+    <div class="alert-detail" id="alertDetail">Loading…</div>
+  </div>
+  <div class="alert-actions">
+    <a href="/admin/marketplace" class="btn btn-sm btn-outline" id="alertBtn">
+      <i class="ti ti-arrow-right"></i>
+      <span id="alertBtnLabel">Review</span>
+    </a>
+    <button class="btn btn-sm btn-ghost" onclick="document.getElementById('alertBanner').style.display='none'">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPONENT 3 — KPI Cards  (.kpi-grid / .kpi-card)
+     5 cards: Users, Scans Today, Revenue, Active Ads, Pending Docs
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="kpi-grid">
+
+  <!-- Total Users -->
+  <div class="kpi-card" id="kpi-users">
+    <div class="kpi-card-top">
+      <div class="kpi-icon indigo">
+        <i class="ti ti-users"></i>
+      </div>
+      <span class="kpi-delta flat" id="kpi-users-split">—</span>
+    </div>
+    <div>
+      <div class="kpi-value" id="kpi-users-val">—</div>
+      <div class="kpi-label" data-i18n="adm_total_users">Total Users</div>
+    </div>
+    <div class="kpi-sparkline indigo" id="kpi-users-spark">
+      <div class="bar" style="height:40%"></div>
+      <div class="bar" style="height:55%"></div>
+      <div class="bar" style="height:45%"></div>
+      <div class="bar" style="height:70%"></div>
+      <div class="bar" style="height:60%"></div>
+      <div class="bar" style="height:80%"></div>
+      <div class="bar active" style="height:100%"></div>
+    </div>
+  </div>
+
+  <!-- Scans Today -->
+  <div class="kpi-card" id="kpi-scans">
+    <div class="kpi-card-top">
+      <div class="kpi-icon green">
+        <i class="ti ti-scan"></i>
+      </div>
+      <span class="kpi-delta up" id="kpi-scans-today">— today</span>
+    </div>
+    <div>
+      <div class="kpi-value" id="kpi-scans-val">—</div>
+      <div class="kpi-label" data-i18n="adm_total_scans">Total Scans</div>
+    </div>
+    <div class="kpi-sparkline green">
+      <div class="bar" style="height:30%"></div>
+      <div class="bar" style="height:50%"></div>
+      <div class="bar" style="height:40%"></div>
+      <div class="bar" style="height:65%"></div>
+      <div class="bar" style="height:75%"></div>
+      <div class="bar" style="height:55%"></div>
+      <div class="bar active" style="height:90%"></div>
+    </div>
+  </div>
+
+  <!-- Revenue -->
+  <div class="kpi-card" id="kpi-revenue">
+    <div class="kpi-card-top">
+      <div class="kpi-icon navy">
+        <i class="ti ti-currency-dollar"></i>
+      </div>
+      <span class="kpi-delta up" id="kpi-subs-count">— pro</span>
+    </div>
+    <div>
+      <div class="kpi-value" id="kpi-revenue-val">—</div>
+      <div class="kpi-label" data-i18n="adm_monthly_rev">Est. Monthly Revenue</div>
+    </div>
+    <div class="kpi-sparkline indigo">
+      <div class="bar" style="height:20%"></div>
+      <div class="bar" style="height:35%"></div>
+      <div class="bar" style="height:50%"></div>
+      <div class="bar" style="height:60%"></div>
+      <div class="bar" style="height:70%"></div>
+      <div class="bar" style="height:80%"></div>
+      <div class="bar active" style="height:100%"></div>
+    </div>
+  </div>
+
+  <!-- Active Ads -->
+  <div class="kpi-card" id="kpi-ads">
+    <div class="kpi-card-top">
+      <div class="kpi-icon amber">
+        <i class="ti ti-speakerphone"></i>
+      </div>
+      <span class="kpi-delta flat" id="kpi-ads-ctr">— CTR</span>
+    </div>
+    <div>
+      <div class="kpi-value" id="kpi-ads-val">—</div>
+      <div class="kpi-label" data-i18n="adm_active_ads">Active Ads</div>
+    </div>
+    <div class="kpi-sparkline amber">
+      <div class="bar" style="height:50%"></div>
+      <div class="bar" style="height:60%"></div>
+      <div class="bar" style="height:45%"></div>
+      <div class="bar" style="height:70%"></div>
+      <div class="bar" style="height:80%"></div>
+      <div class="bar" style="height:60%"></div>
+      <div class="bar active" style="height:100%"></div>
+    </div>
+  </div>
+
+  <!-- Pending Doctors -->
+  <div class="kpi-card accent-amber" id="kpi-pending">
+    <div class="kpi-card-top">
+      <div class="kpi-icon amber">
+        <i class="ti ti-stethoscope"></i>
+      </div>
+      <span class="kpi-delta flat" id="kpi-pending-label">awaiting</span>
+    </div>
+    <div>
+      <div class="kpi-value" id="kpi-pending-val">—</div>
+      <div class="kpi-label" data-i18n="adm_pending_docs">Pending Doctors</div>
+    </div>
+    <a href="/admin/marketplace" class="btn btn-sm btn-outline-primary"
+       style="margin-top:6px; font-size:11px; padding:4px 10px">
+      <i class="ti ti-arrow-right" style="font-size:11px"></i>
+      <span data-i18n="adm_doc_approvals">Review Queue</span>
+    </a>
+  </div>
+
+</div><!-- /.kpi-grid -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPONENTS 4 + 5 — Panel Grid  (.panel-grid)
+     Left  (3fr) = Admin Table  (.table-card + .admin-table) — recent scans
+     Right (2fr) = Health Gauges (.health-list + .health-bar)
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="panel-grid">
+
+  <!-- ── Left panel: Recent Scans ── -->
+  <div class="panel-card">
+    <div class="panel-card-header">
+      <div class="panel-card-title">
+        <div class="live-dot"></div>
+        <span data-i18n="adm_recent_scans">Recent Scans</span>
+      </div>
+      <a href="/admin/logs?event_type=scan" class="btn btn-sm btn-ghost" style="font-size:11px">
+        <span data-i18n="adm_view_all">View all</span>
+        <i class="ti ti-arrow-right" style="font-size:11px"></i>
+      </a>
+    </div>
+
+    <div class="panel-card-body">
+      <div class="table-card" style="border:none; border-radius:0; margin-bottom:0; box-shadow:none">
+        <div class="table-responsive">
+          <table class="admin-table" id="recentScansTable">
+            <thead>
+              <tr>
+                <th data-i18n="adm_col_user">User</th>
+                <th data-i18n="adm_col_result">Result</th>
+                <th data-i18n="adm_col_confidence">Confidence</th>
+                <th data-i18n="adm_col_time">Time</th>
+              </tr>
+            </thead>
+            <tbody id="recentScansBody">
+              <!-- Skeleton rows -->
+              <tr>
+                <td colspan="4">
+                  <div class="skeleton skeleton-row medium" style="margin:4px 0"></div>
+                  <div class="skeleton skeleton-row short"  style="margin:4px 0"></div>
+                  <div class="skeleton skeleton-row full"   style="margin:4px 0"></div>
+                  <div class="skeleton skeleton-row medium" style="margin:4px 0"></div>
+                  <div class="skeleton skeleton-row short"  style="margin:4px 0"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-card-footer">
+      <i class="ti ti-clock" style="font-size:11px"></i>
+      <span id="recentScansUpdated" data-i18n="adm_last_updated">Last updated just now</span>
+    </div>
+  </div><!-- /.panel-card left -->
+
+
+  <!-- ── Right panel: System Health Gauges + Scan Breakdown ── -->
+  <div style="display:flex; flex-direction:column; gap:16px">
+
+    <!-- COMPONENT 4 — Health Gauges (.health-list) -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-title">
+          <i class="ti ti-heart-rate-monitor" style="color:var(--color-green); font-size:15px"></i>
+          <span data-i18n="adm_system_health">System Health</span>
+        </div>
+        <span class="badge badge-green" id="healthOverallBadge" style="font-size:10px">OK</span>
+      </div>
+
+      <div class="health-list" id="healthGauges">
+
+        <!-- Pneumonia rate -->
+        <div class="health-item">
+          <div class="health-item-row">
+            <div class="health-item-label">
+              <i class="ti ti-lungs" style="color:var(--color-red); font-size:13px"></i>
+              <span data-i18n="adm_pneu_rate">Pneumonia Rate</span>
+            </div>
+            <div class="health-item-value" id="h-pneu-pct">—%</div>
+          </div>
+          <div class="health-bar">
+            <div class="health-bar-fill red" id="h-pneu-bar" style="width:0%"></div>
+            <div class="threshold-mark" style="left:60%"></div>
+          </div>
+        </div>
+
+        <!-- Scan quota usage (today / capacity proxy) -->
+        <div class="health-item">
+          <div class="health-item-row">
+            <div class="health-item-label">
+              <i class="ti ti-scan" style="color:var(--color-indigo); font-size:13px"></i>
+              <span data-i18n="adm_scans_today">Scans Today</span>
+            </div>
+            <div class="health-item-value" id="h-scans-today">—</div>
+          </div>
+          <div class="health-bar">
+            <div class="health-bar-fill indigo" id="h-scans-bar" style="width:0%"></div>
+            <div class="threshold-mark" style="left:80%"></div>
+          </div>
+        </div>
+
+        <!-- Ad CTR -->
+        <div class="health-item">
+          <div class="health-item-row">
+            <div class="health-item-label">
+              <i class="ti ti-cursor" style="color:var(--color-amber); font-size:13px"></i>
+              <span data-i18n="adm_ad_ctr">Ad Click-Through Rate</span>
+            </div>
+            <div class="health-item-value" id="h-ctr-pct">—%</div>
+          </div>
+          <div class="health-bar">
+            <div class="health-bar-fill amber" id="h-ctr-bar" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Pro conversion -->
+        <div class="health-item">
+          <div class="health-item-row">
+            <div class="health-item-label">
+              <i class="ti ti-star" style="color:#7C3AED; font-size:13px"></i>
+              <span data-i18n="adm_pro_rate">Pro Conversion</span>
+            </div>
+            <div class="health-item-value" id="h-pro-pct">—%</div>
+          </div>
+          <div class="health-bar">
+            <div class="health-bar-fill" id="h-pro-bar"
+                 style="width:0%; background:#7C3AED"></div>
+          </div>
+        </div>
+
+      </div><!-- /.health-list -->
+    </div><!-- /.panel-card health -->
+
+
+    <!-- Scan breakdown mini-card -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-title">
+          <i class="ti ti-chart-pie" style="font-size:15px"></i>
+          <span data-i18n="adm_scan_results">Scan Results</span>
+        </div>
+      </div>
+      <div style="padding:16px 18px; display:flex; gap:12px">
+
+        <!-- Pneumonia box -->
+        <div style="flex:1; text-align:center; padding:14px 8px;
+                    background:var(--color-red-light); border-radius:var(--radius-card)">
+          <div style="font-size:26px; font-weight:800; color:var(--color-red-dark)"
+               id="sb-pneumonia">—</div>
+          <div style="font-size:11px; color:var(--color-muted); margin-top:3px"
+               data-i18n="adm_pneumonia">Pneumonia</div>
+        </div>
+
+        <!-- Normal box -->
+        <div style="flex:1; text-align:center; padding:14px 8px;
+                    background:var(--color-green-light); border-radius:var(--radius-card)">
+          <div style="font-size:26px; font-weight:800; color:var(--color-green-dark)"
+               id="sb-normal">—</div>
+          <div style="font-size:11px; color:var(--color-muted); margin-top:3px"
+               data-i18n="adm_normal">Normal</div>
+        </div>
+
+      </div>
+      <!-- Ratio bar -->
+      <div style="padding:0 18px 16px">
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill red" id="sb-pbar" style="width:0%"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:4px;
+                    font-size:10px; color:var(--color-muted)">
+          <span data-i18n="adm_pneumonia">Pneumonia</span>
+          <span data-i18n="adm_normal">Normal</span>
+        </div>
+      </div>
+    </div><!-- /.panel-card scan breakdown -->
+
+  </div><!-- /.right column -->
+
+</div><!-- /.panel-grid -->
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Bottom row: Telegram Widget + Quick Actions
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px"
+     class="panel-grid">
+
+  <!-- ── COMPONENT 6 — Telegram Alerts Widget (.telegram-card) ── -->
+  <div class="telegram-card">
+    <div class="telegram-card-header">
+      <i class="ti ti-brand-telegram"></i>
+      <div>
+        <div class="label" data-i18n="adm_tg_title">Telegram Alerts</div>
+        <div class="bot-handle">@SmartXRayBot</div>
+      </div>
+      <a href="/admin/telegram" class="btn btn-sm btn-outline"
+         style="margin-left:auto; font-size:11px; padding:4px 10px">
+        <span data-i18n="adm_configure">Configure</span>
+      </a>
+    </div>
+    <div class="telegram-card-body">
+      <!-- Pneumonia ≥ 80% alert -->
+      <div class="tg-toggle-wrap">
+        <label class="switch">
+          <input type="checkbox" id="tgHighConf" checked onchange="saveTgPref('high_conf', this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+        <div class="tg-toggle-label" data-i18n="adm_tg_high_conf">Pneumonia ≥ 80%</div>
+      </div>
+      <!-- Daily summary -->
+      <div class="tg-toggle-wrap">
+        <label class="switch">
+          <input type="checkbox" id="tgDailySummary" checked onchange="saveTgPref('daily_summary', this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+        <div class="tg-toggle-label" data-i18n="adm_tg_daily">Daily Summary</div>
+      </div>
+      <!-- Critical errors -->
+      <div class="tg-toggle-wrap">
+        <label class="switch">
+          <input type="checkbox" id="tgCritical" onchange="saveTgPref('critical', this.checked)">
+          <span class="switch-slider"></span>
+        </label>
+        <div class="tg-toggle-label" data-i18n="adm_tg_critical">Critical Errors</div>
+      </div>
+    </div>
+  </div><!-- /.telegram-card -->
+
+
+  <!-- ── COMPONENT 7 — Quick Actions  (page-header pattern + action grid) ── -->
+  <div class="panel-card">
+    <div class="panel-card-header">
+      <div class="panel-card-title">
+        <i class="ti ti-bolt" style="font-size:15px"></i>
+        <span data-i18n="adm_quick_actions">Quick Actions</span>
+      </div>
+    </div>
+    <div style="padding:14px 16px">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
+
+        <a href="/admin/users" class="btn btn-outline"
+           style="flex-direction:column; align-items:flex-start; gap:4px;
+                  padding:12px; height:auto; text-align:left">
+          <i class="ti ti-users" style="font-size:20px; color:var(--color-indigo)"></i>
+          <span style="font-size:12px; font-weight:600"
+                data-i18n="adm_manage_users">Manage Users</span>
+        </a>
+
+        <a href="/admin/marketplace" class="btn btn-outline"
+           style="flex-direction:column; align-items:flex-start; gap:4px;
+                  padding:12px; height:auto; text-align:left; position:relative">
+          <i class="ti ti-stethoscope" style="font-size:20px; color:var(--color-amber)"></i>
+          <span style="font-size:12px; font-weight:600"
+                data-i18n="adm_doc_approvals">Doctor Queue</span>
+          <span class="badge badge-amber" id="qa-badge"
+                style="position:absolute; top:8px; right:8px; display:none; font-size:9px"></span>
+        </a>
+
+        <a href="/admin/ads" class="btn btn-outline"
+           style="flex-direction:column; align-items:flex-start; gap:4px;
+                  padding:12px; height:auto; text-align:left">
+          <i class="ti ti-speakerphone" style="font-size:20px; color:var(--color-green)"></i>
+          <span style="font-size:12px; font-weight:600"
+                data-i18n="adm_nav_ads">Ad Manager</span>
+        </a>
+
+        <a href="/admin/logs" class="btn btn-outline"
+           style="flex-direction:column; align-items:flex-start; gap:4px;
+                  padding:12px; height:auto; text-align:left">
+          <i class="ti ti-activity" style="font-size:20px; color:var(--color-muted)"></i>
+          <span style="font-size:12px; font-weight:600"
+                data-i18n="adm_nav_logs">System Logs</span>
+        </a>
+
+      </div>
+    </div>
+  </div><!-- /.panel-card quick actions -->
+
+</div><!-- /.bottom row -->
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   dashboard.js — SmartX-Ray Admin Dashboard
+   Data source: GET /api/admin/stats  (+ GET /api/admin/logs for recent scans)
+   All DOM IDs are declared above in the template.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+// ── Extra i18n keys (dashboard-only) ─────────────────────────────────────
+Object.assign(TRANSLATIONS, {
+  adm_recent_scans:   { en: 'Recent Scans',               km: 'ការស្កែនថ្មីៗ' },
+  adm_view_all:       { en: 'View all',                   km: 'មើលទាំងអស់' },
+  adm_system_health:  { en: 'System Health',              km: 'សុខភាពប្រព័ន្ធ' },
+  adm_scans_today:    { en: 'Scans Today',                km: 'ការស្កែនថ្ងៃនេះ' },
+  adm_ad_ctr:         { en: 'Ad Click-Through Rate',      km: 'អត្រាចុចផ្សាយពាណិជ្ជ' },
+  adm_pro_rate:       { en: 'Pro Conversion',             km: 'ការប្តូរ Pro' },
+  adm_monthly_rev:    { en: 'Est. Monthly Revenue',       km: 'ចំណូលប្រចាំខែ (ប.ច.)' },
+  adm_tg_title:       { en: 'Telegram Alerts',            km: 'ការជូនដំណឹង Telegram' },
+  adm_configure:      { en: 'Configure',                  km: 'កំណត់រចនាសម្ព័ន្ធ' },
+  adm_tg_high_conf:   { en: 'Pneumonia ≥ 80%',           km: 'ការចម្លងរោគ ≥ 80%' },
+  adm_tg_daily:       { en: 'Daily Summary',              km: 'សង្ខេបប្រចាំថ្ងៃ' },
+  adm_tg_critical:    { en: 'Critical Errors',            km: 'កំហុសសំខាន់' },
+  adm_last_updated:   { en: 'Last updated just now',      km: 'ធ្វើបច្ចុប្បន្នភាពថ្មីៗ' },
+  adm_scan_results:   { en: 'Scan Results',               km: 'លទ្ធផលស្កែន' },
+  adm_pneumonia:      { en: 'Pneumonia',                  km: 'ជំងឺរលាកសួត' },
+  adm_normal:         { en: 'Normal',                     km: 'ធម្មតា' },
+  adm_pneu_rate:      { en: 'Pneumonia Rate',             km: 'អត្រារោគ' },
+  adm_ad_perf:        { en: 'Ad Performance',             km: 'សមត្ថភាពផ្សាយ' },
+  adm_total_scans:    { en: 'Total Scans',                km: 'ស្កែនសរុប' },
+  adm_total_users:    { en: 'Total Users',                km: 'អ្នកប្រើសរុប' },
+  adm_active_ads:     { en: 'Active Ads',                 km: 'ផ្សាយសកម្ម' },
+  adm_pending_docs:   { en: 'Pending Doctors',            km: 'វេជ្ជបណ្ឌិតរង់ចាំ' },
+  adm_doc_approvals:  { en: 'Review Queue',               km: 'ជួររង់ចាំពិនិត្យ' },
+  adm_quick_actions:  { en: 'Quick Actions',              km: 'សកម្មភាពរហ័ស' },
+  adm_manage_users:   { en: 'Manage Users',               km: 'គ្រប់គ្រងអ្នកប្រើ' },
+  adm_nav_ads:        { en: 'Ad Manager',                 km: 'គ្រប់គ្រងផ្សាយ' },
+  adm_nav_logs:       { en: 'System Logs',                km: 'កំណត់ហេតុប្រព័ន្ធ' },
+});
+if (typeof I18n !== 'undefined') I18n.applyAll();
+
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function setBar(barId, pct, cap = 100) {
+  const el = $(barId);
+  if (el) el.style.width = Math.min(pct, 100) + '%';
+}
+
+function setPct(id, pct) {
+  const el = $(id);
+  if (el) el.textContent = pct + '%';
+}
+
+// ── Load /api/admin/stats ─────────────────────────────────────────────────
+async function loadStats() {
+  const r = await apiFetch('/api/admin/stats');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+
+  // ── KPI 1: Users ──────────────────────────────────────────────────────
+  $('kpi-users-val').textContent   = fmtNum(d.users.total);
+  $('kpi-users-split').textContent = `${d.users.free}F / ${d.users.pro}P`;
+  $('kpi-users-split').className   = 'kpi-delta ' + (d.users.pro > 0 ? 'up' : 'flat');
+
+  // ── KPI 2: Scans ──────────────────────────────────────────────────────
+  $('kpi-scans-val').textContent   = fmtNum(d.scans.total);
+  $('kpi-scans-today').textContent = `+${d.scans.today} today`;
+
+  // ── KPI 3: Revenue ────────────────────────────────────────────────────
+  $('kpi-revenue-val').textContent = fmtCurrency(d.subscriptions.monthly_revenue);
+  $('kpi-subs-count').textContent  = `${d.subscriptions.active} pro`;
+
+  // ── KPI 4: Ads ────────────────────────────────────────────────────────
+  $('kpi-ads-val').textContent = d.ads.active;
+  const ctrRaw = d.ads.clicks && d.ads.impressions
+    ? ((d.ads.clicks / d.ads.impressions) * 100).toFixed(1)
+    : '0.0';
+  $('kpi-ads-ctr').textContent = `${ctrRaw}% CTR`;
+  $('kpi-ads-ctr').className   = 'kpi-delta ' + (parseFloat(ctrRaw) >= 1.5 ? 'up' : 'flat');
+
+  // ── KPI 5: Pending doctors ────────────────────────────────────────────
+  const pending = d.marketplace.pending_approvals;
+  $('kpi-pending-val').textContent   = pending;
+  $('kpi-pending-label').textContent = pending === 1 ? 'awaiting' : 'awaiting';
+  $('kpi-pending').className         = 'kpi-card ' + (pending > 0 ? 'accent-amber' : '');
+
+  // ── Alert Banner ─────────────────────────────────────────────────────
+  const banner = $('alertBanner');
+  if (pending > 0) {
+    $('alertTitle').textContent  = `${pending} doctor ${pending === 1 ? 'application' : 'applications'} pending`;
+    $('alertDetail').textContent = 'New doctor submissions are waiting for admin review and approval.';
+    $('alertBtn').href           = '/admin/marketplace';
+    $('alertBtnLabel').textContent = 'Review Queue';
+    banner.style.display         = 'flex';
+    banner.className             = 'admin-alert warning';
+  }
+
+  // Quick-action badge
+  const qaBadge = $('qa-badge');
+  if (qaBadge && pending > 0) {
+    qaBadge.textContent    = pending;
+    qaBadge.style.display  = '';
+  }
+
+  // Sidebar pending badge (inherited from base.html — just in case)
+  const sbBadge = document.getElementById('sidebarPendingBadge');
+  if (sbBadge && pending > 0) {
+    sbBadge.textContent    = pending;
+    sbBadge.style.display  = 'inline-flex';
+  }
+
+  // ── Scan breakdown ────────────────────────────────────────────────────
+  $('sb-pneumonia').textContent = fmtNum(d.scans.pneumonia);
+  $('sb-normal').textContent    = fmtNum(d.scans.normal);
+  const scanTotal  = d.scans.pneumonia + d.scans.normal;
+  const pneuPct    = scanTotal ? Math.round((d.scans.pneumonia / scanTotal) * 100) : 0;
+  setBar('sb-pbar', pneuPct);
+
+  // ── Health gauges ─────────────────────────────────────────────────────
+  // Pneumonia rate
+  setPct('h-pneu-pct', pneuPct);
+  setBar('h-pneu-bar', pneuPct);
+  $('h-pneu-bar').className = 'health-bar-fill ' + (pneuPct > 60 ? 'red' : pneuPct > 40 ? 'amber' : 'green');
+
+  // Scans today (normalised against a soft cap of 50)
+  const scansCap = 50;
+  $('h-scans-today').textContent = d.scans.today;
+  setBar('h-scans-bar', Math.round((d.scans.today / scansCap) * 100));
+
+  // Ad CTR
+  const ctrPct = Math.min(parseFloat(ctrRaw) * 10, 100); // 10% CTR = full bar
+  setPct('h-ctr-pct', ctrRaw);
+  setBar('h-ctr-bar', ctrPct);
+  $('h-ctr-bar').className = 'health-bar-fill ' + (parseFloat(ctrRaw) >= 2 ? 'green' : parseFloat(ctrRaw) >= 0.5 ? 'amber' : 'red');
+
+  // Pro conversion rate
+  const proPct = d.users.total ? Math.round((d.users.pro / d.users.total) * 100) : 0;
+  setPct('h-pro-pct', proPct);
+  setBar('h-pro-bar', proPct);
+
+  // Overall health badge
+  const isHealthy = pneuPct < 70 && d.scans.today < scansCap * 0.9;
+  const badge = $('healthOverallBadge');
+  if (badge) {
+    badge.textContent  = isHealthy ? 'OK' : 'Warning';
+    badge.className    = 'badge ' + (isHealthy ? 'badge-green' : 'badge-amber');
+  }
+}
+
+
+// ── Load recent scan logs ─────────────────────────────────────────────────
+async function loadRecentScans() {
+  const r = await apiFetch('/api/admin/logs?event_type=scan&limit=8');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+
+  const tbody = $('recentScansBody');
+  if (!tbody) return;
+
+  if (!d.logs || !d.logs.length) {
+    tbody.innerHTML = `<tr><td colspan="4">
+      <div class="empty-state" style="padding:24px">
+        <i class="ti ti-scan empty-icon" style="font-size:32px"></i>
+        <p style="font-size:12px">No scan events yet.</p>
+      </div>
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = d.logs.map(l => {
+    // Parse result from log message, e.g. "Scan #3 — PNEUMONIA (conf 0.92)"
+    const isPneumonia = l.message && l.message.includes('PNEUMONIA');
+    const isNormal    = l.message && l.message.includes('NORMAL');
+
+    const resultBadge = isPneumonia
+      ? '<span class="badge badge-red"><i class="ti ti-alert-triangle" style="font-size:9px"></i> Pneumonia</span>'
+      : isNormal
+        ? '<span class="badge badge-green">Normal</span>'
+        : '<span class="badge" style="background:#F1F5F9;color:var(--color-hint)">—</span>';
+
+    // Try to extract confidence
+    const confMatch = l.message && l.message.match(/conf[\s:]+([0-9.]+)/i);
+    const confPct   = confMatch
+      ? Math.round(parseFloat(confMatch[1]) * 100) + '%'
+      : '—';
+
+    const confClass = confMatch && parseFloat(confMatch[1]) >= 0.8
+      ? 'style="color:var(--color-red-dark); font-weight:600"'
+      : '';
+
+    return `
+    <tr class="${isPneumonia && parseFloat((confMatch || [])[1] || 0) >= 0.8 ? 'sev-high' : ''}">
+      <td>
+        <span style="font-size:12px; color:var(--color-muted)">${l.user_email || '—'}</span>
+      </td>
+      <td>${resultBadge}</td>
+      <td><span ${confClass}>${confPct}</span></td>
+      <td style="white-space:nowrap">
+        <span style="font-size:11px; color:var(--color-hint)">${timeAgo(l.created_at)}</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Update footer timestamp
+  const footer = $('recentScansUpdated');
+  if (footer) footer.textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+
+// ── Telegram preference persistence (localStorage) ────────────────────────
+function saveTgPref(key, val) {
+  const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
+  prefs[key] = val;
+  localStorage.setItem('tg_prefs', JSON.stringify(prefs));
+  toast(val ? 'Alert enabled.' : 'Alert disabled.', val ? 'success' : 'warning');
+}
+
+function restoreTgPrefs() {
+  const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
+  if ('high_conf'    in prefs) $('tgHighConf').checked    = prefs.high_conf;
+  if ('daily_summary' in prefs) $('tgDailySummary').checked = prefs.daily_summary;
+  if ('critical'     in prefs) $('tgCritical').checked    = prefs.critical;
+}
+
+
+// ── Spinning refresh button ───────────────────────────────────────────────
+async function loadDashboard() {
+  const icon = $('refreshIcon');
+  if (icon) {
+    icon.style.transition = 'transform .6s ease';
+    icon.style.transform  = 'rotate(360deg)';
+    setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 650);
+  }
+  await Promise.all([loadStats(), loadRecentScans()]);
+}
+
+
+// ── Auto-refresh every 60 s ───────────────────────────────────────────────
+restoreTgPrefs();
+loadDashboard();
+setInterval(loadDashboard, 60_000);
+</script>
+{% endblock %}

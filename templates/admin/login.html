@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Login — SmartX-Ray</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <!-- Khmer font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #0d1117 0%, #1e293b 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    :lang(km), [lang="km"] * { font-family: 'Noto Sans Khmer', sans-serif !important; }
+
+    .login-card {
+      width: 100%;
+      max-width: 420px;
+      border: none;
+      border-radius: 18px;
+      box-shadow: 0 24px 60px rgba(0,0,0,.35);
+    }
+    .brand-circle {
+      width: 60px; height: 60px;
+      background: #2563eb;
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 1rem;
+    }
+    .form-control:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 .2rem rgba(37,99,235,.2);
+    }
+    .btn-login {
+      background: #2563eb;
+      border: none;
+      border-radius: 10px;
+      padding: .65rem;
+      font-weight: 600;
+      transition: background .2s;
+    }
+    .btn-login:hover { background: #1d4ed8; }
+    .error-msg { display: none; }
+
+    /* Language toggle */
+    .lang-btn {
+      position: absolute;
+      top: 1.2rem; right: 1.2rem;
+      font-size: .78rem;
+      border-radius: 20px;
+      padding: .25rem .7rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Language toggle (top-right) -->
+  <button class="btn btn-outline-light lang-btn" id="loginLangBtn"
+          onclick="loginToggleLang()">ខ្មែរ</button>
+
+  <div class="login-card card p-4 p-md-5">
+    <div class="text-center mb-4">
+      <div class="brand-circle">
+        <i class="bi bi-lungs-fill text-white fs-3"></i>
+      </div>
+      <h4 class="fw-bold mb-0">SmartX-Ray</h4>
+      <p class="text-muted small mt-1" data-i18n="adm_login_sub">
+        Admin Panel — Authorized Access Only
+      </p>
+    </div>
+
+    <div class="alert alert-danger error-msg d-flex align-items-center gap-2"
+         id="errMsg" role="alert">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span id="errText">Invalid credentials.</span>
+    </div>
+
+    <form id="loginForm">
+      <div class="mb-3">
+        <label class="form-label fw-medium" for="email" data-i18n="adm_email_lbl">Email</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0">
+            <i class="bi bi-envelope text-muted"></i>
+          </span>
+          <input type="email" class="form-control border-start-0 ps-0"
+                 id="email" placeholder="admin@smartxray.com"
+                 required autocomplete="username">
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-medium" for="password" data-i18n="adm_pwd_lbl">Password</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0">
+            <i class="bi bi-lock text-muted"></i>
+          </span>
+          <input type="password" class="form-control border-start-0 ps-0"
+                 id="password" placeholder="••••••••"
+                 required autocomplete="current-password">
+          <button type="button" class="btn btn-outline-secondary border-start-0"
+                  onclick="togglePwd()">
+            <i class="bi bi-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-login btn-primary w-100 text-white" id="submitBtn">
+        <span id="btnText">
+          <i class="bi bi-shield-lock me-2"></i>
+          <span data-i18n="adm_sign_in">Sign In</span>
+        </span>
+        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+      </button>
+    </form>
+
+    <p class="text-center text-muted small mt-4 mb-0">
+      <a href="/" class="text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i>
+        <span data-i18n="adm_return_app">Return to App</span>
+      </a>
+    </p>
+  </div>
+
+  <!-- i18n engine -->
+  <script src="/static/js/i18n.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (localStorage.getItem('admin_token')) {
+      window.location.href = '/admin/dashboard';
+    }
+
+    // Sync lang button on load
+    (function () {
+      const lang = localStorage.getItem('smartxray_lang') || 'en';
+      document.getElementById('loginLangBtn').textContent = lang === 'km' ? 'EN' : 'ខ្មែរ';
+    })();
+
+    function loginToggleLang() {
+      I18n.toggle();
+      document.getElementById('loginLangBtn').textContent =
+        I18n.getLang() === 'km' ? 'EN' : 'ខ្មែរ';
+    }
+
+    function togglePwd() {
+      const pw = document.getElementById('password');
+      const ic = document.getElementById('eyeIcon');
+      pw.type = pw.type === 'password' ? 'text' : 'password';
+      ic.className = pw.type === 'text' ? 'bi bi-eye-slash' : 'bi bi-eye';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errDiv  = document.getElementById('errMsg');
+      const btn     = document.getElementById('submitBtn');
+      const btnTxt  = document.getElementById('btnText');
+      const spinner = document.getElementById('btnSpinner');
+
+      errDiv.style.display = 'none';
+      btn.disabled = true;
+      btnTxt.classList.add('d-none');
+      spinner.classList.remove('d-none');
+
+      try {
+        const resp = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email:    document.getElementById('email').value.trim(),
+            password: document.getElementById('password').value,
+          }),
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+          localStorage.setItem('admin_token', data.access_token);
+          window.location.href = '/admin/dashboard';
+        } else {
+          document.getElementById('errText').textContent = data.error || 'Login failed.';
+          errDiv.style.display = 'flex';
+          btn.disabled = false;
+          btnTxt.classList.remove('d-none');
+          spinner.classList.add('d-none');
+        }
+      } catch (_) {
+        document.getElementById('errText').textContent = 'Network error. Please try again.';
+        errDiv.style.display = 'flex';
+        btn.disabled = false;
+        btnTxt.classList.remove('d-none');
+        spinner.classList.add('d-none');
+      }
+    });
+  </script>
+</body>
+</html>

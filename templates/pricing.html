@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Pricing{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center mb-5">
+    <h2 class="section-title fw-bold" data-i18n="pricing_title">Simple, Transparent Pricing</h2>
+    <p class="text-muted" data-i18n="pricing_sub">Upgrade anytime. Cancel anytime. No hidden fees.</p>
+
+    <!-- Billing toggle -->
+    <div class="d-inline-flex align-items-center gap-2 mt-2 p-1 bg-light rounded-pill">
+      <button class="btn btn-primary btn-sm rounded-pill px-4" id="btnMonthly" onclick="setBilling('monthly')" data-i18n="pricing_monthly">Monthly</button>
+      <button class="btn btn-light btn-sm rounded-pill px-4" id="btnYearly" onclick="setBilling('yearly')">
+        <span data-i18n="pricing_yearly">Yearly</span>
+        <span class="badge bg-success ms-1" data-i18n="pricing_save">Save 33%</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="row g-4 justify-content-center align-items-start">
+
+    <!-- Free -->
+    <div class="col-md-4">
+      <div class="card pricing-card p-4 h-100">
+        <h4 class="fw-bold" data-i18n="plan_free">Free</h4>
+        <div class="price-num">$0</div>
+        <p class="text-muted mb-4" data-i18n="plan_forever">forever</p>
+        <ul class="list-unstyled mb-4">
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_3scans">3 scans per day</span></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_heatmaps">Grad-CAM heatmaps</span></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_history">Scan history</span></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="pricing_marketplace">Marketplace access</span></li>
+          <li class="py-1 border-bottom text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_no_pdf">PDF reports</span></li>
+          <li class="py-1 border-bottom text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_no_adfree">Ad-free</span></li>
+          <li class="py-1 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_priority">Priority support</span></li>
+        </ul>
+        <a href="/login" class="btn btn-outline-primary w-100 mt-auto" data-i18n="plan_get_free">Get Started Free</a>
+      </div>
+    </div>
+
+    <!-- Pro -->
+    <div class="col-md-4">
+      <div class="card pricing-card featured p-4 h-100">
+        <span class="badge badge-pro mb-2" data-i18n="plan_most_popular">MOST POPULAR</span>
+        <h4 class="fw-bold" data-i18n="plan_pro">Pro</h4>
+        <div class="price-num" id="proPrice">$9.99</div>
+        <p class="text-muted mb-4" id="proBillingNote">/month, billed monthly</p>
+        <ul class="list-unstyled mb-4">
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><strong data-i18n="plan_unlimited">Unlimited scans</strong></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_heatmaps">Grad-CAM heatmaps</span></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_pdf">PDF diagnostic reports</span></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_adfree">Ad-free experience</span></li>
+          <li class="py-1 border-bottom"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="pricing_marketplace">Marketplace access</span></li>
+          <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_priority">Priority support</span></li>
+        </ul>
+        <button class="btn btn-primary w-100 fw-bold mt-auto" id="checkoutBtn" onclick="startCheckout()">
+          <span id="checkoutSpinner" class="spinner-border spinner-border-sm d-none me-1"></span>
+          <i class="fa-solid fa-credit-card me-2"></i>
+          <span data-i18n="plan_subscribe">Subscribe Now</span>
+        </button>
+        <p class="text-muted small text-center mt-2 mb-0" data-i18n="pricing_secure">Secure payment via Stripe</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FAQ -->
+  <div class="row mt-5 justify-content-center">
+    <div class="col-lg-7">
+      <h4 class="fw-bold text-center mb-4" data-i18n="faq_title">Frequently Asked Questions</h4>
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item border mb-2 rounded">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" data-i18n="faq1_q">
+              Can I cancel at any time?
+            </button>
+          </h2>
+          <div id="faq1" class="accordion-collapse collapse">
+            <div class="accordion-body text-muted" data-i18n="faq1_a">Yes. You can cancel your subscription from your dashboard at any time.
+              You retain Pro access until the end of the current billing period.</div>
+          </div>
+        </div>
+        <div class="accordion-item border mb-2 rounded">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" data-i18n="faq2_q">
+              Is this a real medical diagnostic tool?
+            </button>
+          </h2>
+          <div id="faq2" class="accordion-collapse collapse">
+            <div class="accordion-body text-muted" data-i18n-html="faq2_a">No. SmartX-Ray is a university research project for educational purposes only.
+              It is <strong>not</strong> a certified medical device.</div>
+          </div>
+        </div>
+        <div class="accordion-item border mb-2 rounded">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" data-i18n="faq3_q">
+              What payment methods are accepted?
+            </button>
+          </h2>
+          <div id="faq3" class="accordion-collapse collapse">
+            <div class="accordion-body text-muted" data-i18n="faq3_a">All major credit and debit cards via Stripe.</div>
+          </div>
+        </div>
+        <div class="accordion-item border rounded">
+          <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" data-i18n="faq4_q">
+              What happens to my scans if I downgrade?
+            </button>
+          </h2>
+          <div id="faq4" class="accordion-collapse collapse">
+            <div class="accordion-body text-muted" data-i18n="faq4_a">Your scan history and all previously generated PDF reports remain accessible.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let currentBilling = "monthly";
+
+  function setBilling(plan) {
+    currentBilling = plan;
+    const isMonthly = plan === "monthly";
+    document.getElementById("proPrice").textContent       = isMonthly ? "$9.99" : "$6.67";
+    document.getElementById("proBillingNote").textContent = isMonthly ? "/month, billed monthly" : "/month, billed $79.99/year";
+    document.getElementById("btnMonthly").className = `btn btn-sm rounded-pill px-4 ${isMonthly  ? "btn-primary" : "btn-light"}`;
+    document.getElementById("btnYearly").className  = `btn btn-sm rounded-pill px-4 ${!isMonthly ? "btn-primary" : "btn-light"}`;
+  }
+
+  async function startCheckout() {
+    if (!Auth.isLoggedIn()) { window.location.href = "/login"; return; }
+    document.getElementById("checkoutBtn").disabled = true;
+    document.getElementById("checkoutSpinner").classList.remove("d-none");
+    try {
+      const res  = await api.post("/subscription/checkout", {
+        plan:        currentBilling,
+        success_url: `${window.location.origin}/dashboard`,
+        cancel_url:  `${window.location.origin}/pricing`,
+      });
+      const data = await res.json();
+      if (!res.ok) { showToast(data.error || "Could not create checkout session.", "danger"); return; }
+      window.location.href = data.checkout_url;
+    } catch {
+      showToast("An error occurred. Please try again.", "danger");
+    } finally {
+      document.getElementById("checkoutBtn").disabled = false;
+      document.getElementById("checkoutSpinner").classList.add("d-none");
+    }
+  }
+</script>
+{% endblock %}

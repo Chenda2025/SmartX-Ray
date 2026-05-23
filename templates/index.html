@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ───────────────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6">
+        <span class="badge bg-warning text-dark mb-3 px-3 py-2">
+          <i class="fa-solid fa-flask me-1"></i>
+          <span data-i18n="hero_badge">University Research Project</span>
+        </span>
+        <h1 data-i18n="hero_h1">AI-Powered Pneumonia Detection</h1>
+        <p class="lead my-4" data-i18n-html="hero_lead">
+          Upload a chest X-ray and get an instant AI diagnosis with Grad-CAM
+          heatmap visualisation — built on a Hybrid CNN+ANN model with
+          <strong>97.03% validation accuracy</strong>.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="/login" class="btn btn-warning btn-lg fw-bold px-4">
+            <i class="fa-solid fa-upload me-2"></i>
+            <span data-i18n="hero_cta_primary">Try Free — No Card Needed</span>
+          </a>
+          <a href="/pricing" class="btn btn-outline-light btn-lg px-4" data-i18n="hero_cta_plans">See Pro Plans</a>
+        </div>
+        <div class="mt-4 d-flex gap-4 text-white-50 small flex-wrap">
+          <span><i class="fa-solid fa-circle-check text-warning me-1"></i><span data-i18n="hero_check1">97.03% Val Accuracy</span></span>
+          <span><i class="fa-solid fa-circle-check text-warning me-1"></i><span data-i18n="hero_check2">Grad-CAM Heatmaps</span></span>
+          <span><i class="fa-solid fa-circle-check text-warning me-1"></i><span data-i18n="hero_check3">Free tier: 3 scans/day</span></span>
+        </div>
+      </div>
+      <div class="col-lg-6 text-center">
+        <div class="card border-0 shadow-lg p-4 text-start mx-auto" style="max-width:360px;border-radius:20px;">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-danger px-3 py-2 fs-6">PNEUMONIA</span>
+            <span class="text-muted small">Confidence: <strong>94.7%</strong></span>
+          </div>
+          <div class="bg-dark rounded-3 d-flex align-items-center justify-content-center mb-3" style="height:180px;">
+            <i class="fa-solid fa-lungs text-white opacity-25" style="font-size:5rem;"></i>
+          </div>
+          <div class="progress mb-2" style="height:8px;">
+            <div class="progress-bar bg-danger" style="width:94.7%"></div>
+          </div>
+          <div class="d-flex justify-content-between small text-muted">
+            <span>Normal</span><span>Pneumonia</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Stats ───────────────────────────────────────────────────────────── -->
+<section class="py-5 bg-white border-bottom">
+  <div class="container">
+    <div class="row text-center g-4">
+      <div class="col-6 col-md-3">
+        <div class="display-5 fw-bold text-brand">97.03%</div>
+        <div class="text-muted small mt-1" data-i18n="stat_val_acc">Validation Accuracy</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="display-5 fw-bold text-brand">83.01%</div>
+        <div class="text-muted small mt-1" data-i18n="stat_test_acc">Test Accuracy</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="display-5 fw-bold text-brand">CNN+ANN</div>
+        <div class="text-muted small mt-1" data-i18n="stat_architecture">Hybrid Architecture</div>
+      </div>
+      <div class="col-6 col-md-3">
+        <div class="display-5 fw-bold text-brand">Grad-CAM</div>
+        <div class="text-muted small mt-1" data-i18n="stat_xai">Explainable AI</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ────────────────────────────────────────────────────────── -->
+<section class="py-5">
+  <div class="container">
+    <h2 class="section-title text-center mb-5" data-i18n="features_title">Everything You Need</h2>
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 p-4 text-center">
+          <div class="mb-3"><i class="fa-solid fa-bolt text-brand" style="font-size:2.2rem;"></i></div>
+          <h5 class="fw-bold" data-i18n="feat1_title">Instant Results</h5>
+          <p class="text-muted small" data-i18n="feat1_body">Upload an X-ray and receive a PNEUMONIA / NORMAL prediction in seconds.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 p-4 text-center">
+          <div class="mb-3"><i class="fa-solid fa-eye text-brand" style="font-size:2.2rem;"></i></div>
+          <h5 class="fw-bold" data-i18n="feat2_title">Grad-CAM Heatmaps</h5>
+          <p class="text-muted small" data-i18n="feat2_body">Visualise exactly which regions of the X-ray drove the AI's decision.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 p-4 text-center border-warning">
+          <div class="mb-3"><i class="fa-solid fa-file-pdf" style="font-size:2.2rem;color:#fbbc04;"></i></div>
+          <h5 class="fw-bold"><span data-i18n="feat3_title">PDF Reports</span> <span class="badge badge-pro ms-1">PRO</span></h5>
+          <p class="text-muted small" data-i18n="feat3_body">Download a branded diagnostic PDF with images, heatmaps, and clinical notes.</p>
+        </div>
+      </div>
+      <div class="col-md-6 col-lg-3">
+        <div class="card h-100 p-4 text-center">
+          <div class="mb-3"><i class="fa-solid fa-user-doctor text-brand" style="font-size:2.2rem;"></i></div>
+          <h5 class="fw-bold" data-i18n="feat4_title">Find a Doctor</h5>
+          <p class="text-muted small" data-i18n="feat4_body">Connect with verified pulmonologists and radiologists near you.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How it works ─────────────────────────────────────────────────────── -->
+<section class="py-5 bg-white">
+  <div class="container">
+    <h2 class="section-title text-center mb-5" data-i18n="how_title">How It Works</h2>
+    <div class="row g-4 align-items-center">
+      <div class="col-md-4 text-center">
+        <div class="rounded-circle bg-brand text-white d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:60px;height:60px;font-size:1.5rem;font-weight:700;">1</div>
+        <h6 class="fw-bold" data-i18n="how1_title">Upload X-Ray</h6>
+        <p class="text-muted small" data-i18n="how1_body">Drag and drop a chest X-ray PNG or JPEG file (up to 16 MB).</p>
+      </div>
+      <div class="col-md-4 text-center">
+        <div class="rounded-circle bg-brand text-white d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:60px;height:60px;font-size:1.5rem;font-weight:700;">2</div>
+        <h6 class="fw-bold" data-i18n="how2_title">AI Analysis</h6>
+        <p class="text-muted small" data-i18n="how2_body">Our Hybrid CNN+ANN model analyses the image and produces a prediction with Grad-CAM.</p>
+      </div>
+      <div class="col-md-4 text-center">
+        <div class="rounded-circle bg-brand text-white d-inline-flex align-items-center justify-content-center mb-3"
+             style="width:60px;height:60px;font-size:1.5rem;font-weight:700;">3</div>
+        <h6 class="fw-bold" data-i18n="how3_title">Review Results</h6>
+        <p class="text-muted small" data-i18n="how3_body">See the result, confidence score, heatmap, and (Pro) download a full PDF report.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Pricing preview ──────────────────────────────────────────────────── -->
+<section class="py-5">
+  <div class="container text-center">
+    <h2 class="section-title mb-2" data-i18n="pricing_preview_title">Simple, Transparent Pricing</h2>
+    <p class="text-muted mb-5" data-i18n="pricing_preview_sub">Start free. Upgrade anytime.</p>
+    <div class="row g-4 justify-content-center">
+      <!-- Free -->
+      <div class="col-md-4">
+        <div class="card pricing-card p-4">
+          <h4 class="fw-bold" data-i18n="plan_free">Free</h4>
+          <div class="price-num">$0</div>
+          <p class="text-muted" data-i18n="plan_forever">forever</p>
+          <ul class="list-unstyled text-start mb-4">
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_3scans">3 scans per day</span></li>
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_heatmaps">Grad-CAM heatmaps</span></li>
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_history">Scan history</span></li>
+            <li class="py-1 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_no_pdf">PDF reports</span></li>
+            <li class="py-1 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_no_adfree">Ad-free experience</span></li>
+          </ul>
+          <a href="/login" class="btn btn-outline-primary w-100" data-i18n="plan_get_free">Get Started Free</a>
+        </div>
+      </div>
+      <!-- Pro -->
+      <div class="col-md-4">
+        <div class="card pricing-card featured p-4">
+          <span class="badge badge-pro mb-2" data-i18n="plan_most_popular">MOST POPULAR</span>
+          <h4 class="fw-bold" data-i18n="plan_pro">Pro</h4>
+          <div class="price-num">$9.99</div>
+          <p class="text-muted">/month &nbsp;·&nbsp; or $79.99/year</p>
+          <ul class="list-unstyled text-start mb-4">
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_unlimited">Unlimited scans</span></li>
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_heatmaps">Grad-CAM heatmaps</span></li>
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_pdf">PDF diagnostic reports</span></li>
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_adfree">Ad-free experience</span></li>
+            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_priority">Priority support</span></li>
+          </ul>
+          <a href="/pricing" class="btn btn-primary w-100 fw-bold" data-i18n="plan_upgrade">Upgrade to Pro</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ──────────────────────────────────────────────────────────────── -->
+<section class="py-5 bg-brand text-white text-center">
+  <div class="container">
+    <h2 class="fw-bold mb-3" data-i18n="cta_title">Ready to analyse your first X-ray?</h2>
+    <p class="lead opacity-75 mb-4" data-i18n="cta_sub">No credit card required. Start free in 30 seconds.</p>
+    <a href="/login" class="btn btn-warning btn-lg fw-bold px-5">
+      <i class="fa-solid fa-upload me-2"></i>
+      <span data-i18n="cta_btn">Upload X-Ray Now</span>
+    </a>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends "admin/base.html" %}
+{% block title %}System Logs{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">System Logs</li>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-0" data-i18n="adm_log_title">System Logs</h4>
+    <p class="text-muted small mb-0" data-i18n="adm_log_sub">Every scan, AI processing time, auth events, and DB health checks</p>
+  </div>
+  <button class="btn btn-sm btn-outline-secondary" onclick="loadLogs(1)">
+    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+  </button>
+</div>
+
+<!-- Severity Legend + Filters -->
+<div class="card table-card p-3 mb-3">
+  <div class="row g-2 align-items-center">
+    <div class="col-md-2">
+      <select class="form-select form-select-sm" id="filterSeverity">
+        <option value="" data-i18n="adm_all_severity">All Severity</option>
+        <option value="info">Info</option>
+        <option value="warning">Warning</option>
+        <option value="high">High</option>
+        <option value="critical">Critical</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <select class="form-select form-select-sm" id="filterEventType">
+        <option value="" data-i18n="adm_all_events">All Events</option>
+        <option value="scan">Scan</option>
+        <option value="auth_login">Auth Login</option>
+        <option value="auth_fail">Auth Fail</option>
+        <option value="admin_action">Admin Action</option>
+        <option value="telegram_alert">Telegram Alert</option>
+        <option value="error">Error</option>
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-primary btn-sm w-100" onclick="loadLogs(1)">
+        <i class="bi bi-funnel me-1"></i>Filter
+      </button>
+    </div>
+    <div class="col-md-6 d-flex justify-content-end gap-2 flex-wrap">
+      <span class="badge bg-info">info</span>
+      <span class="badge bg-warning text-dark">warning</span>
+      <span class="badge badge-high">high — pneumonia ≥80%</span>
+      <span class="badge badge-critical">critical</span>
+    </div>
+  </div>
+</div>
+
+<!-- Log Table -->
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" style="font-size:.85rem">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th data-i18n="adm_col_time">Time</th>
+          <th data-i18n="adm_col_event">Event</th>
+          <th data-i18n="adm_col_severity">Severity</th>
+          <th data-i18n="adm_col_user">User</th>
+          <th data-i18n="adm_col_message">Message</th>
+          <th data-i18n="adm_col_ai_ms">AI (ms)</th>
+          <th data-i18n="adm_col_ip">IP</th>
+        </tr>
+      </thead>
+      <tbody id="logsTable">
+        <tr><td colspan="8" class="text-center py-4 text-muted">Loading…</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="d-flex align-items-center justify-content-between p-3 border-top">
+    <small class="text-muted" id="logsPagInfo">—</small>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="logsBtnPrev"
+              onclick="loadLogs(logsPage - 1)" disabled>
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <button class="btn btn-sm btn-outline-secondary" id="logsBtnNext"
+              onclick="loadLogs(logsPage + 1)" disabled>
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let logsPage = 1;
+
+const SEVERITY_CLASS = {
+  info:     'badge-info',
+  warning:  'bg-warning text-dark',
+  high:     'badge-high',
+  critical: 'badge-critical',
+};
+
+const EVENT_ICON = {
+  scan:            'bi-image',
+  auth_login:      'bi-box-arrow-in-right',
+  auth_fail:       'bi-shield-x',
+  admin_action:    'bi-shield-check',
+  telegram_alert:  'bi-telegram',
+  error:           'bi-bug',
+  health_check:    'bi-heart-pulse',
+};
+
+async function loadLogs(page = 1) {
+  logsPage = page;
+  const severity  = document.getElementById('filterSeverity').value;
+  const eventType = document.getElementById('filterEventType').value;
+  const params    = new URLSearchParams({ page, limit: 50 });
+  if (severity)  params.set('severity', severity);
+  if (eventType) params.set('event_type', eventType);
+
+  const r = await apiFetch(`/api/admin/logs?${params}`);
+  if (!r) return;
+  const d = await r.json();
+
+  document.getElementById('logsPagInfo').textContent =
+    `${d.total.toLocaleString()} entries — page ${d.page}/${d.pages || 1}`;
+  document.getElementById('logsBtnPrev').disabled = d.page <= 1;
+  document.getElementById('logsBtnNext').disabled = !d.has_next;
+
+  const tbody = document.getElementById('logsTable');
+  if (!d.logs.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No logs found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = d.logs.map(l => {
+    const icon    = EVENT_ICON[l.event_type] || 'bi-dot';
+    const sevCls  = SEVERITY_CLASS[l.severity] || 'bg-secondary';
+    const rowCls  = l.severity === 'high' ? 'table-danger' :
+                    l.severity === 'warning' ? 'table-warning' :
+                    l.severity === 'critical' ? 'table-danger' : '';
+    return `
+    <tr class="${rowCls}">
+      <td class="text-muted">${l.id}</td>
+      <td style="white-space:nowrap" class="text-muted">${fmtDateTime(l.created_at)}</td>
+      <td><i class="bi ${icon} me-1"></i>${l.event_type}</td>
+      <td><span class="badge ${sevCls}">${l.severity}</span></td>
+      <td class="text-muted small">${l.user_email || '—'}</td>
+      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${l.message}">
+        ${l.message}
+      </td>
+      <td class="text-center">
+        ${l.processing_ms !== null
+          ? `<span class="badge ${l.processing_ms > 3000 ? 'bg-warning text-dark' : 'bg-secondary'}">${l.processing_ms}ms</span>`
+          : '—'}
+      </td>
+      <td class="text-muted small">${l.ip_address || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+loadLogs();
+
+// Auto-refresh every 30 seconds
+setInterval(() => loadLogs(logsPage), 30_000);
+</script>
+{% endblock %}

@@ -1,0 +1,171 @@
+{% extends "admin/base.html" %}
+{% block title %}Marketplace{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active">Marketplace</li>{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h4 class="fw-bold mb-0" data-i18n="adm_mkt_title">Doctor Marketplace</h4>
+    <p class="text-muted small mb-0" data-i18n="adm_mkt_sub">Review Cambodian doctor license submissions — approve or reject</p>
+  </div>
+</div>
+
+<!-- Filter Tabs -->
+<ul class="nav nav-pills mb-4" id="docTabs">
+  <li class="nav-item">
+    <button class="nav-link active" data-status="pending" onclick="switchTab(this, 'pending')">
+      <i class="bi bi-clock-history me-1"></i><span data-i18n="adm_pending">Pending</span>
+      <span class="badge bg-danger ms-1" id="badge-pending">—</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-status="approved" onclick="switchTab(this, 'approved')">
+      <i class="bi bi-check-circle me-1"></i><span data-i18n="adm_approved">Approved</span>
+    </button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" data-status="rejected" onclick="switchTab(this, 'rejected')">
+      <i class="bi bi-x-circle me-1"></i><span data-i18n="adm_rejected">Rejected</span>
+    </button>
+  </li>
+</ul>
+
+<!-- Doctors Grid -->
+<div id="doctorsGrid" class="row g-3">
+  <div class="col-12 text-center py-4 text-muted">Loading…</div>
+</div>
+
+<!-- Pagination -->
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <small class="text-muted" id="docPagInfo">—</small>
+  <div class="d-flex gap-2">
+    <button class="btn btn-sm btn-outline-secondary" id="docBtnPrev"
+            onclick="loadDoctors(docPage - 1)" disabled>
+      <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" id="docBtnNext"
+            onclick="loadDoctors(docPage + 1)" disabled>
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let docPage   = 1;
+let docStatus = 'pending';
+
+function switchTab(btn, status) {
+  document.querySelectorAll('#docTabs .nav-link').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  docStatus = status;
+  loadDoctors(1);
+}
+
+async function loadDoctors(page = 1) {
+  docPage = page;
+  const r = await apiFetch(`/api/admin/marketplace/doctors?status=${docStatus}&page=${page}&limit=12`);
+  if (!r) return;
+  const d = await r.json();
+
+  const grid = document.getElementById('doctorsGrid');
+  document.getElementById('docPagInfo').textContent =
+    `${d.total} doctor(s) — page ${d.page}/${d.pages || 1}`;
+  document.getElementById('docBtnPrev').disabled = d.page <= 1;
+  document.getElementById('docBtnNext').disabled = (d.page >= d.pages);
+
+  if (!d.doctors.length) {
+    grid.innerHTML = `<div class="col-12 text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-2"></i>No ${docStatus} doctors.
+    </div>`;
+    return;
+  }
+
+  // Update pending badge
+  if (docStatus === 'pending') {
+    document.getElementById('badge-pending').textContent = d.total;
+  }
+
+  grid.innerHTML = d.doctors.map(doc => `
+    <div class="col-md-6 col-xl-4">
+      <div class="card border-0 shadow-sm rounded-3 h-100">
+        <div class="card-body p-3">
+          <div class="d-flex gap-3 mb-2">
+            <div class="stat-icon flex-shrink-0" style="background:#eff6ff;width:44px;height:44px">
+              <i class="bi bi-person-badge-fill text-primary fs-5"></i>
+            </div>
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="fw-semibold text-truncate">Dr. ${doc.full_name}</div>
+              <div class="small text-muted">${doc.specialty}</div>
+            </div>
+          </div>
+          <div class="small mb-1">
+            <i class="bi bi-building me-1 text-muted"></i>${doc.hospital || '—'}
+          </div>
+          <div class="small mb-1">
+            <i class="bi bi-geo-alt me-1 text-muted"></i>${doc.city || '—'}, ${doc.country || 'Cambodia'}
+          </div>
+          ${doc.qualifications ? `<div class="small mb-2 text-muted">
+            <i class="bi bi-award me-1"></i>${doc.qualifications}</div>` : ''}
+          ${doc.email ? `<div class="small mb-2">
+            <i class="bi bi-envelope me-1 text-muted"></i>${doc.email}</div>` : ''}
+
+          ${docStatus === 'pending' ? `
+          <div class="d-flex gap-2 mt-3">
+            <button class="btn btn-sm btn-success flex-grow-1"
+                    onclick="approve(${doc.id}, '${doc.full_name.replace(/'/g,"\\'")}')">
+              <i class="bi bi-check-lg me-1"></i>Approve
+            </button>
+            <button class="btn btn-sm btn-outline-danger flex-grow-1"
+                    onclick="reject(${doc.id}, '${doc.full_name.replace(/'/g,"\\'")}')">
+              <i class="bi bi-x-lg me-1"></i>Reject
+            </button>
+          </div>` : docStatus === 'approved' ? `
+          <div class="mt-2">
+            <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>
+          </div>` : `
+          <div class="mt-2">
+            <span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>
+          </div>`}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function approve(docId, name) {
+  ConfirmModal.show({
+    title:       'Approve Doctor',
+    body:        `Approve <strong>Dr. ${name}</strong>? They will appear in the public marketplace.`,
+    confirmText: 'Approve',
+    variant:     'success',
+    icon:        'ti ti-circle-check',
+    onConfirm:   async () => {
+      const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/approve`, { method: 'PATCH' });
+      if (!r) return;
+      if (r.ok) { toast(`Dr. ${name} approved!`); loadDoctors(docPage); }
+      else { const d = await r.json(); toast(d.error || 'Failed.', 'danger'); }
+    },
+  });
+}
+
+function reject(docId, name) {
+  ConfirmModal.show({
+    title:       'Reject Doctor',
+    body:        `Reject <strong>Dr. ${name}</strong>? Their listing will be removed from the marketplace.`,
+    confirmText: 'Reject',
+    variant:     'warning',
+    icon:        'ti ti-user-x',
+    onConfirm:   async () => {
+      const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/reject`, { method: 'PATCH' });
+      if (!r) return;
+      if (r.ok) { toast(`Dr. ${name} rejected.`, 'warning'); loadDoctors(docPage); }
+      else { const d = await r.json(); toast(d.error || 'Failed.', 'danger'); }
+    },
+  });
+}
+
+loadDoctors();
+</script>
+{% endblock %}

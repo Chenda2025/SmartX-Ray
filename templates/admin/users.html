@@ -1,0 +1,414 @@
+{% extends "admin/base.html" %}
+{% block title %}Users{% endblock %}
+{% block breadcrumb %}<li class="breadcrumb-item active" data-i18n="adm_nav_users">Users</li>{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Tier toggle icon ─────────────────────────────────────── */
+  .tier-toggle {
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: transform .15s, opacity .15s;
+    border: none; background: none; padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .tier-toggle:hover { transform: scale(1.25); opacity: .8; }
+  .tier-toggle.pro   { color: #7c3aed; }
+  .tier-toggle.free  { color: #94a3b8; }
+
+  /* ── Status toggle icon ───────────────────────────────────── */
+  .status-toggle {
+    cursor: pointer;
+    font-size: 1rem;
+    transition: transform .15s;
+    border: none; background: none; padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .status-toggle:hover { transform: scale(1.2); }
+  .status-toggle.active   { color: #10b981; }
+  .status-toggle.suspended { color: #ef4444; }
+
+  /* ── Filter bar ───────────────────────────────────────────── */
+  .filter-bar .form-select,
+  .filter-bar .form-control {
+    font-size: .85rem;
+    border-radius: 8px;
+  }
+  .filter-bar .form-control:focus,
+  .filter-bar .form-select:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 .18rem rgba(37,99,235,.15);
+  }
+
+  /* ── Table tweaks ─────────────────────────────────────────── */
+  .table td { vertical-align: middle; }
+  .user-avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; font-weight: 700; color: #475569;
+    flex-shrink: 0;
+  }
+
+  /* ── Spinning loader on cell update ──────────────────────── */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin .6s linear infinite; display:inline-block; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h4 class="fw-bold mb-0" data-i18n="adm_user_title">User Management</h4>
+    <p class="text-muted small mb-0">
+      <span id="resultCount" class="fw-semibold text-primary">—</span>
+      <span data-i18n="adm_users_found"> users found</span>
+    </p>
+  </div>
+</div>
+
+<!-- ── Filter bar ──────────────────────────────────────────────────────── -->
+<div class="card table-card p-3 mb-3 filter-bar">
+  <div class="row g-2 align-items-end">
+
+    <!-- Live search -->
+    <div class="col-md-4">
+      <label class="form-label small fw-medium mb-1" data-i18n="adm_search_label">Search name or email</label>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0 ps-0"
+               id="searchInput"
+               data-i18n-placeholder="adm_search_ph"
+               placeholder="Type 1 letter to search…"
+               autocomplete="off">
+        <button class="btn btn-outline-secondary" id="clearSearch"
+                onclick="clearSearchInput()" style="display:none" title="Clear">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tier filter -->
+    <div class="col-md-2">
+      <label class="form-label small fw-medium mb-1" data-i18n="adm_col_tier">Tier</label>
+      <select class="form-select form-select-sm" id="filterTier">
+        <option value="" data-i18n="adm_all_tiers">All Tiers</option>
+        <option value="free" data-i18n="adm_free">Free</option>
+        <option value="pro" data-i18n="adm_pro">Pro</option>
+      </select>
+    </div>
+
+    <!-- Status filter -->
+    <div class="col-md-2">
+      <label class="form-label small fw-medium mb-1" data-i18n="adm_col_status">Status</label>
+      <select class="form-select form-select-sm" id="filterStatus">
+        <option value="" data-i18n="adm_all_status">All Status</option>
+        <option value="active" data-i18n="adm_active">Active</option>
+        <option value="suspended" data-i18n="adm_suspended">Suspended</option>
+      </select>
+    </div>
+
+    <!-- Sort order -->
+    <div class="col-md-2">
+      <label class="form-label small fw-medium mb-1" data-i18n="adm_sort_label">Sort</label>
+      <select class="form-select form-select-sm" id="filterOrder">
+        <option value="desc" data-i18n="adm_sort_new_old">New → Old</option>
+        <option value="asc"  data-i18n="adm_sort_old_new">Old → New</option>
+      </select>
+    </div>
+
+    <!-- Clear all -->
+    <div class="col-md-2">
+      <label class="form-label small fw-medium mb-1 d-block">&nbsp;</label>
+      <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearAllFilters()">
+        <i class="bi bi-x-circle me-1"></i><span data-i18n="adm_clear_filters">Clear</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Users Table ─────────────────────────────────────────────────────── -->
+<div class="card table-card">
+  <div class="table-responsive">
+    <table class="table table-hover mb-0" style="font-size:.875rem">
+      <thead>
+        <tr>
+          <th style="width:44px">ID</th>
+          <th data-i18n="adm_col_user">User</th>
+          <th data-i18n="adm_col_tier" style="width:100px">Tier</th>
+          <th data-i18n="adm_col_status" style="width:100px">Status</th>
+          <th data-i18n="adm_col_scans" style="width:90px">Scans Today</th>
+          <th data-i18n="adm_col_joined" style="width:120px">Joined</th>
+        </tr>
+      </thead>
+      <tbody id="usersTable">
+        <tr>
+          <td colspan="6" class="text-center py-5 text-muted">
+            <div class="spin d-inline-block me-2"><i class="bi bi-arrow-clockwise"></i></div>
+            <span data-i18n="adm_loading">Loading…</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination footer -->
+  <div class="d-flex align-items-center justify-content-between px-3 py-2 border-top bg-light"
+       style="font-size:.82rem">
+    <span class="text-muted" id="paginationInfo">—</span>
+    <div class="d-flex gap-2">
+      <button class="btn btn-sm btn-outline-secondary" id="btnPrev"
+              onclick="changePage(-1)" disabled>
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <span class="align-self-center text-muted" id="pageLabel">—</span>
+      <button class="btn btn-sm btn-outline-secondary" id="btnNext"
+              onclick="changePage(1)" disabled>
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// ── Add missing i18n keys for this page ──────────────────────────────────────
+// (extends translations already in i18n.js)
+Object.assign(TRANSLATIONS, {
+  adm_users_found:  { en: ' users found',            km: ' នាក់ត្រូវបានរកឃើញ' },
+  adm_search_label: { en: 'Search name or email',    km: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល' },
+  adm_search_ph:    { en: 'Type 1 letter to search…',km: 'វាយ ១ អក្សរដើម្បីស្វែងរក…' },
+  adm_sort_label:   { en: 'Sort',                    km: 'តម្រៀប' },
+  adm_sort_new_old: { en: 'New → Old',               km: 'ថ្មី → ចាស់' },
+  adm_sort_old_new: { en: 'Old → New',               km: 'ចាស់ → ថ្មី' },
+  adm_clear_filters:{ en: 'Clear',                   km: 'លុបចោល' },
+  adm_loading:      { en: 'Loading…',                km: 'កំពុងផ្ទុក…' },
+  adm_no_users:     { en: 'No users found.',         km: 'រកមិនឃើញអ្នកប្រើ។' },
+  adm_page_of:      { en: 'of',                      km: 'នៃ' },
+  adm_tier_pro:     { en: 'Pro',                     km: 'Pro' },
+  adm_tier_free:    { en: 'Free',                    km: 'ឥតគិតថ្លៃ' },
+  adm_tip_make_pro: { en: 'Click to upgrade to Pro', km: 'ចុចដើម្បីលើកកម្ពស់ទៅ Pro' },
+  adm_tip_make_free:{ en: 'Click to downgrade to Free', km: 'ចុចដើម្បីបន្ថយទៅ Free' },
+  adm_tip_activate: { en: 'Click to activate',       km: 'ចុចដើម្បីធ្វើឱ្យសកម្ម' },
+  adm_tip_suspend:  { en: 'Click to suspend',        km: 'ចុចដើម្បីព្យួរ' },
+});
+// Re-apply so newly added keys render on page load
+if (typeof I18n !== 'undefined') I18n.applyAll();
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentPage = 1;
+let totalPages  = 1;
+let searchTimer = null;
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getFilters() {
+  return {
+    search: document.getElementById('searchInput').value.trim(),
+    tier:   document.getElementById('filterTier').value,
+    status: document.getElementById('filterStatus').value,
+    order:  document.getElementById('filterOrder').value,
+  };
+}
+
+function clearSearchInput() {
+  document.getElementById('searchInput').value = '';
+  document.getElementById('clearSearch').style.display = 'none';
+  loadUsers(1);
+}
+
+function clearAllFilters() {
+  document.getElementById('searchInput').value  = '';
+  document.getElementById('filterTier').value   = '';
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterOrder').value  = 'desc';
+  document.getElementById('clearSearch').style.display = 'none';
+  loadUsers(1);
+}
+
+function changePage(delta) {
+  const next = currentPage + delta;
+  if (next >= 1 && next <= totalPages) loadUsers(next);
+}
+
+// ── Load users ────────────────────────────────────────────────────────────────
+async function loadUsers(page = 1) {
+  currentPage = page;
+  const { search, tier, status, order } = getFilters();
+  const params = new URLSearchParams({ page, limit: 20, order });
+  if (search) params.set('search', search);
+  if (tier)   params.set('tier', tier);
+  if (status) params.set('status', status);
+
+  // Show skeleton
+  document.getElementById('usersTable').innerHTML = `
+    <tr><td colspan="6" class="text-center py-4 text-muted">
+      <span class="spin d-inline-block me-2"><i class="bi bi-arrow-clockwise"></i></span>
+      <span data-i18n="adm_loading">Loading…</span>
+    </td></tr>`;
+
+  const r = await apiFetch(`/api/admin/users?${params}`);
+  if (!r) return;
+  const d = await r.json();
+
+  // Update counters
+  document.getElementById('resultCount').textContent   = d.total.toLocaleString();
+  totalPages = d.pages || 1;
+  const lang = localStorage.getItem('smartxray_lang') || 'en';
+  const ofWord = lang === 'km' ? 'នៃ' : 'of';
+  document.getElementById('pageLabel').textContent     = `${d.page} ${ofWord} ${d.pages}`;
+  document.getElementById('paginationInfo').textContent =
+    `${(page-1)*20+1}–${(page-1)*20 + d.users.length} / ${d.total}`;
+  document.getElementById('btnPrev').disabled = d.page <= 1;
+  document.getElementById('btnNext').disabled = !d.has_next;
+
+  const tbody = document.getElementById('usersTable');
+  if (!d.users.length) {
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+      <span data-i18n="adm_no_users">No users found.</span>
+    </td></tr>`;
+    I18n.applyAll();
+    return;
+  }
+
+  tbody.innerHTML = d.users.map(u => {
+    const initials = (u.full_name || '?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const tierIcon = u.tier === 'pro'
+      ? `<button class="tier-toggle pro" onclick="toggleTier(${u.id},'free',this)"
+                 title="${I18n.t('adm_tip_make_free')}">
+           <i class="bi bi-patch-check-fill"></i>
+         </button>
+         <span class="badge badge-pro ms-1" style="font-size:.72rem">Pro</span>`
+      : `<button class="tier-toggle free" onclick="toggleTier(${u.id},'pro',this)"
+                 title="${I18n.t('adm_tip_make_pro')}">
+           <i class="bi bi-patch-check"></i>
+         </button>
+         <span class="badge badge-free ms-1" style="font-size:.72rem">${I18n.t('adm_tier_free')}</span>`;
+
+    const statusIcon = u.is_active
+      ? `<button class="status-toggle active" onclick="toggleStatus(${u.id},false,this)"
+                 title="${I18n.t('adm_tip_suspend')}">
+           <i class="bi bi-toggle-on fs-5"></i>
+         </button>`
+      : `<button class="status-toggle suspended" onclick="toggleStatus(${u.id},true,this)"
+                 title="${I18n.t('adm_tip_activate')}">
+           <i class="bi bi-toggle-off fs-5"></i>
+         </button>`;
+
+    return `
+    <tr id="row-${u.id}">
+      <td class="text-muted small">${u.id}</td>
+      <td>
+        <div class="d-flex align-items-center gap-2">
+          <div class="user-avatar">${initials}</div>
+          <div>
+            <div class="fw-medium lh-sm">${u.full_name}</div>
+            <div class="text-muted small">${u.email}</div>
+          </div>
+        </div>
+      </td>
+      <td id="tier-${u.id}">${tierIcon}</td>
+      <td id="status-${u.id}">${statusIcon}</td>
+      <td class="text-center fw-medium">${u.scans_today}</td>
+      <td class="text-muted small">${fmtDate(u.created_at)}</td>
+    </tr>`;
+  }).join('');
+
+  I18n.applyAll();
+}
+
+// ── Inline tier toggle ────────────────────────────────────────────────────────
+async function toggleTier(userId, newTier, btn) {
+  const cell = document.getElementById(`tier-${userId}`);
+  const orig = cell.innerHTML;
+  cell.innerHTML = `<span class="spin text-muted"><i class="bi bi-arrow-clockwise"></i></span>`;
+
+  const r = await apiFetch(`/api/admin/users/${userId}/tier`, {
+    method: 'PATCH',
+    body: JSON.stringify({ tier: newTier }),
+  });
+  if (!r) { cell.innerHTML = orig; return; }
+
+  if (r.ok) {
+    const d = await r.json();
+    const u = d.user;
+    const lang = localStorage.getItem('smartxray_lang') || 'en';
+    const freeLabel = lang === 'km' ? 'ឥតគិតថ្លៃ' : 'Free';
+    cell.innerHTML = u.tier === 'pro'
+      ? `<button class="tier-toggle pro" onclick="toggleTier(${u.id},'free',this)"
+                 title="${I18n.t('adm_tip_make_free')}">
+           <i class="bi bi-patch-check-fill"></i>
+         </button>
+         <span class="badge badge-pro ms-1" style="font-size:.72rem">Pro</span>`
+      : `<button class="tier-toggle free" onclick="toggleTier(${u.id},'pro',this)"
+                 title="${I18n.t('adm_tip_make_pro')}">
+           <i class="bi bi-patch-check"></i>
+         </button>
+         <span class="badge badge-free ms-1" style="font-size:.72rem">${freeLabel}</span>`;
+    toast(`${u.email} → ${u.tier}`);
+  } else {
+    cell.innerHTML = orig;
+    const d = await r.json();
+    toast(d.error || 'Failed.', 'danger');
+  }
+}
+
+// ── Inline status toggle ──────────────────────────────────────────────────────
+async function toggleStatus(userId, makeActive, btn) {
+  const cell = document.getElementById(`status-${userId}`);
+  const orig = cell.innerHTML;
+  cell.innerHTML = `<span class="spin text-muted"><i class="bi bi-arrow-clockwise"></i></span>`;
+
+  const r = await apiFetch(`/api/admin/users/${userId}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: makeActive }),
+  });
+  if (!r) { cell.innerHTML = orig; return; }
+
+  if (r.ok) {
+    const d = await r.json();
+    const u = d.user;
+    cell.innerHTML = u.is_active
+      ? `<button class="status-toggle active" onclick="toggleStatus(${u.id},false,this)"
+                 title="${I18n.t('adm_tip_suspend')}">
+           <i class="bi bi-toggle-on fs-5"></i>
+         </button>`
+      : `<button class="status-toggle suspended" onclick="toggleStatus(${u.id},true,this)"
+                 title="${I18n.t('adm_tip_activate')}">
+           <i class="bi bi-toggle-off fs-5"></i>
+         </button>`;
+    toast(u.is_active
+      ? `${I18n.t('adm_active')}: ${u.email}`
+      : `${I18n.t('adm_suspended')}: ${u.email}`, u.is_active ? 'success' : 'warning');
+  } else {
+    cell.innerHTML = orig;
+    const d = await r.json();
+    toast(d.error || 'Failed.', 'danger');
+  }
+}
+
+// ── Auto-filter wiring ────────────────────────────────────────────────────────
+
+// Live search: fires from 1st character typed, debounced 300 ms
+document.getElementById('searchInput').addEventListener('input', function () {
+  const val = this.value;
+  document.getElementById('clearSearch').style.display = val ? '' : 'none';
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => loadUsers(1), 300);
+});
+
+// Dropdowns: auto-fire on change — no button needed
+['filterTier', 'filterStatus', 'filterOrder'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => loadUsers(1));
+});
+
+// ── Initial load ──────────────────────────────────────────────────────────────
+loadUsers();
+</script>
+{% endblock %}

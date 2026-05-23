@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Login / Register{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="text-center mb-4">
+        <i class="fa-solid fa-lungs text-brand" style="font-size:2.5rem;"></i>
+        <h3 class="fw-bold mt-2">SmartX-Ray</h3>
+        <p class="text-muted" data-i18n="auth_tagline">AI-Powered Pneumonia Detection</p>
+      </div>
+
+      <div class="card p-4 shadow-sm">
+        <!-- Tabs -->
+        <ul class="nav nav-pills nav-fill mb-4" id="authTabs">
+          <li class="nav-item">
+            <button class="nav-link active" id="loginTab" onclick="switchTab('login')" data-i18n="auth_login_tab">Login</button>
+          </li>
+          <li class="nav-item">
+            <button class="nav-link" id="registerTab" onclick="switchTab('register')" data-i18n="auth_signup_tab">Sign Up Free</button>
+          </li>
+        </ul>
+
+        <!-- Login form -->
+        <div id="loginForm">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" data-i18n="auth_email">Email</label>
+            <input type="email" id="loginEmail" class="form-control" data-i18n-placeholder="auth_email" placeholder="Email" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" data-i18n="auth_password">Password</label>
+            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" />
+          </div>
+          <button class="btn btn-primary w-100 fw-bold" onclick="doLogin()">
+            <span id="loginSpinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+            <span data-i18n="auth_login_btn">Login</span>
+          </button>
+          <p class="text-center text-muted small mt-3 mb-0">
+            <a href="/forgot-password" data-i18n="auth_forgot">Forgot your password?</a>
+          </p>
+        </div>
+
+        <!-- Register form -->
+        <div id="registerForm" class="d-none">
+          <div class="mb-3">
+            <label class="form-label fw-semibold" data-i18n="auth_fullname">Full Name</label>
+            <input type="text" id="regName" class="form-control" data-i18n-placeholder="auth_fullname" placeholder="Full Name" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" data-i18n="auth_email">Email</label>
+            <input type="email" id="regEmail" class="form-control" data-i18n-placeholder="auth_email" placeholder="Email" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" data-i18n="auth_password">Password</label>
+            <input type="password" id="regPassword" class="form-control" data-i18n-placeholder="auth_min8" placeholder="Min 8 characters" />
+          </div>
+          <button class="btn btn-primary w-100 fw-bold" onclick="doRegister()">
+            <span id="registerSpinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+            <span data-i18n="auth_create_btn">Create Free Account</span>
+          </button>
+        </div>
+
+        <div id="authError" class="alert alert-danger mt-3 d-none small"></div>
+      </div>
+
+      <p class="text-center text-muted small mt-3" data-i18n-html="auth_disclaimer">
+        By signing up you agree to use this app for educational purposes only.<br>
+        Not a substitute for professional medical advice.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  if (Auth.isLoggedIn()) window.location.href = "/dashboard";
+
+  function switchTab(tab) {
+    const isLogin = tab === "login";
+    document.getElementById("loginForm").classList.toggle("d-none",    !isLogin);
+    document.getElementById("registerForm").classList.toggle("d-none",  isLogin);
+    document.getElementById("loginTab").classList.toggle("active",     isLogin);
+    document.getElementById("registerTab").classList.toggle("active",  !isLogin);
+    document.getElementById("authError").classList.add("d-none");
+  }
+
+  function setLoading(btn, spinner, loading) {
+    document.getElementById(btn).disabled = loading;
+    document.getElementById(spinner).classList.toggle("d-none", !loading);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById("authError");
+    el.textContent = msg;
+    el.classList.remove("d-none");
+  }
+
+  async function doLogin() {
+    setLoading("loginBtn", "loginSpinner", true);
+    document.getElementById("authError").classList.add("d-none");
+    try {
+      await Auth.login(
+        document.getElementById("loginEmail").value.trim(),
+        document.getElementById("loginPassword").value
+      );
+      window.location.href = "/dashboard";
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setLoading("loginBtn", "loginSpinner", false);
+    }
+  }
+
+  async function doRegister() {
+    setLoading("registerBtn", "registerSpinner", true);
+    document.getElementById("authError").classList.add("d-none");
+    try {
+      await Auth.register(
+        document.getElementById("regEmail").value.trim(),
+        document.getElementById("regPassword").value,
+        document.getElementById("regName").value.trim()
+      );
+      window.location.href = "/dashboard";
+    } catch (e) {
+      showError(e.message);
+    } finally {
+      setLoading("registerBtn", "registerSpinner", false);
+    }
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const isLogin = !document.getElementById("loginForm").classList.contains("d-none");
+    isLogin ? doLogin() : doRegister();
+  });
+
+  document.querySelector("#loginForm button").id    = "loginBtn";
+  document.querySelector("#registerForm button").id = "registerBtn";
+</script>
+{% endblock %}

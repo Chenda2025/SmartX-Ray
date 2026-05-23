@@ -1,0 +1,205 @@
+<!-- ════════════════════════════════════════════════════════════════════════════
+     templates/shared/modal.html  —  Reusable confirmation modal + JS helper
+     ────────────────────────────────────────────────────────────────────────────
+     Include once in your base layout, then call from any child page:
+
+       ConfirmModal.show({
+         title, body, confirmText, cancelText,
+         variant   : "danger|warning|success|primary",
+         icon      : "ti ti-trash",   // optional Tabler icon class
+         onConfirm : async () => { ... },
+       });
+     ════════════════════════════════════════════════════════════════════════════ -->
+
+<!-- ── Modal markup ────────────────────────────────────────────────────── -->
+<div class="modal fade" id="confirmModal" tabindex="-1"
+     aria-labelledby="confirmModalLabel" aria-hidden="true"
+     data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content border-0 shadow-lg" style="border-radius:16px; overflow:hidden">
+
+      <!-- Header -->
+      <div class="modal-header border-0 pb-0" id="confirmModalHeader"
+           style="padding: 20px 20px 8px">
+        <div class="d-flex align-items-center gap-3 w-100">
+          <!-- Icon bubble -->
+          <div id="confirmModalIconWrap"
+               style="width:42px; height:42px; border-radius:12px;
+                      display:flex; align-items:center; justify-content:center;
+                      flex-shrink:0; font-size:20px; background:#fee2e2; color:#dc2626">
+            <i id="confirmModalIcon" class="ti ti-alert-triangle"></i>
+          </div>
+          <div>
+            <h6 class="modal-title fw-bold mb-0" id="confirmModalLabel"
+                style="font-size:15px; line-height:1.3">
+              Confirm Action
+            </h6>
+          </div>
+        </div>
+        <button type="button" class="btn-close ms-auto mt-n1"
+                data-bs-dismiss="modal" aria-label="Close"
+                style="font-size:12px; opacity:.5"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" style="padding: 10px 20px 4px">
+        <p id="confirmModalBody"
+           style="color:#475569; font-size:13.5px; line-height:1.55; margin:0">
+          Are you sure you want to proceed?
+        </p>
+      </div>
+
+      <!-- Divider -->
+      <hr style="margin: 12px 20px 0; border-color:#f1f5f9">
+
+      <!-- Footer -->
+      <div class="modal-footer border-0" style="padding: 12px 16px 16px; gap:8px">
+        <button type="button" class="btn btn-light" id="confirmModalCancelBtn"
+                data-bs-dismiss="modal"
+                style="font-size:13px; padding:7px 16px; border-radius:10px;
+                       border:1px solid #e2e8f0; color:#64748b">
+          Cancel
+        </button>
+        <button type="button" class="btn btn-danger" id="confirmModalConfirmBtn"
+                style="font-size:13px; padding:7px 18px; border-radius:10px;
+                       min-width:100px; position:relative">
+          <!-- Normal label -->
+          <span id="confirmModalBtnLabel">Confirm</span>
+          <!-- Spinner (hidden by default) -->
+          <span id="confirmModalBtnSpinner"
+                class="spinner-border spinner-border-sm d-none ms-1"
+                role="status" aria-hidden="true"></span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ── ConfirmModal JS helper ─────────────────────────────────────────── -->
+<script>
+/* ═══════════════════════════════════════════════════════════════════════════
+   ConfirmModal — global singleton
+   ─────────────────────────────────────────────────────────────────────────
+   API:
+     ConfirmModal.show(opts)  → shows the modal, returns BS Modal instance
+     ConfirmModal.hide()      → hides the modal (useful if onConfirm errors)
+     ConfirmModal.setLoading(bool) → spin the confirm button
+   ═══════════════════════════════════════════════════════════════════════════ */
+const ConfirmModal = (() => {
+  // ── DOM refs (populated lazily once DOM is ready) ────────────────────────
+  let _el, _bsModal, _confirmBtn, _cancelBtn, _iconWrap, _icon,
+      _label, _body, _spinner, _btnLabel;
+  let _pendingCallback = null;
+
+  // Palette: variant → { bg, text, iconClass }
+  const VARIANTS = {
+    danger:  { bg: '#fee2e2', text: '#dc2626', icon: 'ti-alert-triangle',    btn: 'btn-danger'  },
+    warning: { bg: '#fef9c3', text: '#ca8a04', icon: 'ti-alert-circle',      btn: 'btn-warning' },
+    success: { bg: '#dcfce7', text: '#16a34a', icon: 'ti-circle-check',      btn: 'btn-success' },
+    primary: { bg: '#eff6ff', text: '#2563eb', icon: 'ti-info-circle',       btn: 'btn-primary' },
+  };
+
+  function _init() {
+    if (_el) return; // already initialised
+    _el         = document.getElementById('confirmModal');
+    _bsModal    = new bootstrap.Modal(_el);
+    _confirmBtn = document.getElementById('confirmModalConfirmBtn');
+    _cancelBtn  = document.getElementById('confirmModalCancelBtn');
+    _iconWrap   = document.getElementById('confirmModalIconWrap');
+    _icon       = document.getElementById('confirmModalIcon');
+    _label      = document.getElementById('confirmModalLabel');
+    _body       = document.getElementById('confirmModalBody');
+    _spinner    = document.getElementById('confirmModalBtnSpinner');
+    _btnLabel   = document.getElementById('confirmModalBtnLabel');
+
+    // Wire the confirm button
+    _confirmBtn.addEventListener('click', async () => {
+      if (!_pendingCallback) return;
+      const cb = _pendingCallback;
+      _pendingCallback = null;  // prevent double-fire
+
+      setLoading(true);
+      try {
+        await cb();
+      } catch (err) {
+        console.error('[ConfirmModal] onConfirm threw:', err);
+      } finally {
+        setLoading(false);
+        _bsModal.hide();
+      }
+    });
+  }
+
+  function setLoading(bool) {
+    _confirmBtn.disabled = bool;
+    _cancelBtn.disabled  = bool;
+    _spinner.classList.toggle('d-none', !bool);
+  }
+
+  /**
+   * Show the confirmation modal.
+   *
+   * @param {object} opts
+   * @param {string}   opts.title       - Modal heading
+   * @param {string}   opts.body        - Description text (HTML allowed)
+   * @param {string}   [opts.confirmText="Confirm"]
+   * @param {string}   [opts.cancelText="Cancel"]
+   * @param {string}   [opts.variant="danger"]   - danger|warning|success|primary
+   * @param {string}   [opts.icon]      - Tabler icon class e.g. "ti ti-trash"
+   * @param {Function} opts.onConfirm   - async callback invoked on confirm
+   * @returns {object} Bootstrap Modal instance
+   */
+  function show(opts = {}) {
+    _init();
+
+    const {
+      title       = 'Confirm Action',
+      body        = 'Are you sure you want to proceed?',
+      confirmText = 'Confirm',
+      cancelText  = 'Cancel',
+      variant     = 'danger',
+      icon,
+      onConfirm,
+    } = opts;
+
+    if (typeof onConfirm !== 'function') {
+      console.warn('[ConfirmModal] opts.onConfirm must be a function');
+      return;
+    }
+
+    // Apply variant
+    const v = VARIANTS[variant] || VARIANTS.danger;
+    _iconWrap.style.background = v.bg;
+    _iconWrap.style.color      = v.text;
+    _icon.className            = icon ? icon : `ti ${v.icon}`;
+
+    // Confirm button colour — remove old btn-* classes then add new one
+    _confirmBtn.className = _confirmBtn.className
+      .replace(/\bbtn-(danger|warning|success|primary)\b/g, '').trim();
+    _confirmBtn.classList.add(v.btn);
+
+    // Copy text
+    _label.textContent      = title;
+    _body.innerHTML         = body;   // allow <strong> etc.
+    _btnLabel.textContent   = confirmText;
+    _cancelBtn.textContent  = cancelText;
+
+    // Store callback
+    _pendingCallback = onConfirm;
+
+    // Reset spinner state
+    setLoading(false);
+
+    _bsModal.show();
+    return _bsModal;
+  }
+
+  function hide() {
+    if (_bsModal) _bsModal.hide();
+  }
+
+  return { show, hide, setLoading };
+})();
+</script>

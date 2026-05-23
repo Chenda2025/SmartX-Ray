@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="30"><!-- auto-refresh every 30 s -->
+  <title>System Health — SmartX-Ray</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; }
+    :lang(km) * { font-family: 'Noto Sans Khmer', sans-serif !important; }
+
+    .status-hero {
+      background: linear-gradient(135deg,
+        {% if overall == 'ok' %}#065f46, #059669{% else %}#7f1d1d, #dc2626{% endif %});
+      color: #fff;
+      padding: 3rem 1rem;
+      text-align: center;
+    }
+
+    .status-icon {
+      font-size: 4rem;
+      margin-bottom: .5rem;
+    }
+
+    .check-card {
+      border: none;
+      border-radius: 14px;
+      transition: transform .2s;
+    }
+    .check-card:hover { transform: translateY(-2px); }
+
+    .check-indicator {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: .5rem;
+      flex-shrink: 0;
+    }
+    .ind-ok       { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+    .ind-loaded   { background: #10b981; box-shadow: 0 0 0 3px rgba(16,185,129,.2); }
+    .ind-not_loaded { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
+    .ind-error    { background: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,.2); }
+    .ind-unknown  { background: #9ca3af; box-shadow: 0 0 0 3px rgba(156,163,175,.2); }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50%      { opacity: .55; }
+    }
+
+    .meta-row { font-size: .82rem; color: #64748b; }
+    .badge-status {
+      font-size: 1rem;
+      padding: .5rem 1.5rem;
+      border-radius: 30px;
+      letter-spacing: .04em;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Status hero banner -->
+<div class="status-hero">
+  <div class="status-icon">
+    {% if overall == 'ok' %}
+      <i class="bi bi-check-circle-fill pulse"></i>
+    {% else %}
+      <i class="bi bi-exclamation-triangle-fill pulse"></i>
+    {% endif %}
+  </div>
+
+  <h1 class="fw-bold mb-1" style="font-size:2rem">
+    {% if overall == 'ok' %}All Systems Operational{% else %}Degraded Performance{% endif %}
+  </h1>
+  <p class="mb-3 opacity-75" style="font-size:.95rem">
+    {% if overall == 'ok' %}ប្រព័ន្ធទាំងអស់ដំណើរការធម្មតា{% else %}ប្រព័ន្ធមានបញ្ហា{% endif %}
+  </p>
+
+  <span class="badge badge-status text-uppercase fw-bold
+    {% if overall == 'ok' %}bg-success{% else %}bg-danger{% endif %}">
+    {{ overall }}
+  </span>
+</div>
+
+<div class="container py-5" style="max-width:700px">
+
+  <!-- Auto-refresh notice -->
+  <p class="text-center text-muted small mb-4">
+    <i class="bi bi-arrow-clockwise me-1"></i>
+    Auto-refreshes every 30 seconds &nbsp;·&nbsp; ធ្វើឱ្យស្រស់ស្វ័យប្រវត្តិរៀង 30 វិនាទី
+  </p>
+
+  <!-- Check cards -->
+  <div class="row g-3 mb-4">
+
+    <!-- Database -->
+    <div class="col-md-6">
+      <div class="card check-card shadow-sm p-4">
+        <div class="d-flex align-items-center mb-3">
+          <span class="check-indicator ind-{{ checks.database }}"></span>
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-database me-2 text-primary"></i>Database
+          </h5>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted small">PostgreSQL</span>
+          <span class="badge rounded-pill
+            {% if checks.database == 'ok' %}bg-success
+            {% else %}bg-danger{% endif %}">
+            {{ checks.database }}
+          </span>
+        </div>
+        <div class="text-muted small mt-1">ឃ្លាំងទិន្នន័យ</div>
+      </div>
+    </div>
+
+    <!-- AI Model -->
+    <div class="col-md-6">
+      <div class="card check-card shadow-sm p-4">
+        <div class="d-flex align-items-center mb-3">
+          <span class="check-indicator ind-{{ checks.model }}"></span>
+          <h5 class="mb-0 fw-semibold">
+            <i class="bi bi-cpu me-2 text-purple" style="color:#7c3aed"></i>AI Model
+          </h5>
+        </div>
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="text-muted small">Hybrid CNN+ANN · best_model.h5</span>
+          <span class="badge rounded-pill
+            {% if checks.model == 'loaded' %}bg-success
+            {% elif checks.model == 'not_loaded' %}bg-warning text-dark
+            {% else %}bg-danger{% endif %}">
+            {{ checks.model }}
+          </span>
+        </div>
+        <div class="text-muted small mt-1">គំរូ AI សម្រាប់រកជំងឺរលាកសួត</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Meta info table -->
+  <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+    <h6 class="fw-semibold mb-3">
+      <i class="bi bi-info-circle me-2 text-primary"></i>System Info
+      <span class="text-muted fw-normal small ms-2">ព័ត៌មានប្រព័ន្ធ</span>
+    </h6>
+    <div class="row g-2 meta-row">
+      <div class="col-6"><span class="text-muted">Version</span></div>
+      <div class="col-6 fw-medium">{{ version }}</div>
+
+      <div class="col-6"><span class="text-muted">Environment</span></div>
+      <div class="col-6">
+        <span class="badge
+          {% if env == 'production' %}bg-danger
+          {% elif env == 'testing' %}bg-warning text-dark
+          {% else %}bg-secondary{% endif %}">
+          {{ env }}
+        </span>
+      </div>
+
+      <div class="col-6"><span class="text-muted">Python</span></div>
+      <div class="col-6 fw-medium">{{ python }}</div>
+
+      <div class="col-6"><span class="text-muted">Val Accuracy</span></div>
+      <div class="col-6 fw-medium text-success">97.03%</div>
+
+      <div class="col-6"><span class="text-muted">Last Checked</span></div>
+      <div class="col-6 fw-medium" id="ts">{{ timestamp }}</div>
+    </div>
+  </div>
+
+  <!-- JSON link + admin link -->
+  <div class="d-flex gap-2 justify-content-center flex-wrap">
+    <a href="/health?format=json" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-braces me-1"></i>Raw JSON
+    </a>
+    <a href="/admin/dashboard" class="btn btn-sm btn-outline-primary">
+      <i class="bi bi-grid-1x2 me-1"></i>Admin Dashboard
+    </a>
+    <a href="/" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-house me-1"></i>Back to App
+    </a>
+  </div>
+
+  <p class="text-center text-muted small mt-4">
+    &copy; 2025 SmartX-Ray &mdash;
+    <em>For educational use only · សម្រាប់តែការអប់រំ</em>
+  </p>
+</div>
+
+<script>
+  // Format the timestamp nicely
+  const ts = document.getElementById('ts');
+  if (ts) {
+    try {
+      ts.textContent = new Date(ts.textContent).toLocaleString('en-US', {
+        year:'numeric', month:'short', day:'2-digit',
+        hour:'2-digit', minute:'2-digit', second:'2-digit',
+        timeZoneName:'short'
+      });
+    } catch(_) {}
+  }
+</script>
+</body>
+</html>

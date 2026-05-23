@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}Find a Doctor{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Header -->
+  <div class="text-center mb-5">
+    <h2 class="section-title fw-bold">
+      <i class="fa-solid fa-user-doctor text-brand me-2"></i>
+      <span data-i18n="market_title">Find a Doctor</span>
+    </h2>
+    <p class="text-muted" data-i18n="market_sub">Connect with verified pulmonologists and radiologists near you.</p>
+  </div>
+
+  <!-- Search & Filters -->
+  <div class="card mb-4 p-3">
+    <div class="row g-2 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label small fw-semibold" data-i18n="market_search_label">Search</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="fa-solid fa-search"></i></span>
+          <input type="text" id="searchInput" class="form-control"
+                 data-i18n-placeholder="market_placeholder_search"
+                 placeholder="Name, hospital…" oninput="debounceSearch()" />
+        </div>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold" data-i18n="market_specialty">Specialty</label>
+        <select id="specialtyFilter" class="form-select" onchange="searchDoctors()">
+          <option value="" data-i18n="market_all_spec">All Specialties</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold" data-i18n="market_city">City</label>
+        <select id="cityFilter" class="form-select" onchange="searchDoctors()">
+          <option value="" data-i18n="market_all_cities">All Cities</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+          <i class="fa-solid fa-rotate-left me-1"></i><span data-i18n="market_reset">Reset</span>
+        </button>
+      </div>
+    </div>
+    <div class="mt-2">
+      <div class="form-check form-check-inline">
+        <input class="form-check-input" type="checkbox" id="featuredOnly" onchange="searchDoctors()" />
+        <label class="form-check-label small" for="featuredOnly" data-i18n="market_featured">Featured doctors only</label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted small" id="resultCount" data-i18n="market_loading">Loading…</span>
+  </div>
+
+  <div class="row g-4" id="doctorGrid"></div>
+
+  <div class="text-center mt-4 d-none" id="loadMoreDoctors">
+    <button class="btn btn-outline-primary" onclick="loadDoctors(true)" data-i18n="market_load_more">Load More</button>
+  </div>
+
+  <!-- Empty state -->
+  <div class="text-center py-5 d-none" id="emptyState">
+    <i class="fa-solid fa-user-doctor text-muted" style="font-size:3rem;opacity:.3;"></i>
+    <p class="text-muted mt-3" data-i18n="market_no_results">No doctors found matching your criteria.</p>
+    <button class="btn btn-outline-secondary btn-sm" onclick="clearFilters()" data-i18n="market_clear_filters">Clear Filters</button>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let doctorPage  = 1;
+  let searchTimer = null;
+
+  async function initMarketplace() {
+    const [specRes, cityRes] = await Promise.all([
+      fetch("/api/marketplace/specialties"),
+      fetch("/api/marketplace/cities"),
+    ]);
+    const specData = await specRes.json();
+    const cityData = await cityRes.json();
+
+    const specSel = document.getElementById("specialtyFilter");
+    specData.specialties?.forEach(s => {
+      specSel.insertAdjacentHTML("beforeend", `<option value="${s}">${s}</option>`);
+    });
+
+    const citySel = document.getElementById("cityFilter");
+    cityData.cities?.forEach(c => {
+      citySel.insertAdjacentHTML("beforeend", `<option value="${c}">${c}</option>`);
+    });
+
+    await loadDoctors();
+  }
+
+  function debounceSearch() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(searchDoctors, 350);
+  }
+
+  function searchDoctors() {
+    doctorPage = 1;
+    document.getElementById("doctorGrid").innerHTML = "";
+    loadDoctors();
+  }
+
+  function clearFilters() {
+    document.getElementById("searchInput").value      = "";
+    document.getElementById("specialtyFilter").value  = "";
+    document.getElementById("cityFilter").value       = "";
+    document.getElementById("featuredOnly").checked   = false;
+    searchDoctors();
+  }
+
+  async function loadDoctors(more = false) {
+    const search    = document.getElementById("searchInput").value.trim();
+    const specialty = document.getElementById("specialtyFilter").value;
+    const city      = document.getElementById("cityFilter").value;
+    const featured  = document.getElementById("featuredOnly").checked;
+
+    const params = new URLSearchParams({
+      page: doctorPage, limit: 12,
+      ...(search    && { search }),
+      ...(specialty && { specialty }),
+      ...(city      && { city }),
+      ...(featured  && { featured: "true" }),
+    });
+
+    const res  = await fetch(`/api/marketplace/doctors?${params}`);
+    const data = await res.json();
+
+    const total = data.total ?? 0;
+    document.getElementById("resultCount").textContent =
+      `${total} ${I18n.t("market_title").toLowerCase()} ${I18n.t("market_no_results").split(" ")[0]}…`.replace("…","") ||
+      `${total} found`;
+    // simpler:
+    document.getElementById("resultCount").textContent = `${total} found`;
+
+    const grid  = document.getElementById("doctorGrid");
+    const empty = document.getElementById("emptyState");
+
+    if (!data.doctors?.length && !more) {
+      grid.innerHTML = "";
+      empty.classList.remove("d-none");
+      document.getElementById("loadMoreDoctors").classList.add("d-none");
+      return;
+    }
+    empty.classList.add("d-none");
+
+    data.doctors.forEach(d => {
+      const stars     = renderStars(d.rating);
+      const verBadge  = d.is_verified ? `<span class="badge bg-success ms-1"><i class="fa-solid fa-circle-check"></i> ${I18n.t("market_verified")}</span>` : "";
+      const featBadge = d.is_featured ? `<span class="badge bg-warning text-dark ms-1">${I18n.t("market_featured_badge")}</span>` : "";
+      const avatar    = d.avatar_url
+        ? `<img src="${d.avatar_url}" class="avatar" alt="${d.full_name}">`
+        : `<div class="avatar bg-light d-flex align-items-center justify-content-center"><i class="fa-solid fa-user-doctor text-brand fs-4"></i></div>`;
+
+      grid.insertAdjacentHTML("beforeend", `
+        <div class="col-md-6 col-lg-4">
+          <div class="card doctor-card h-100 p-3">
+            <div class="d-flex gap-3 align-items-start mb-3">
+              ${avatar}
+              <div class="flex-grow-1 min-width-0">
+                <h6 class="fw-bold mb-1 text-truncate">${d.full_name} ${verBadge} ${featBadge}</h6>
+                <p class="text-brand small mb-0 fw-semibold">${d.specialty}</p>
+                ${d.qualifications ? `<p class="text-muted small mb-0">${d.qualifications}</p>` : ""}
+              </div>
+            </div>
+            ${d.hospital ? `<p class="small mb-1"><i class="fa-solid fa-hospital me-1 text-muted"></i>${d.hospital}</p>` : ""}
+            ${d.city || d.country ? `<p class="small mb-1"><i class="fa-solid fa-location-dot me-1 text-muted"></i>${[d.city, d.country].filter(Boolean).join(", ")}</p>` : ""}
+            <div class="d-flex align-items-center gap-1 mb-2">
+              <span class="star small">${stars}</span>
+              <span class="small text-muted">${d.rating?.toFixed(1) ?? "N/A"} (${d.review_count} ${I18n.t("market_reviews")})</span>
+            </div>
+            ${d.bio ? `<p class="small text-muted text-truncate-2 mb-3">${d.bio}</p>` : ""}
+            <div class="d-flex gap-2 mt-auto flex-wrap">
+              ${d.phone   ? `<a href="tel:${d.phone}"    class="btn btn-outline-success  btn-sm flex-grow-1"><i class="fa-solid fa-phone me-1"></i>${I18n.t("market_call")}</a>` : ""}
+              ${d.email   ? `<a href="mailto:${d.email}" class="btn btn-outline-primary   btn-sm flex-grow-1"><i class="fa-solid fa-envelope me-1"></i>${I18n.t("market_email")}</a>` : ""}
+              ${d.google_maps_url ? `<a href="${d.google_maps_url}" target="_blank" class="btn btn-outline-secondary btn-sm flex-grow-1"><i class="fa-solid fa-map-pin me-1"></i>${I18n.t("market_map")}</a>` : ""}
+            </div>
+          </div>
+        </div>`);
+    });
+
+    const moreBtn = document.getElementById("loadMoreDoctors");
+    if (data.has_next) { moreBtn.classList.remove("d-none"); doctorPage++; }
+    else               { moreBtn.classList.add("d-none"); }
+  }
+
+  function renderStars(rating) {
+    const full = Math.round(rating || 0);
+    return "★".repeat(full) + "☆".repeat(5 - full);
+  }
+
+  initMarketplace();
+</script>
+<style>
+  .text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
+{% endblock %}
