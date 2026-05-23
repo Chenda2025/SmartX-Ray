@@ -154,9 +154,10 @@
     </li>
 
     <li class="nav-item">
-      <a href="/admin/telegram" class="nav-link {% if active == 'telegram' %}active{% endif %}">
+      <a href="#" onclick="event.preventDefault(); showTgConfigModal()"
+         class="nav-link {% if active == 'telegram' %}active{% endif %}">
         <i class="ti ti-brand-telegram nav-icon"></i>
-        <span class="nav-label">Telegram Alerts</span>
+        <span class="nav-label" data-i18n="adm_nav_telegram">Telegram Alerts</span>
       </a>
     </li>
 
@@ -225,27 +226,11 @@
         <span class="dot danger" id="topbarAlertDot" style="display:none"></span>
       </a>
 
-      <!-- Health indicator -->
-      <a href="/health" target="_blank" class="topbar-icon-btn"
-         title="System Health">
-        <i class="ti ti-heart-rate-monitor"></i>
-        <span class="dot" id="topbarHealthDot"></span>
-      </a>
-
-      <!-- Language toggle -->
+      <!-- Language toggle (globe icon + label) -->
       <button id="adminLangBtn" class="lang-toggle"
               onclick="adminToggleLang()" title="Switch language / ប្ដូរភាសា">
-        ខ្មែរ
-      </button>
-
-      <!-- Admin email (hidden on phone) -->
-      <span class="topbar-email hide-xs" id="topbarEmail">Admin</span>
-
-      <!-- Logout -->
-      <button class="btn btn-sm btn-outline-danger" onclick="adminLogout()"
-              style="font-size:12px; padding:5px 12px; white-space:nowrap;">
-        <i class="ti ti-power" style="font-size:13px"></i>
-        <span class="hide-xs" data-i18n="adm_logout" style="margin-left:4px">Logout</span>
+        <i class="ti ti-world" style="font-size:14px; vertical-align:middle"></i>
+        <span id="adminLangLabel" style="margin-left:3px">ខ្មែរ</span>
       </button>
 
     </div>
@@ -264,6 +249,72 @@
 
 <!-- ── Shared confirmation modal ──────────────────────────────────────── -->
 {% include 'shared/modal.html' %}
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     TELEGRAM CONFIG MODAL
+     ══════════════════════════════════════════════════════════════════════ -->
+<div id="tgConfigModal"
+     style="display:none; position:fixed; inset:0; z-index:2100;
+            background:rgba(15,23,42,.5); align-items:center; justify-content:center"
+     onclick="if(event.target===this) closeTgModal()">
+  <div style="background:#fff; border-radius:16px; padding:28px; max-width:480px; width:92%;
+              box-shadow:0 24px 64px rgba(0,0,0,.22); position:relative">
+
+    <!-- Close -->
+    <button onclick="closeTgModal()"
+            style="position:absolute; top:14px; right:14px; background:none; border:none;
+                   cursor:pointer; color:var(--color-hint,#94a3b8); font-size:18px; line-height:1">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+      <div style="width:42px; height:42px; border-radius:12px; background:#2AABEE;
+                  display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0">
+        <i class="ti ti-brand-telegram" style="font-size:20px"></i>
+      </div>
+      <div>
+        <div style="font-weight:700; font-size:15px; color:var(--color-text,#0f172a)"
+             data-i18n="adm_tg_modal_title">Telegram Alerts Setup</div>
+        <div style="font-size:12px; color:var(--color-muted,#64748b)"
+             data-i18n="adm_tg_modal_sub">Real-time alerts for PNEUMONIA ≥ 80%</div>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <ol style="font-size:13px; line-height:1.85; padding-left:20px;
+               color:var(--color-text,#0f172a); margin-bottom:18px">
+      <li>Open Telegram → search <strong>@BotFather</strong> → send <code>/newbot</code></li>
+      <li>Follow the prompts and copy your <strong>Bot Token</strong></li>
+      <li>Start your bot, then message <strong>@userinfobot</strong> to get your <strong>Chat ID</strong></li>
+      <li>Add both values to <code>.env</code>:
+        <pre style="background:#F8FAFC; border-radius:8px; padding:12px; margin-top:8px;
+                    font-size:12px; border:1px solid #e2e8f0; overflow-x:auto; line-height:1.6"><code>TELEGRAM_BOT_TOKEN=123456789:ABC-your-token-here
+TELEGRAM_CHAT_ID=your_chat_id</code></pre>
+      </li>
+      <li>Restart the server — alerts fire automatically</li>
+    </ol>
+
+    <!-- Status row -->
+    <div style="background:#F0FDF4; border:1px solid #bbf7d0; border-radius:8px;
+                padding:10px 14px; font-size:12px; color:#166534; margin-bottom:18px;
+                display:flex; align-items:center; gap:8px">
+      <i class="ti ti-info-circle" style="font-size:15px; color:#16a34a"></i>
+      <span data-i18n="adm_tg_modal_note">
+        Alerts are sent automatically when a scan returns Pneumonia with ≥ 80% confidence.
+        No code changes needed — only the .env variables above.
+      </span>
+    </div>
+
+    <!-- Footer -->
+    <div style="display:flex; justify-content:flex-end">
+      <button onclick="closeTgModal()" class="btn btn-sm btn-outline"
+              style="font-size:13px; padding:6px 18px"
+              data-i18n="adm_close">Close</button>
+    </div>
+
+  </div>
+</div><!-- /#tgConfigModal -->
 
 
 <!-- ════════════════════════════════════════════════════════════════════════
@@ -423,8 +474,21 @@ function adminToggleLang() {
 }
 
 function _syncLangBtn() {
-  const btn = document.getElementById('adminLangBtn');
-  if (btn) btn.textContent = I18n.getLang() === 'km' ? 'EN' : 'ខ្មែរ';
+  const label = document.getElementById('adminLangLabel');
+  if (label) label.textContent = I18n.getLang() === 'km' ? 'EN' : 'ខ្មែរ';
+}
+
+// ── Telegram Config Modal ─────────────────────────────────────────────────
+function showTgConfigModal() {
+  const m = document.getElementById('tgConfigModal');
+  if (m) {
+    m.style.display = 'flex';
+    if (typeof I18n !== 'undefined' && I18n.applyAll) I18n.applyAll();
+  }
+}
+function closeTgModal() {
+  const m = document.getElementById('tgConfigModal');
+  if (m) m.style.display = 'none';
 }
 
 // ── Sidebar toggle (mobile / tablet) ─────────────────────────────────────
@@ -481,6 +545,32 @@ document.addEventListener('keydown', e => {
     avatarEl.style.background = avatarColor(email);
   }
 })();
+
+// ── Base i18n keys (admin-wide, loaded on every page) ────────────────────
+Object.assign(TRANSLATIONS, {
+  adm_brand_sub:         { en: 'Admin Panel',                      km: 'បន្ទះគ្រប់គ្រង' },
+  adm_nav_overview:      { en: 'Overview',                         km: 'ទិដ្ឋភាពទូទៅ' },
+  adm_nav_dashboard:     { en: 'Dashboard',                        km: 'ផ្ទាំងគ្រប់គ្រង' },
+  adm_nav_management:    { en: 'Management',                       km: 'ការគ្រប់គ្រង' },
+  adm_nav_users:         { en: 'Users',                            km: 'អ្នកប្រើ' },
+  adm_nav_ads:           { en: 'Ad Manager',                       km: 'គ្រប់គ្រងផ្សាយ' },
+  adm_nav_subs:          { en: 'Subscriptions',                    km: 'ការជាវ' },
+  adm_nav_marketplace:   { en: 'Marketplace',                      km: 'ផ្សារ' },
+  adm_nav_system:        { en: 'System',                           km: 'ប្រព័ន្ធ' },
+  adm_nav_logs:          { en: 'System Logs',                      km: 'កំណត់ហេតុប្រព័ន្ធ' },
+  adm_nav_health:        { en: 'Health Check',                     km: 'ពិនិត្យសុខភាព' },
+  adm_nav_telegram:      { en: 'Telegram Alerts',                  km: 'ការជូនដំណឹង Telegram' },
+  adm_back_app:          { en: 'Back to App',                      km: 'ត្រឡប់កម្មវិធី' },
+  adm_logout:            { en: 'Logout',                           km: 'ចាកចេញ' },
+  adm_refresh:           { en: 'Refresh',                          km: 'ធ្វើបច្ចុប្បន្នភាព' },
+  adm_dash_title:        { en: 'Dashboard Overview',               km: 'ទិដ្ឋភាពទូទៅ' },
+  adm_dash_sub:          { en: 'SmartX-Ray — Cambodia Medical AI Platform', km: 'SmartX-Ray — វេទិកា AI វេជ្ជសាស្ត្រ' },
+  adm_close:             { en: 'Close',                            km: 'បិទ' },
+  adm_tg_modal_title:    { en: 'Telegram Alerts Setup',            km: 'ការដំឡើង Telegram Alerts' },
+  adm_tg_modal_sub:      { en: 'Real-time alerts for PNEUMONIA ≥ 80%', km: 'ការជូនដំណឹងភ្លាមៗ ≥ 80%' },
+  adm_tg_modal_note:     { en: 'Alerts fire automatically when a scan returns Pneumonia ≥ 80% confidence. Only .env variables needed.', km: 'ការជូនដំណឹងដោយស្វ័យប្រវត្តិ នៅពេលស្កែនបង្ហាញ Pneumonia ≥ 80%។' },
+  adm_configure:         { en: 'Configure',                        km: 'កំណត់រចនាសម្ព័ន្ធ' },
+});
 
 // ── Language button sync on load ──────────────────────────────────────────
 (function _syncLangOnLoad() {

@@ -14,14 +14,12 @@
     <p class="page-sub" data-i18n="adm_dash_sub">SmartX-Ray — Cambodia Medical AI Platform</p>
   </div>
   <div class="page-header-right">
-    <button class="btn btn-sm btn-outline" onclick="loadDashboard()" id="refreshBtn">
+    <!-- Refresh hidden — auto-refresh runs every 60 s -->
+    <button class="btn btn-sm btn-outline" onclick="loadDashboard()" id="refreshBtn"
+            style="display:none">
       <i class="ti ti-refresh" id="refreshIcon"></i>
       <span data-i18n="adm_refresh">Refresh</span>
     </button>
-    <a href="/health" target="_blank" class="btn btn-sm btn-outline">
-      <i class="ti ti-heart-rate-monitor"></i>
-      <span class="hide-xs" data-i18n="adm_nav_health">Health</span>
-    </a>
   </div>
 </div>
 
@@ -363,10 +361,11 @@
         <div class="label" data-i18n="adm_tg_title">Telegram Alerts</div>
         <div class="bot-handle">@SmartXRayBot</div>
       </div>
-      <a href="/admin/telegram" class="btn btn-sm btn-outline"
-         style="margin-left:auto; font-size:11px; padding:4px 10px">
+      <button onclick="showTgConfigModal()" class="btn btn-sm btn-outline"
+              style="margin-left:auto; font-size:11px; padding:4px 10px">
+        <i class="ti ti-settings" style="font-size:12px; margin-right:3px"></i>
         <span data-i18n="adm_configure">Configure</span>
-      </a>
+      </button>
     </div>
     <div class="telegram-card-body">
       <!-- Pneumonia ≥ 80% alert -->
@@ -469,8 +468,7 @@ Object.assign(TRANSLATIONS, {
   adm_pro_rate:       { en: 'Pro Conversion',             km: 'ការប្តូរ Pro' },
   adm_monthly_rev:    { en: 'Est. Monthly Revenue',       km: 'ចំណូលប្រចាំខែ (ប.ច.)' },
   adm_tg_title:       { en: 'Telegram Alerts',            km: 'ការជូនដំណឹង Telegram' },
-  adm_configure:      { en: 'Configure',                  km: 'កំណត់រចនាសម្ព័ន្ធ' },
-  adm_tg_high_conf:   { en: 'Pneumonia ≥ 80%',           km: 'ការចម្លងរោគ ≥ 80%' },
+  adm_tg_high_conf:   { en: 'Pneumonia ≥ 80%',           km: 'ជំងឺរលាកសួត ≥ 80%' },
   adm_tg_daily:       { en: 'Daily Summary',              km: 'សង្ខេបប្រចាំថ្ងៃ' },
   adm_tg_critical:    { en: 'Critical Errors',            km: 'កំហុសសំខាន់' },
   adm_last_updated:   { en: 'Last updated just now',      km: 'ធ្វើបច្ចុប្បន្នភាពថ្មីៗ' },
@@ -478,7 +476,6 @@ Object.assign(TRANSLATIONS, {
   adm_pneumonia:      { en: 'Pneumonia',                  km: 'ជំងឺរលាកសួត' },
   adm_normal:         { en: 'Normal',                     km: 'ធម្មតា' },
   adm_pneu_rate:      { en: 'Pneumonia Rate',             km: 'អត្រារោគ' },
-  adm_ad_perf:        { en: 'Ad Performance',             km: 'សមត្ថភាពផ្សាយ' },
   adm_total_scans:    { en: 'Total Scans',                km: 'ស្កែនសរុប' },
   adm_total_users:    { en: 'Total Users',                km: 'អ្នកប្រើសរុប' },
   adm_active_ads:     { en: 'Active Ads',                 km: 'ផ្សាយសកម្ម' },
@@ -486,8 +483,6 @@ Object.assign(TRANSLATIONS, {
   adm_doc_approvals:  { en: 'Review Queue',               km: 'ជួររង់ចាំពិនិត្យ' },
   adm_quick_actions:  { en: 'Quick Actions',              km: 'សកម្មភាពរហ័ស' },
   adm_manage_users:   { en: 'Manage Users',               km: 'គ្រប់គ្រងអ្នកប្រើ' },
-  adm_nav_ads:        { en: 'Ad Manager',                 km: 'គ្រប់គ្រងផ្សាយ' },
-  adm_nav_logs:       { en: 'System Logs',                km: 'កំណត់ហេតុប្រព័ន្ធ' },
 });
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
