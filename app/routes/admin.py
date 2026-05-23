@@ -554,6 +554,98 @@ def reject_doctor(doctor_id):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+#  API: TELEGRAM BOT
+# ══════════════════════════════════════════════════════════════════════════════
+
+@admin_api_bp.route("/telegram/status", methods=["GET"])
+@admin_required
+def telegram_status():
+    """
+    GET /api/admin/telegram/status
+    Returns whether the bot is configured and live info from Telegram getMe.
+    """
+    import requests as _req
+    from flask import current_app
+
+    token   = current_app.config.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = current_app.config.get("TELEGRAM_CHAT_ID",   "").strip()
+    configured = bool(token and chat_id)
+
+    bot_username = None
+    bot_name     = None
+    reachable    = False
+
+    if configured:
+        try:
+            r = _req.get(
+                f"https://api.telegram.org/bot{token}/getMe",
+                timeout=5,
+            )
+            if r.ok:
+                info         = r.json().get("result", {})
+                bot_username = info.get("username")
+                bot_name     = info.get("first_name")
+                reachable    = True
+        except Exception:
+            pass
+
+    # Mask chat_id: show first 3 chars then ***
+    chat_id_preview = (chat_id[:3] + "***") if chat_id else None
+
+    return jsonify({
+        "configured":     configured,
+        "reachable":      reachable,
+        "token_set":      bool(token),
+        "chat_id_set":    bool(chat_id),
+        "chat_id_preview": chat_id_preview,
+        "bot_username":   bot_username,
+        "bot_name":       bot_name,
+    }), 200
+
+
+@admin_api_bp.route("/telegram/test", methods=["POST"])
+@admin_required
+def telegram_test():
+    """
+    POST /api/admin/telegram/test
+    Sends a test alert to confirm the bot is working.
+    """
+    from flask import current_app
+    from app.services.telegram_service import send_telegram_alert
+    from app.models.system_log import SystemLog
+
+    token   = current_app.config.get("TELEGRAM_BOT_TOKEN", "").strip()
+    chat_id = current_app.config.get("TELEGRAM_CHAT_ID",   "").strip()
+
+    if not token or not chat_id:
+        return jsonify({
+            "ok":      False,
+            "message": "Telegram not configured. Add TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID to .env and restart.",
+        }), 400
+
+    msg = (
+        "✅ <b>SmartX-Ray — Test Alert</b>\n\n"
+        "Telegram alerts are configured and working correctly! 🎉\n\n"
+        "<i>Sent from the SmartX-Ray admin panel.</i>"
+    )
+    ok = send_telegram_alert(msg)
+
+    log = SystemLog(
+        event_type="admin_action",
+        severity="info",
+        message="Admin sent Telegram test alert",
+        ip_address=request.remote_addr,
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    if ok:
+        return jsonify({"ok": True,  "message": "Test message sent — check your Telegram!"}), 200
+    else:
+        return jsonify({"ok": False, "message": "Bot is configured but message delivery failed. Check token and chat_id."}), 502
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 #  API: SYSTEM LOGS
 # ══════════════════════════════════════════════════════════════════════════════
 

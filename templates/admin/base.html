@@ -289,7 +289,7 @@
     </button>
 
     <!-- Header -->
-    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:18px">
       <div style="width:42px; height:42px; border-radius:12px; background:#2AABEE;
                   display:flex; align-items:center; justify-content:center; color:#fff; flex-shrink:0">
         <i class="ti ti-brand-telegram" style="font-size:20px"></i>
@@ -302,33 +302,45 @@
       </div>
     </div>
 
-    <!-- Steps -->
-    <ol style="font-size:13px; line-height:1.85; padding-left:20px;
-               color:var(--color-text,#0f172a); margin-bottom:18px">
-      <li>Open Telegram → search <strong>@BotFather</strong> → send <code>/newbot</code></li>
-      <li>Follow the prompts and copy your <strong>Bot Token</strong></li>
-      <li>Start your bot, then message <strong>@userinfobot</strong> to get your <strong>Chat ID</strong></li>
-      <li>Add both values to <code>.env</code>:
-        <pre style="background:#F8FAFC; border-radius:8px; padding:12px; margin-top:8px;
-                    font-size:12px; border:1px solid #e2e8f0; overflow-x:auto; line-height:1.6"><code>TELEGRAM_BOT_TOKEN=123456789:ABC-your-token-here
-TELEGRAM_CHAT_ID=your_chat_id</code></pre>
-      </li>
-      <li>Restart the server — alerts fire automatically</li>
-    </ol>
-
-    <!-- Status row -->
-    <div style="background:#F0FDF4; border:1px solid #bbf7d0; border-radius:8px;
-                padding:10px 14px; font-size:12px; color:#166534; margin-bottom:18px;
-                display:flex; align-items:center; gap:8px">
-      <i class="ti ti-info-circle" style="font-size:15px; color:#16a34a"></i>
-      <span data-i18n="adm_tg_modal_note">
-        Alerts are sent automatically when a scan returns Pneumonia with ≥ 80% confidence.
-        No code changes needed — only the .env variables above.
-      </span>
+    <!-- Live status section (populated by showTgConfigModal JS) -->
+    <div id="tgModalStatus" style="margin-bottom:16px">
+      <div style="background:#F8FAFC; border:1px solid #e2e8f0; border-radius:8px;
+                  padding:10px 14px; font-size:12px; color:var(--color-muted,#64748b);
+                  display:flex; align-items:center; gap:8px">
+        <i class="ti ti-loader-2" style="font-size:14px"></i>
+        <span>Checking status…</span>
+      </div>
     </div>
 
+    <!-- Setup steps (always visible) -->
+    <details style="margin-bottom:16px">
+      <summary style="cursor:pointer; font-size:13px; font-weight:600;
+                      color:var(--color-text,#0f172a); margin-bottom:8px; user-select:none">
+        <i class="ti ti-book" style="font-size:13px; margin-right:4px"></i>
+        <span data-i18n="adm_tg_setup_steps">Setup Instructions</span>
+      </summary>
+      <ol style="font-size:12px; line-height:1.85; padding-left:18px;
+                 color:var(--color-text,#0f172a); margin:10px 0 0">
+        <li>Open Telegram → search <strong>@BotFather</strong> → send <code>/newbot</code></li>
+        <li>Follow the prompts and copy your <strong>Bot Token</strong></li>
+        <li>Start your bot, then message <strong>@userinfobot</strong> to get your <strong>Chat ID</strong></li>
+        <li>Add both values to your <code>.env</code> file:
+          <pre style="background:#F8FAFC; border-radius:6px; padding:10px; margin-top:6px;
+                      font-size:11px; border:1px solid #e2e8f0; overflow-x:auto"><code>TELEGRAM_BOT_TOKEN=123456789:ABC-your-token-here
+TELEGRAM_CHAT_ID=your_chat_id</code></pre>
+        </li>
+        <li>Restart the server — PNEUMONIA ≥ 80% alerts fire automatically</li>
+      </ol>
+    </details>
+
     <!-- Footer -->
-    <div style="display:flex; justify-content:flex-end">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+      <button id="tgModalTestBtn" onclick="sendTgTestFromModal()"
+              class="btn btn-sm btn-outline" style="display:none; font-size:12px; padding:6px 14px">
+        <i class="ti ti-send" style="font-size:12px; margin-right:4px"></i>
+        <span data-i18n="adm_tg_test">Send Test Alert</span>
+      </button>
+      <div style="flex:1"></div>
       <button onclick="closeTgModal()" class="btn btn-sm btn-outline"
               style="font-size:13px; padding:6px 18px"
               data-i18n="adm_close">Close</button>
@@ -500,16 +512,105 @@ function _syncLangBtn() {
 }
 
 // ── Telegram Config Modal ─────────────────────────────────────────────────
-function showTgConfigModal() {
+async function showTgConfigModal() {
   const m = document.getElementById('tgConfigModal');
-  if (m) {
-    m.style.display = 'flex';
-    if (typeof I18n !== 'undefined' && I18n.applyAll) I18n.applyAll();
+  if (!m) return;
+  m.style.display = 'flex';
+  if (typeof I18n !== 'undefined' && I18n.applyAll) I18n.applyAll();
+
+  // Fetch live status and update status section
+  const statusEl  = document.getElementById('tgModalStatus');
+  const testBtn   = document.getElementById('tgModalTestBtn');
+
+  // Use cached result from dashboard if available, otherwise fetch
+  const cached = window._tgStatus;
+  const d = cached || await _fetchTgStatus();
+  if (!d) return;
+
+  _renderTgModalStatus(d, statusEl, testBtn);
+}
+
+async function _fetchTgStatus() {
+  try {
+    const r = await apiFetch('/api/admin/telegram/status');
+    if (r && r.ok) return await r.json();
+  } catch (_) {}
+  return null;
+}
+
+function _renderTgModalStatus(d, statusEl, testBtn) {
+  if (!statusEl) return;
+
+  if (d.configured && d.reachable) {
+    const botLine = d.bot_username
+      ? `<div style="font-weight:600">@${d.bot_username}${d.bot_name ? ' — ' + d.bot_name : ''}</div>`
+      : '';
+    const chatLine = d.chat_id_preview
+      ? `<div style="opacity:.8">Chat ID: ${d.chat_id_preview}</div>`
+      : '';
+    statusEl.innerHTML = `
+      <div style="background:#F0FDF4;border:1px solid #bbf7d0;border-radius:8px;
+                  padding:10px 14px;font-size:12px;color:#166534;
+                  display:flex;align-items:flex-start;gap:10px">
+        <i class="ti ti-circle-check" style="font-size:18px;color:#16a34a;flex-shrink:0;margin-top:1px"></i>
+        <div>
+          <div style="font-weight:700;margin-bottom:2px">Bot connected ✓</div>
+          ${botLine}${chatLine}
+        </div>
+      </div>`;
+    if (testBtn) testBtn.style.display = '';
+
+  } else if (d.configured && !d.reachable) {
+    statusEl.innerHTML = `
+      <div style="background:#FFF7ED;border:1px solid #fed7aa;border-radius:8px;
+                  padding:10px 14px;font-size:12px;color:#92400e;
+                  display:flex;align-items:center;gap:10px">
+        <i class="ti ti-alert-triangle" style="font-size:18px;color:#d97706;flex-shrink:0"></i>
+        <div>
+          <div style="font-weight:700;margin-bottom:2px">Configured but unreachable</div>
+          <div>Token and Chat ID are set, but Telegram API did not respond. Check your token.</div>
+        </div>
+      </div>`;
+    if (testBtn) testBtn.style.display = '';
+
+  } else {
+    statusEl.innerHTML = `
+      <div style="background:#FEF2F2;border:1px solid #fecaca;border-radius:8px;
+                  padding:10px 14px;font-size:12px;color:#991b1b;
+                  display:flex;align-items:center;gap:10px">
+        <i class="ti ti-x-circle" style="font-size:18px;color:#ef4444;flex-shrink:0"></i>
+        <div>
+          <div style="font-weight:700;margin-bottom:2px">Not configured</div>
+          <div>Add <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> to <code>.env</code>, then restart.</div>
+        </div>
+      </div>`;
+    if (testBtn) testBtn.style.display = 'none';
   }
 }
+
 function closeTgModal() {
   const m = document.getElementById('tgConfigModal');
   if (m) m.style.display = 'none';
+}
+
+// Send test from inside the modal (delegates to dashboard fn if available,
+// otherwise calls API directly)
+async function sendTgTestFromModal() {
+  const btn = document.getElementById('tgModalTestBtn');
+  if (btn) { btn.disabled = true; }
+
+  let ok = false, msg = '';
+  try {
+    const r = await apiFetch('/api/admin/telegram/test', { method: 'POST' });
+    if (r) {
+      const d = await r.json();
+      ok  = d.ok;
+      msg = d.message || (ok ? 'Sent!' : 'Failed.');
+    }
+  } catch (_) { msg = 'Network error.'; }
+
+  if (btn) { btn.disabled = false; }
+  if (typeof toast !== 'undefined') toast(msg, ok ? 'success' : 'error');
 }
 
 // ── Sidebar toggle (mobile / tablet) ─────────────────────────────────────
@@ -598,6 +699,8 @@ Object.assign(TRANSLATIONS, {
   adm_tg_modal_sub:      { en: 'Real-time alerts for PNEUMONIA ≥ 80%',  km: 'ការជូនដំណឹងភ្លាមៗ ≥ 80%' },
   adm_tg_modal_note:     { en: 'Alerts fire automatically when a scan returns Pneumonia ≥ 80% confidence. Only .env variables needed.',
                            km: 'ការជូនដំណឹងដោយស្វ័យប្រវត្តិ នៅពេលស្កែនបង្ហាញ Pneumonia ≥ 80%។' },
+  adm_tg_setup_steps:   { en: 'Setup Instructions',                  km: 'វិធីដំឡើង' },
+  adm_tg_test:          { en: 'Send Test Alert',                      km: 'ផ្ញើការជូនដំណឹងសាកល្បង' },
 
   /* ── Shared column headers (used on 2+ pages) ──────────────────────────── */
   adm_col_user:          { en: 'User',                                  km: 'អ្នកប្រើ' },

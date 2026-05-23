@@ -355,20 +355,26 @@
 
   <!-- ── COMPONENT 6 — Telegram Alerts Widget (.telegram-card) ── -->
   <div class="telegram-card">
+
+    <!-- Header -->
     <div class="telegram-card-header">
       <i class="ti ti-brand-telegram"></i>
-      <div>
+      <div style="flex:1; min-width:0">
         <div class="label" data-i18n="adm_tg_title">Telegram Alerts</div>
-        <div class="bot-handle">@SmartXRayBot</div>
+        <div class="bot-handle" id="tgBotHandle">—</div>
       </div>
+      <!-- Live status badge -->
+      <span id="tgStatusBadge"
+            style="display:none; font-size:10px; margin-right:6px; flex-shrink:0"></span>
       <button onclick="showTgConfigModal()" class="btn btn-sm btn-outline"
-              style="margin-left:auto; font-size:11px; padding:4px 10px">
+              style="font-size:11px; padding:4px 10px; flex-shrink:0">
         <i class="ti ti-settings" style="font-size:12px; margin-right:3px"></i>
         <span data-i18n="adm_configure">Configure</span>
       </button>
     </div>
+
+    <!-- Toggles -->
     <div class="telegram-card-body">
-      <!-- Pneumonia ≥ 80% alert -->
       <div class="tg-toggle-wrap">
         <label class="switch">
           <input type="checkbox" id="tgHighConf" checked onchange="saveTgPref('high_conf', this.checked)">
@@ -376,7 +382,6 @@
         </label>
         <div class="tg-toggle-label" data-i18n="adm_tg_high_conf">Pneumonia ≥ 80%</div>
       </div>
-      <!-- Daily summary -->
       <div class="tg-toggle-wrap">
         <label class="switch">
           <input type="checkbox" id="tgDailySummary" checked onchange="saveTgPref('daily_summary', this.checked)">
@@ -384,7 +389,6 @@
         </label>
         <div class="tg-toggle-label" data-i18n="adm_tg_daily">Daily Summary</div>
       </div>
-      <!-- Critical errors -->
       <div class="tg-toggle-wrap">
         <label class="switch">
           <input type="checkbox" id="tgCritical" onchange="saveTgPref('critical', this.checked)">
@@ -392,7 +396,19 @@
         </label>
         <div class="tg-toggle-label" data-i18n="adm_tg_critical">Critical Errors</div>
       </div>
+
+      <!-- Test button row -->
+      <div style="margin-top:10px; padding-top:10px;
+                  border-top:1px solid rgba(255,255,255,.12)">
+        <button id="tgTestBtn" onclick="sendTgTest()" disabled
+                class="btn btn-sm btn-outline"
+                style="width:100%; font-size:11px; padding:5px 10px">
+          <i class="ti ti-send" style="font-size:12px; margin-right:4px"></i>
+          <span data-i18n="adm_tg_test">Send Test Alert</span>
+        </button>
+      </div>
     </div>
+
   </div><!-- /.telegram-card -->
 
 
@@ -468,9 +484,10 @@ Object.assign(TRANSLATIONS, {
   adm_pro_rate:       { en: 'Pro Conversion',             km: 'ការប្តូរ Pro' },
   adm_monthly_rev:    { en: 'Est. Monthly Revenue',       km: 'ចំណូលប្រចាំខែ (ប.ច.)' },
   adm_tg_title:       { en: 'Telegram Alerts',            km: 'ការជូនដំណឹង Telegram' },
-  adm_tg_high_conf:   { en: 'Pneumonia ≥ 80%',           km: 'ជំងឺរលាកសួត ≥ 80%' },
-  adm_tg_daily:       { en: 'Daily Summary',              km: 'សង្ខេបប្រចាំថ្ងៃ' },
-  adm_tg_critical:    { en: 'Critical Errors',            km: 'កំហុសសំខាន់' },
+  adm_tg_high_conf:   { en: 'Pneumonia ≥ 80%',            km: 'ជំងឺរលាកសួត ≥ 80%' },
+  adm_tg_daily:       { en: 'Daily Summary',               km: 'សង្ខេបប្រចាំថ្ងៃ' },
+  adm_tg_critical:    { en: 'Critical Errors',             km: 'កំហុសសំខាន់' },
+  adm_tg_test:        { en: 'Send Test Alert',             km: 'ផ្ញើការជូនដំណឹងសាកល្បង' },
   adm_last_updated:   { en: 'Last updated just now',      km: 'ធ្វើបច្ចុប្បន្នភាពថ្មីៗ' },
   adm_scan_results:   { en: 'Scan Results',               km: 'លទ្ធផលស្កែន' },
   adm_pneumonia:      { en: 'Pneumonia',                  km: 'ជំងឺរលាកសួត' },
@@ -656,6 +673,73 @@ async function loadRecentScans() {
 }
 
 
+// ── Telegram: load live status from /api/admin/telegram/status ───────────
+async function loadTgStatus() {
+  const r = await apiFetch('/api/admin/telegram/status');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+
+  // Badge
+  const badge = $('tgStatusBadge');
+  if (badge) {
+    badge.style.display = '';
+    if (d.configured && d.reachable) {
+      badge.textContent  = '● Online';
+      badge.className    = 'badge badge-green';
+    } else if (d.configured && !d.reachable) {
+      badge.textContent  = '● Offline';
+      badge.className    = 'badge badge-amber';
+    } else {
+      badge.textContent  = '● Not set';
+      badge.className    = 'badge';
+      badge.style.cssText += '; background:#F1F5F9; color:var(--color-muted)';
+    }
+  }
+
+  // Bot handle
+  const handle = $('tgBotHandle');
+  if (handle) {
+    handle.textContent = d.bot_username
+      ? '@' + d.bot_username
+      : d.configured ? 'Configured (offline?)' : 'Not configured';
+  }
+
+  // Test button
+  const btn = $('tgTestBtn');
+  if (btn) {
+    btn.disabled = !d.configured;
+    if (!d.configured) btn.title = 'Configure Telegram first';
+  }
+
+  // Cache for modal
+  window._tgStatus = d;
+}
+
+// ── Telegram: send test alert ─────────────────────────────────────────────
+async function sendTgTest() {
+  const btn = $('tgTestBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML =
+      '<i class="ti ti-loader-2" style="font-size:12px;margin-right:4px"></i>Sending…';
+  }
+
+  const r = await apiFetch('/api/admin/telegram/test', { method: 'POST' });
+
+  // Restore button
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML =
+      '<i class="ti ti-send" style="font-size:12px;margin-right:4px"></i>' +
+      '<span data-i18n="adm_tg_test">Send Test Alert</span>';
+    if (typeof I18n !== 'undefined') I18n.applyAll();
+  }
+
+  if (!r) return;
+  const d = await r.json();
+  toast(d.message || (d.ok ? 'Sent!' : 'Failed.'), d.ok ? 'success' : 'error');
+}
+
 // ── Telegram preference persistence (localStorage) ────────────────────────
 function saveTgPref(key, val) {
   const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
@@ -666,9 +750,9 @@ function saveTgPref(key, val) {
 
 function restoreTgPrefs() {
   const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
-  if ('high_conf'    in prefs) $('tgHighConf').checked    = prefs.high_conf;
+  if ('high_conf'     in prefs) $('tgHighConf').checked     = prefs.high_conf;
   if ('daily_summary' in prefs) $('tgDailySummary').checked = prefs.daily_summary;
-  if ('critical'     in prefs) $('tgCritical').checked    = prefs.critical;
+  if ('critical'      in prefs) $('tgCritical').checked     = prefs.critical;
 }
 
 
@@ -686,6 +770,7 @@ async function loadDashboard() {
 
 // ── Auto-refresh every 60 s ───────────────────────────────────────────────
 restoreTgPrefs();
+loadTgStatus();           // load live bot status on page init
 loadDashboard();
 setInterval(loadDashboard, 60_000);
 </script>
