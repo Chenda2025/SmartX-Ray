@@ -1,5 +1,10 @@
 # SmartX-Ray Web
 
+[![CI](https://github.com/YOUR_USERNAME/SmartX-Ray/actions/workflows/ci.yml/badge.svg)](https://github.com/YOUR_USERNAME/SmartX-Ray/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-39%2F39%20passing-brightgreen)](tests/)
+[![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 **AI-Powered Chest X-Ray Pneumonia Detection**  
 University Final Project — Python Flask + PostgreSQL + Hybrid CNN+ANN
 
@@ -236,6 +241,28 @@ pytest tests/ --cov=app --cov-report=term-missing
 
 ---
 
+## Admin Dashboard
+
+Available at **http://localhost:5000/admin/**
+
+| Module | URL | Description |
+|--------|-----|-------------|
+| Dashboard | `/admin/` | KPI cards — total users, scans, revenue |
+| User Management | `/admin/users` | Search, filter, toggle tier/admin flag |
+| Ad Manager | `/admin/ads` | Create/edit/activate ads with placement |
+| Subscriptions | `/admin/subscriptions` | Billing overview, cancel subscriptions |
+| Marketplace | `/admin/marketplace` | Verify/unverify doctor listings |
+| System Logs | `/admin/logs` | Audit trail of all admin actions |
+
+**Default admin credentials** (created by `python seed.py`):
+- Email: `admin@smartxray.com`
+- Password: `admin123`
+
+> 🔔 **Telegram alerts:** Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID` in `.env`
+> to receive a Telegram message whenever a scan returns PNEUMONIA ≥ 80%.
+
+---
+
 ## Business Models
 
 | Model | Implementation |
@@ -260,7 +287,9 @@ pytest tests/ --cov=app --cov-report=term-missing
 | PDF | ReportLab |
 | Payments | Stripe |
 | Email | Flask-Mail |
-| Deployment | Gunicorn + Docker |
+| Notifications | Telegram Bot API |
+| Deployment | Gunicorn + Docker Compose |
+| CI/CD | GitHub Actions (pytest + coverage) |
 
 ---
 
