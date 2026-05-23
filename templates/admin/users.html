@@ -1,6 +1,7 @@
 {% extends "admin/base.html" %}
 {% block title %}Users{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active" data-i18n="adm_nav_users">Users</li>{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_users">Users</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_users">Users</span>{% endblock %}
 
 {% block extra_head %}
 <style>
@@ -178,27 +179,25 @@
 
 {% block scripts %}
 <script>
-// ── Add missing i18n keys for this page ──────────────────────────────────────
-// (extends translations already in i18n.js)
+// ── i18n keys — Users page ───────────────────────────────────────────────
 Object.assign(TRANSLATIONS, {
-  adm_users_found:  { en: ' users found',            km: ' នាក់ត្រូវបានរកឃើញ' },
-  adm_search_label: { en: 'Search name or email',    km: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល' },
-  adm_search_ph:    { en: 'Type 1 letter to search…',km: 'វាយ ១ អក្សរដើម្បីស្វែងរក…' },
-  adm_sort_label:   { en: 'Sort',                    km: 'តម្រៀប' },
-  adm_sort_new_old: { en: 'New → Old',               km: 'ថ្មី → ចាស់' },
-  adm_sort_old_new: { en: 'Old → New',               km: 'ចាស់ → ថ្មី' },
-  adm_clear_filters:{ en: 'Clear',                   km: 'លុបចោល' },
-  adm_loading:      { en: 'Loading…',                km: 'កំពុងផ្ទុក…' },
-  adm_no_users:     { en: 'No users found.',         km: 'រកមិនឃើញអ្នកប្រើ។' },
-  adm_page_of:      { en: 'of',                      km: 'នៃ' },
-  adm_tier_pro:     { en: 'Pro',                     km: 'Pro' },
-  adm_tier_free:    { en: 'Free',                    km: 'ឥតគិតថ្លៃ' },
-  adm_tip_make_pro: { en: 'Click to upgrade to Pro', km: 'ចុចដើម្បីលើកកម្ពស់ទៅ Pro' },
+  adm_user_title:   { en: 'User Management',          km: 'ការគ្រប់គ្រងអ្នកប្រើ' },
+  adm_users_found:  { en: ' users found',             km: ' នាក់ត្រូវបានរកឃើញ' },
+  adm_search_label: { en: 'Search name or email',     km: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល' },
+  adm_search_ph:    { en: 'Type 1 letter to search…', km: 'វាយ ១ អក្សរ ដើម្បីស្វែងរក…' },
+  adm_sort_label:   { en: 'Sort',                     km: 'តម្រៀប' },
+  adm_sort_new_old: { en: 'New → Old',                km: 'ថ្មី → ចាស់' },
+  adm_sort_old_new: { en: 'Old → New',                km: 'ចាស់ → ថ្មី' },
+  adm_clear_filters:{ en: 'Clear',                    km: 'លុបចោល' },
+  adm_no_users:     { en: 'No users found.',          km: 'រកមិនឃើញអ្នកប្រើ។' },
+  adm_page_of:      { en: 'of',                       km: 'នៃ' },
+  adm_tier_pro:     { en: 'Pro',                      km: 'Pro' },
+  adm_tier_free:    { en: 'Free',                     km: 'ឥតគិតថ្លៃ' },
+  adm_tip_make_pro: { en: 'Click to upgrade to Pro',  km: 'ចុចដើម្បីលើកកម្ពស់ទៅ Pro' },
   adm_tip_make_free:{ en: 'Click to downgrade to Free', km: 'ចុចដើម្បីបន្ថយទៅ Free' },
-  adm_tip_activate: { en: 'Click to activate',       km: 'ចុចដើម្បីធ្វើឱ្យសកម្ម' },
-  adm_tip_suspend:  { en: 'Click to suspend',        km: 'ចុចដើម្បីព្យួរ' },
+  adm_tip_activate: { en: 'Click to activate',        km: 'ចុចដើម្បីធ្វើឱ្យសកម្ម' },
+  adm_tip_suspend:  { en: 'Click to suspend',         km: 'ចុចដើម្បីព្យួរ' },
 });
-// Re-apply so newly added keys render on page load
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
 // ── State ─────────────────────────────────────────────────────────────────────

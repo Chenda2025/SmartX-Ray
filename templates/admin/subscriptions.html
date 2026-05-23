@@ -1,6 +1,7 @@
 {% extends "admin/base.html" %}
 {% block title %}Subscriptions{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active">Subscriptions</li>{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_subs">Subscriptions</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_subs">Subscriptions</span>{% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
@@ -121,6 +122,19 @@
 
 {% block scripts %}
 <script>
+// ── i18n keys — Subscriptions page ──────────────────────────────────────
+Object.assign(TRANSLATIONS, {
+  adm_sub_title:      { en: 'Subscriptions',                 km: 'ការជាវ' },
+  adm_sub_sub:        { en: 'Free vs Pro counts, revenue, and expiry dates', km: 'ចំនួន Free/Pro, ចំណូល, និងកាលបរិច្ឆេទផុតកំណត់' },
+  adm_monthly_subs:   { en: 'Monthly Subscribers',           km: 'អ្នកជាវប្រចាំខែ' },
+  adm_yearly_subs:    { en: 'Yearly Subscribers',            km: 'អ្នកជាវប្រចាំឆ្នាំ' },
+  adm_total_rev:      { en: 'Total Revenue (est.)',           km: 'ចំណូលសរុប (ប.ច.)' },
+  adm_aba_plans:      { en: 'ABA KHQR Pricing Plans',        km: 'គម្រោងតម្លៃ ABA KHQR' },
+  adm_monthly_plan:   { en: 'Monthly Plan',                  km: 'គម្រោងប្រចាំខែ' },
+  adm_yearly_plan:    { en: 'Yearly Plan',                   km: 'គម្រោងប្រចាំឆ្នាំ' },
+});
+if (typeof I18n !== 'undefined') I18n.applyAll();
+
 let subsPage = 1;
 
 async function loadSubs(page = 1) {

@@ -1,6 +1,7 @@
 {% extends "admin/base.html" %}
 {% block title %}Marketplace{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active">Marketplace</li>{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_marketplace">Marketplace</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_marketplace">Marketplace</span>{% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
@@ -53,6 +54,14 @@
 
 {% block scripts %}
 <script>
+// ── i18n keys — Marketplace page ────────────────────────────────────────
+Object.assign(TRANSLATIONS, {
+  adm_mkt_title:  { en: 'Doctor Marketplace',                          km: 'ផ្សារវេជ្ជបណ្ឌិត' },
+  adm_mkt_sub:    { en: 'Review Cambodian doctor license submissions — approve or reject',
+                   km: 'ពិនិត្យការដាក់ស្នើអាជ្ញាបណ្ណ — អនុម័ត ឬ បដិសេធ' },
+});
+if (typeof I18n !== 'undefined') I18n.applyAll();
+
 let docPage   = 1;
 let docStatus = 'pending';
 

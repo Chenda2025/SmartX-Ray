@@ -1,6 +1,7 @@
 {% extends "admin/base.html" %}
 {% block title %}System Logs{% endblock %}
-{% block breadcrumb %}<li class="breadcrumb-item active">System Logs</li>{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_logs">System Logs</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_logs">System Logs</span>{% endblock %}
 
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-4">
@@ -8,8 +9,9 @@
     <h4 class="fw-bold mb-0" data-i18n="adm_log_title">System Logs</h4>
     <p class="text-muted small mb-0" data-i18n="adm_log_sub">Every scan, AI processing time, auth events, and DB health checks</p>
   </div>
-  <button class="btn btn-sm btn-outline-secondary" onclick="loadLogs(1)">
-    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+  <!-- Refresh hidden — auto-refresh every 30 s already active -->
+  <button class="btn btn-sm btn-outline-secondary" onclick="loadLogs(1)" style="display:none">
+    <i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="adm_refresh">Refresh</span>
   </button>
 </div>
 
@@ -38,7 +40,7 @@
     </div>
     <div class="col-md-2">
       <button class="btn btn-primary btn-sm w-100" onclick="loadLogs(1)">
-        <i class="bi bi-funnel me-1"></i>Filter
+        <i class="bi bi-funnel me-1"></i><span data-i18n="adm_filter">Filter</span>
       </button>
     </div>
     <div class="col-md-6 d-flex justify-content-end gap-2 flex-wrap">
@@ -89,6 +91,14 @@
 
 {% block scripts %}
 <script>
+// ── i18n keys — Logs page ────────────────────────────────────────────────
+Object.assign(TRANSLATIONS, {
+  adm_log_title:  { en: 'System Logs',                                 km: 'កំណត់ហេតុប្រព័ន្ធ' },
+  adm_log_sub:    { en: 'Every scan, AI processing time, auth events, and DB health checks',
+                   km: 'ស្កែន, ពេលវេលា AI, ព្រឹត្តិការណ៍ auth, និង DB health' },
+});
+if (typeof I18n !== 'undefined') I18n.applyAll();
+
 let logsPage = 1;
 
 const SEVERITY_CLASS = {
