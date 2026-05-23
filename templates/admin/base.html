@@ -30,9 +30,30 @@
       font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
     }
 
-    /* Khmer language override */
+    /* Khmer language override — text elements */
     :lang(km), [lang="km"], .km {
       font-family: 'Noto Sans Khmer', sans-serif !important;
+    }
+
+    /*
+     * ICON FONT RESTORATION
+     * ─────────────────────────────────────────────────────────────────────
+     * Problem: when lang="km" is set on <html>, the !important Noto Sans Khmer
+     * rule above overrides Tabler Icons' own `.ti { font-family: tabler-icons
+     * !important }` because equal-specificity rules resolve to "last wins" and
+     * this <style> tag loads after the CDN stylesheet.
+     *
+     * Fix: use attribute-selector on <i> elements to raise specificity to
+     * (0,1,1) which beats :lang(km) at (0,1,0), restoring the icon font.
+     * Must appear AFTER the Khmer rule above.
+     */
+    i[class*="ti-"], i.ti {
+      font-family: tabler-icons !important;
+      font-style: normal;
+    }
+    i[class*="bi-"], i.bi {
+      font-family: "bootstrap-icons" !important;
+      font-style: normal;
     }
 
     /* Disable Bootstrap's body background so tokens.css controls it */
