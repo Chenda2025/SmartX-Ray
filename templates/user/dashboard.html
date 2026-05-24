@@ -1,562 +1,598 @@
-{% extends "base.html" %}
-{% block title %}Dashboard{% endblock %}
+<!DOCTYPE html>
+<html lang="en" id="ud-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — SmartX-Ray</title>
 
-{% block head %}
-<style>
-/* ── User dashboard local overrides ──────────────────────────────────── */
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <!-- Dashboard CSS -->
+  <link rel="stylesheet" href="/static/css/user-dashboard.css" />
+</head>
+<body>
 
-/* Quota bar progress */
-.quota-progress { height: 8px; border-radius: 4px; overflow: hidden; background: #e9ecef; }
-.quota-progress .bar {
-  height: 100%; border-radius: 4px;
-  background: linear-gradient(90deg, var(--brand-blue,#1A73E8), #0d47a1);
-  transition: width .4s ease;
-}
-.quota-progress .bar.danger { background: linear-gradient(90deg, #ef4444, #b91c1c); }
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPONENT 1 — USER NAVIGATION HEADER
+     ══════════════════════════════════════════════════════════════════════════ -->
+<header class="ud-nav">
+  <a href="/dashboard" class="ud-brand">
+    <span class="ud-brand-name">SmartX-Ray</span>
+    <span class="ud-brand-sub" data-i18n="brand_sub">Medical AI Platform</span>
+  </a>
 
-/* Ratio mini-bar */
-.ratio-bar { height: 6px; border-radius: 3px; overflow: hidden; background: #e9ecef; display:flex; }
-.ratio-bar .seg-pneu { background: #ef4444; transition: width .4s ease; }
-.ratio-bar .seg-norm { background: #22c55e; transition: width .4s ease; }
+  <nav>
+    <ul class="ud-nav-links">
+      <li><a href="/dashboard" class="active" data-i18n="nav_home">Home</a></li>
+      <li><a href="#scan-section" data-i18n="nav_scan">Scan</a></li>
+      <li><a href="#history-section" data-i18n="nav_history">History</a></li>
+      <li><a href="#doctor-section" data-i18n="nav_find_doctor_s">Find a Doctor</a></li>
+      <li class="nav-upgrade"><a href="/pricing" data-i18n="nav_upgrade_link">Upgrade</a></li>
+    </ul>
+  </nav>
 
-/* Upload drop zone */
-#dropZone {
-  border: 2px dashed #cbd5e1;
-  border-radius: 14px;
-  padding: 2.5rem 1.5rem;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .2s, background .2s;
-  background: #f8fafc;
-}
-#dropZone:hover, #dropZone.dragover {
-  border-color: var(--brand-blue,#1A73E8);
-  background: #eff6ff;
-}
-
-/* Scan cards */
-.scan-row { transition: background .15s; border-radius: 10px; }
-.scan-row:hover { background: #f8fafc; }
-
-/* Locked PDF badge */
-.pdf-locked {
-  cursor: not-allowed;
-  opacity: .5;
-  font-size: 11px;
-  position: relative;
-}
-.pdf-locked::after {
-  content: "🔒";
-  margin-left: 4px;
-  font-size: 10px;
-}
-
-/* Pro card accent */
-.pro-active-card { background: linear-gradient(135deg, #1e40af 0%, #1A73E8 100%); }
-.pro-active-card * { color: #fff !important; }
-.pro-active-card hr { border-color: rgba(255,255,255,.2); }
-
-/* Alert quota warning */
-.quota-alert {
-  border-left: 4px solid #f59e0b;
-  background: #fffbeb;
-  border-radius: 10px;
-}
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container py-4">
-
-  <!-- ══════════════════════════════════════════════════════════════════════
-       Component 1 — Page Header
-       ══════════════════════════════════════════════════════════════════════ -->
-  <div class="d-flex flex-column flex-md-row justify-content-between
-              align-items-start align-items-md-center mb-4 gap-3">
-    <div>
-      <h4 class="fw-bold mb-0" data-i18n="dash_title">My Dashboard</h4>
-      <p class="text-muted small mb-0" id="dashGreeting">Welcome back!</p>
+  <div class="ud-nav-right">
+    <button class="ud-lang-btn" id="udLangBtn" onclick="udToggleLang()">ខ្មែរ</button>
+    <span class="ud-tier-badge free" id="udTierBadge">Free</span>
+    <button class="ud-bell" title="Notifications" aria-label="Notifications">
+      <i class="ti ti-bell"></i>
+    </button>
+    <div class="ud-avatar-wrap">
+      <div class="ud-avatar" id="udAvatar" onclick="udToggleDropdown()">?</div>
+      <div class="ud-dropdown" id="udDropdown">
+        <div style="padding:12px 14px; border-bottom:1px solid var(--border);">
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary)" id="ddName">—</div>
+          <div style="font-size:11px;color:var(--text-muted)" id="ddEmail">—</div>
+        </div>
+        <a href="/pricing" class="ud-dropdown-item">
+          <i class="ti ti-credit-card"></i>
+          <span data-i18n="dd_subscription">Manage Subscription</span>
+        </a>
+        <div class="ud-dropdown-divider"></div>
+        <button class="ud-dropdown-item danger" onclick="udLogout()">
+          <i class="ti ti-logout"></i>
+          <span data-i18n="nav_logout">Logout</span>
+        </button>
+      </div>
     </div>
-    <div class="d-flex align-items-center gap-2">
-      <span class="badge fs-6" id="dashTierBadge">FREE</span>
-      <!-- Upgrade CTA — free only -->
-      <a href="/pricing" class="btn btn-warning btn-sm fw-bold d-none" id="upgradeBtn">
-        <i class="fa-solid fa-star me-1"></i><span data-i18n="dash_upgrade">Upgrade to Pro</span>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PHONE — BOTTOM TAB BAR
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="ud-tab-bar">
+  <a href="/dashboard" class="ud-tab-item active">
+    <i class="ti ti-home"></i><span data-i18n="nav_home">Home</span>
+  </a>
+  <a href="#scan-section" class="ud-tab-item" onclick="document.getElementById('scan-section').scrollIntoView({behavior:'smooth'})">
+    <i class="ti ti-scan"></i><span data-i18n="nav_scan">Scan</span>
+  </a>
+  <a href="#history-section" class="ud-tab-item" onclick="document.getElementById('history-section').scrollIntoView({behavior:'smooth'})">
+    <i class="ti ti-history"></i><span data-i18n="nav_history">History</span>
+  </a>
+  <a href="#doctor-section" class="ud-tab-item" onclick="document.getElementById('doctor-section').scrollIntoView({behavior:'smooth'})">
+    <i class="ti ti-stethoscope"></i><span data-i18n="nav_find_doctor_s">Doctor</span>
+  </a>
+  <a href="/pricing" class="ud-tab-item nav-upgrade">
+    <i class="ti ti-crown"></i><span data-i18n="nav_upgrade_link">Upgrade</span>
+  </a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE CONTENT
+     ══════════════════════════════════════════════════════════════════════════ -->
+<main class="ud-page">
+
+  <!-- ── COMPONENT 2 — AD BANNER (free only) ─────────────────────────────── -->
+  <div class="ud-ad-banner ud-hidden" id="udAdBanner">
+    <span class="ud-ad-label">ad</span>
+    <div class="ud-ad-image" id="udAdImg">
+      <i class="ti ti-building-hospital" style="font-size:28px;color:#3B82F6;"></i>
+    </div>
+    <span class="ud-ad-text" id="udAdText" data-i18n="ad_default">Sponsored — Cambodia Medical Supplies Co.</span>
+    <button class="ud-ad-dismiss" onclick="document.getElementById('udAdBanner').classList.add('ud-hidden')" aria-label="Dismiss">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  <!-- ── COMPONENT 3 — WELCOME BANNER ────────────────────────────────────── -->
+  <div class="ud-welcome ud-card">
+    <div class="ud-welcome-content">
+      <div class="ud-welcome-greeting" id="udGreeting">Good morning, User</div>
+      <div class="ud-welcome-sub" id="udWelcomeSub">RUPP · Free Plan</div>
+      <a href="/pricing" class="ud-welcome-btn" data-i18n="welcome_upgrade">
+        Upgrade to Pro →
       </a>
     </div>
+    <i class="ti ti-scan ud-welcome-icon"></i>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════════════════════
-       Component 2 — Alert Banner (quota exceeded, free only)
-       ══════════════════════════════════════════════════════════════════════ -->
-  <div class="quota-alert p-3 mb-4 d-none" id="quotaAlert" role="alert">
-    <div class="d-flex align-items-center gap-2">
-      <i class="fa-solid fa-triangle-exclamation text-warning fs-5"></i>
-      <div>
-        <strong data-i18n="dash_quota_exceeded">Daily scan limit reached.</strong>
-        <span class="text-muted small ms-1" data-i18n="dash_quota_reset">Resets at midnight UTC.</span>
-        <a href="/pricing" class="ms-2 small fw-semibold" data-i18n="dash_upgrade_link">Upgrade for unlimited →</a>
-      </div>
-      <button type="button" class="btn-close btn-sm ms-auto" aria-label="Close"
-              onclick="this.closest('.quota-alert').classList.add('d-none')"></button>
+  <!-- ── COMPONENT 4 — QUICK ACTION CARDS ────────────────────────────────── -->
+  <div class="ud-quick-grid">
+
+    <!-- Card A: New Scan -->
+    <a href="#scan-section" class="ud-qcard ud-qcard-scan"
+       onclick="document.getElementById('scan-section').scrollIntoView({behavior:'smooth'});return false;">
+      <i class="ti ti-upload qcard-icon"></i>
+      <span class="qcard-label" data-i18n="qcard_scan">Upload X-Ray</span>
+      <span class="qcard-sub">PNG, JPG, DICOM</span>
+    </a>
+
+    <!-- Card B: History -->
+    <a href="#history-section" class="ud-qcard ud-qcard-white ud-qcard-history"
+       onclick="document.getElementById('history-section').scrollIntoView({behavior:'smooth'});return false;">
+      <span class="qcard-badge ud-hidden" id="udScanBadge">0</span>
+      <i class="ti ti-history qcard-icon"></i>
+      <span class="qcard-label" data-i18n="qcard_history">View History</span>
+      <span class="qcard-sub" id="udScanSubLabel">— scans total</span>
+    </a>
+
+    <!-- Card C: Doctor -->
+    <a href="#doctor-section" class="ud-qcard ud-qcard-white ud-qcard-doctor"
+       onclick="document.getElementById('doctor-section').scrollIntoView({behavior:'smooth'});return false;">
+      <i class="ti ti-stethoscope qcard-icon"></i>
+      <span class="qcard-label" data-i18n="qcard_doctor">Find a Doctor</span>
+      <span class="qcard-sub" data-i18n="qcard_doctor_sub">8 verified doctors</span>
+    </a>
+
+    <!-- Card D: PDF (locked/unlocked) -->
+    <div class="ud-qcard ud-qcard-pdf-locked" id="udPdfCard"
+         onclick="udShowToast('PDF reports are a Pro feature. Upgrade to unlock!','warning')">
+      <span class="qcard-pro-badge">Pro ⭐</span>
+      <div class="qcard-lock-overlay"><i class="ti ti-lock"></i></div>
+      <i class="ti ti-file-description qcard-icon"></i>
+      <span class="qcard-label" data-i18n="qcard_pdf">AI PDF Report</span>
+      <span class="qcard-sub" data-i18n="qcard_pdf_sub_free">Upgrade to unlock</span>
     </div>
   </div>
 
-  <div class="row g-4">
-    <!-- ── Left column: Banner ad + Quota + Upload + Scan history ──────── -->
-    <div class="col-lg-8">
+  <!-- ── COMPONENT 5 — SCAN UPLOAD PANEL ──────────────────────────────────── -->
+  <section class="ud-card ud-upload-card" id="scan-section">
+    <div class="ud-upload-header">
+      <div class="ud-upload-title" data-i18n="upload_title">Upload X-Ray Image</div>
+      <div class="ud-upload-quota" id="udQuotaText">Free plan: 5 scans/month · remaining: 3</div>
+    </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 3 — Banner Ad (free only)
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="d-none mb-3" id="bannerAdWrap"></div>
+    <!-- Dropzone -->
+    <div class="ud-dropzone" id="udDropzone"
+         ondragover="udDragOver(event)" ondragleave="udDragLeave(event)"
+         ondrop="udDrop(event)" onclick="document.getElementById('udFileInput').click()">
+      <i class="ti ti-cloud-upload upload-icon"></i>
+      <span class="dz-text" data-i18n="upload_drag">Drag &amp; drop your X-ray here</span>
+      <span class="dz-sub" data-i18n="upload_drag_sub">or click to browse — PNG, JPG, DICOM accepted</span>
+      <button class="ud-browse-btn" type="button" onclick="event.stopPropagation();document.getElementById('udFileInput').click()">
+        <i class="ti ti-folder-open"></i>
+        <span data-i18n="upload_browse">Browse File</span>
+      </button>
+      <input type="file" id="udFileInput" accept=".png,.jpg,.jpeg,.dcm"
+             onchange="udFileSelected(this)" />
+    </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 4 — Quota Bar
-           ══════════════════════════════════════════════════════════════════ -->
-      <!-- Free: usage bar -->
-      <div class="card mb-4 d-none border-0 shadow-sm" id="quotaCard">
-        <div class="card-body quota-bar py-3">
-          <div class="d-flex justify-content-between mb-1 small fw-semibold">
-            <span data-i18n="dash_daily_scans">Daily Scans</span>
-            <span id="quotaText">0 / 3 used</span>
-          </div>
-          <div class="quota-progress">
-            <div class="bar" id="quotaBar" style="width:0%"></div>
-          </div>
-          <p class="text-muted small mt-2 mb-0">
-            <span data-i18n="dash_resets">Resets at midnight UTC. </span>
-            <a href="/pricing" class="text-brand" data-i18n="dash_unlimited_link">Upgrade for unlimited scans →</a>
-          </p>
-        </div>
+    <!-- Preview (shown after file select) -->
+    <div class="ud-preview" id="udPreview">
+      <img class="ud-preview-thumb" id="udPreviewImg" src="" alt="X-ray preview" />
+      <div class="ud-preview-info">
+        <div class="ud-preview-name" id="udPreviewName"></div>
+        <div class="ud-preview-size" id="udPreviewSize"></div>
+        <button class="ud-preview-clear" onclick="udClearPreview()">
+          <i class="ti ti-x"></i>
+          <span data-i18n="upload_remove">Remove</span>
+        </button>
       </div>
+    </div>
 
-      <!-- Pro: unlimited indicator -->
-      <div class="card mb-4 d-none border-0 shadow-sm" id="quotaProCard">
-        <div class="card-body py-3">
-          <div class="d-flex align-items-center gap-2">
-            <i class="fa-solid fa-infinity text-primary fs-5"></i>
-            <div>
-              <div class="fw-semibold" data-i18n="dash_unlimited">Unlimited Scans</div>
-              <div class="text-muted small" data-i18n="dash_no_limit">No daily limit on your Pro plan.</div>
-            </div>
-          </div>
-        </div>
+    <!-- Analyse button -->
+    <button class="ud-analyse-btn" id="udAnalyseBtn" onclick="udSubmitScan()">
+      <i class="ti ti-brain"></i>
+      <span data-i18n="upload_analyse">Analyze Now</span>
+    </button>
+
+    <!-- Loading state -->
+    <div class="ud-loading" id="udLoading">
+      <div class="ud-progress-wrap">
+        <div class="ud-progress-bar"></div>
       </div>
+      <div class="ud-loading-text">
+        <i class="ti ti-loader-2" style="animation:spin 1s linear infinite;"></i>
+        <span data-i18n="upload_analyzing">AI is analyzing your X-ray</span><span class="ud-dots"></span>
+      </div>
+    </div>
+  </section>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 5 — Upload Zone
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body p-4">
-          <h5 class="fw-bold mb-3">
-            <i class="fa-solid fa-upload text-brand me-2"></i>
-            <span data-i18n="dash_upload_title">Upload X-Ray</span>
-          </h5>
+  <!-- ── COMPONENT 6 — AI RESULT PANEL ─────────────────────────────────── -->
+  <section class="ud-card ud-result-card" id="udResultCard">
+    <div class="ud-result-header">
+      <div class="ud-result-title" data-i18n="result_title">AI Diagnosis Result</div>
+      <div class="ud-result-ts" id="udResultTs"></div>
+    </div>
 
-          <div id="dropZone" onclick="document.getElementById('fileInput').click()">
-            <i class="fa-solid fa-lungs text-brand mb-3" style="font-size:3rem;opacity:.35;"></i>
-            <p class="fw-semibold mb-1" data-i18n="dash_drop">Drag &amp; drop your X-ray here</p>
-            <p class="text-muted small mb-3" data-i18n="dash_drop_sub">PNG, JPG, JPEG · Max 16 MB</p>
-            <button class="btn btn-primary px-4" type="button" data-i18n="dash_browse">Browse File</button>
-            <input type="file" id="fileInput" accept=".png,.jpg,.jpeg" class="d-none"
-                   onchange="onFileSelected(this)" />
-          </div>
-
-          <!-- Preview section (hidden until file selected) -->
-          <div class="d-none mt-4 p-3 rounded-3 bg-light" id="previewSection">
-            <div class="d-flex align-items-center gap-3 flex-wrap">
-              <img id="previewImg" src="" alt="preview"
-                   class="rounded-3 border" style="height:72px;width:72px;object-fit:cover;" />
-              <div class="flex-grow-1">
-                <p class="mb-1 fw-semibold text-truncate" id="previewName"></p>
-                <div class="d-flex gap-2 mt-2 flex-wrap">
-                  <button class="btn btn-primary btn-sm px-4" onclick="submitScan()" id="analyseBtn">
-                    <span id="uploadSpinner" class="spinner-border spinner-border-sm d-none me-1"
-                          role="status" aria-hidden="true"></span>
-                    <span data-i18n="dash_analyse">Analyse Now</span>
-                  </button>
-                  <button class="btn btn-outline-secondary btn-sm" onclick="clearPreview()"
-                          data-i18n="dash_clear">Clear</button>
-                </div>
-              </div>
-            </div>
+    <div class="ud-result-body">
+      <!-- LEFT: X-ray viewer -->
+      <div>
+        <div class="ud-xray-viewer" id="udXrayViewer">
+          <img id="udXrayImg" src="" alt="X-ray" />
+          <div class="ud-heatmap-overlay" id="udHeatmapOverlay">
+            <img id="udHeatmapImg" src="" alt="Grad-CAM heatmap" />
           </div>
         </div>
-      </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 6 — Scan History
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="card border-0 shadow-sm">
-        <div class="card-body">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h5 class="fw-bold mb-0" data-i18n="dash_history">Scan History</h5>
-            <span class="text-muted small" id="scanCount"></span>
-          </div>
+        <div class="ud-viewer-toolbar">
+          <button class="ud-tool-btn" title="Zoom in"  onclick="udZoomIn()"><i class="ti ti-zoom-in"></i></button>
+          <button class="ud-tool-btn" title="Zoom out" onclick="udZoomOut()"><i class="ti ti-zoom-out"></i></button>
+          <button class="ud-tool-btn" title="Reset"    onclick="udZoomReset()"><i class="ti ti-refresh"></i></button>
+          <button class="ud-tool-btn" title="Download" onclick="udDownloadXray()"><i class="ti ti-download"></i></button>
+        </div>
 
-          <div id="scanList">
-            <div class="text-center py-5 text-muted">
-              <span class="spinner-border spinner-border-sm me-2"></span>
-              <span data-i18n="dash_loading_scans">Loading scans…</span>
-            </div>
-          </div>
-
-          <div class="text-center mt-3 d-none" id="loadMoreWrap">
-            <button class="btn btn-outline-primary btn-sm px-4" onclick="loadScans(true)"
-                    data-i18n="dash_load_more">Load More</button>
+        <div class="ud-heatmap-row">
+          <span class="ud-heatmap-label" data-i18n="result_heatmap_lbl">Grad-CAM Heatmap</span>
+          <div class="ud-toggle-wrap">
+            <label class="ud-toggle">
+              <input type="checkbox" id="udHeatmapToggle" onchange="udToggleHeatmap(this)" />
+              <span class="ud-toggle-track"></span>
+            </label>
           </div>
         </div>
       </div>
 
-    </div><!-- /col-lg-8 -->
+      <!-- RIGHT: Diagnosis details -->
+      <div class="ud-dx-col">
+        <!-- Result label -->
+        <div class="ud-result-label pneumonia" id="udResultLabel">PNEUMONIA DETECTED</div>
 
-    <!-- ── Right column: Account + Pro card + Quick stats + Sidebar ad ── -->
-    <div class="col-lg-4">
+        <!-- Confidence ring -->
+        <div class="ud-confidence-ring">
+          <div class="ud-ring-wrap">
+            <svg viewBox="0 0 100 100" width="100" height="100">
+              <circle class="ud-ring-track" cx="50" cy="50" r="45" />
+              <circle class="ud-ring-fill pneumonia" id="udRingFill" cx="50" cy="50" r="45" />
+            </svg>
+            <div class="ud-ring-center" id="udRingPct">88%</div>
+          </div>
+          <div class="ud-ring-label" data-i18n="result_confidence_lbl">Confidence Score</div>
+        </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 7 — Account Card
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body">
-          <h6 class="fw-bold mb-3" data-i18n="dash_account">Account</h6>
-          <p class="mb-1 small text-muted" data-i18n="dash_logged_as">Logged in as</p>
-          <p class="fw-semibold mb-2 text-truncate" id="sidebarEmail">—</p>
-          <span class="badge mb-3" id="accountTierBadge">FREE</span>
-          <hr class="my-3">
-          <div class="d-grid gap-2">
-            <!-- Free: "Upgrade" CTA; Pro: "Manage Subscription" -->
-            <a href="/pricing" class="btn btn-outline-primary btn-sm d-none" id="manageSubBtn">
-              <i class="fa-solid fa-credit-card me-1"></i>
-              <span data-i18n="dash_manage_sub">Manage Subscription</span>
-            </a>
-            <a href="/pricing" class="btn btn-warning btn-sm fw-bold d-none" id="upgradeSubBtn">
-              <i class="fa-solid fa-star me-1"></i>
-              <span data-i18n="dash_upgrade">Upgrade to Pro</span>
-            </a>
-            <a href="/marketplace" class="btn btn-outline-secondary btn-sm">
-              <i class="fa-solid fa-user-doctor me-1"></i>
-              <span data-i18n="dash_find_doctor">Find a Doctor</span>
-            </a>
+        <!-- Detail rows -->
+        <div class="ud-detail-rows">
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_proc_time">AI Processing Time</span>
+            <span class="ud-detail-value" id="udProcTime">—</span>
+          </div>
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_model_ver">Model Version</span>
+            <span class="ud-detail-value" id="udModelVer">—</span>
+          </div>
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_scan_id">Scan ID</span>
+            <span class="ud-detail-value" id="udScanId">—</span>
+          </div>
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_university">University</span>
+            <span class="ud-detail-value" id="udUniversity">—</span>
           </div>
         </div>
-      </div>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 8a — Pro Teaser Card (free users)
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="card mb-4 border-warning border-2 shadow-sm d-none" id="proTeaserCard">
-        <div class="card-body">
-          <h6 class="fw-bold mb-3">
-            <i class="fa-solid fa-star text-warning me-1"></i>
-            <span data-i18n="dash_pro_features">Pro Features</span>
-          </h6>
-          <ul class="list-unstyled small mb-3">
-            <li class="py-1 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-infinity text-primary"></i>
-              <span data-i18n="dash_pro_unlimited">Unlimited scans / day</span>
-            </li>
-            <li class="py-1 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-file-pdf text-danger"></i>
-              <span data-i18n="dash_pro_pdf">Downloadable PDF reports</span>
-            </li>
-            <li class="py-1 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-ban text-secondary"></i>
-              <span data-i18n="dash_pro_no_ads">Ad-free experience</span>
-            </li>
-            <li class="py-1 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-fire-flame-curved text-warning"></i>
-              <span data-i18n="dash_pro_heatmap">Grad-CAM heatmap download</span>
-            </li>
-          </ul>
-          <a href="/pricing" class="btn btn-warning w-100 btn-sm fw-bold"
-             data-i18n="dash_pro_upgrade">Upgrade — from $9.99/mo</a>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 8b — "You're Pro" Card (pro users)
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="card mb-4 border-0 shadow-sm pro-active-card d-none" id="proActiveCard">
-        <div class="card-body">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <i class="fa-solid fa-circle-check fa-lg"></i>
-            <h6 class="fw-bold mb-0" data-i18n="dash_pro_active_title">You're on Pro</h6>
-          </div>
-          <p class="small mb-3 opacity-75" data-i18n="dash_pro_active_sub">
-            Unlimited scans, PDF reports, and no ads.
-          </p>
-          <hr>
-          <a href="/pricing" class="btn btn-light btn-sm w-100" style="color:#1A73E8 !important;">
-            <i class="fa-solid fa-receipt me-1"></i>
-            <span data-i18n="dash_manage_sub">Manage Subscription</span>
+        <!-- Action row -->
+        <div class="ud-action-row">
+          <button class="ud-btn-save" id="udSaveBtn" onclick="udSaveToHistory()">
+            <i class="ti ti-bookmark"></i>
+            <span data-i18n="result_save">Save to History</span>
+          </button>
+          <!-- Free: locked PDF -->
+          <button class="ud-btn-pdf-locked" id="udPdfBtnLocked"
+                  onclick="udShowToast('Upgrade to Pro to export PDF reports','warning')" title="Pro only">
+            <i class="ti ti-lock"></i>
+            <span data-i18n="result_export_pdf">Export PDF</span>
+          </button>
+          <!-- Pro: active PDF -->
+          <a class="ud-btn-pdf-pro ud-hidden" id="udPdfBtnPro" href="#" target="_blank">
+            <i class="ti ti-file-export"></i>
+            <span data-i18n="result_export_pdf">Export PDF</span>
           </a>
         </div>
+
+        <!-- Disclaimer -->
+        <p class="ud-disclaimer" data-i18n="result_disclaimer_dash">
+          For reference only. Consult a licensed physician.
+        </p>
       </div>
+    </div>
+  </section>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 9 — Quick Stats
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="card mb-4 border-0 shadow-sm">
-        <div class="card-body">
-          <h6 class="fw-bold mb-3" data-i18n="dash_quick_stats">Quick Stats</h6>
+  <!-- ── COMPONENT 7 — SCAN HISTORY TABLE ─────────────────────────────── -->
+  <section class="ud-card ud-history-card" id="history-section">
+    <div class="ud-history-header">
+      <div class="ud-history-title" data-i18n="history_title">My Scan History</div>
+      <a href="/dashboard" class="ud-history-view-all" data-i18n="history_view_all">View all →</a>
+    </div>
 
-          <div class="row text-center g-3 mb-3">
-            <div class="col-4">
-              <div class="h4 fw-bold text-brand mb-0" id="statTotal">–</div>
-              <div class="small text-muted" data-i18n="dash_total_scans">Total</div>
-            </div>
-            <div class="col-4">
-              <div class="h4 fw-bold text-danger mb-0" id="statPneumonia">–</div>
-              <div class="small text-muted" data-i18n="dash_pneumonia">Pneumonia</div>
-            </div>
-            <div class="col-4">
-              <div class="h4 fw-bold text-success mb-0" id="statNormal">–</div>
-              <div class="small text-muted" data-i18n="dash_normal">Normal</div>
-            </div>
-          </div>
+    <!-- Desktop/Tablet: table -->
+    <div class="ud-table-wrap" id="udHistoryTable">
+      <table class="ud-table">
+        <thead>
+          <tr>
+            <th data-i18n="hist_col_date">Date</th>
+            <th data-i18n="hist_col_id">Scan ID</th>
+            <th data-i18n="hist_col_result">Result</th>
+            <th data-i18n="hist_col_conf">Confidence</th>
+            <th data-i18n="hist_col_time">AI Time</th>
+            <th data-i18n="hist_col_actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="udHistoryBody">
+          <tr>
+            <td colspan="6">
+              <div class="ud-empty">
+                <i class="ti ti-loader-2" style="animation:spin 1s linear infinite;"></i>
+                <span class="ud-empty-h" data-i18n="history_loading">Loading scans…</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-          <!-- Mini ratio bar -->
-          <div class="mb-1">
-            <div class="ratio-bar" id="ratioBar">
-              <div class="seg-pneu" id="ratioPneu" style="width:0%"></div>
-              <div class="seg-norm" id="ratioNorm" style="width:0%"></div>
-            </div>
-          </div>
-          <div class="d-flex justify-content-between">
-            <small class="text-danger" id="ratioPneuLabel">— Pneumonia</small>
-            <small class="text-success" id="ratioNormLabel">Normal —</small>
-          </div>
+    <!-- Phone: card list -->
+    <div class="ud-scan-cards" id="udScanCards"></div>
+
+    <div class="ud-empty ud-hidden" id="udHistoryEmpty">
+      <i class="ti ti-scan"></i>
+      <span class="ud-empty-h" data-i18n="history_empty_h">No scans yet</span>
+      <span class="ud-empty-sub" data-i18n="history_empty_sub">Upload your first X-ray above to get started</span>
+    </div>
+  </section>
+
+  <!-- ── COMPONENT 8 — FIND DOCTOR PANEL ──────────────────────────────── -->
+  <section class="ud-card ud-doctor-card-wrap" id="doctor-section">
+    <div class="ud-doctor-header">
+      <div class="ud-doctor-title" data-i18n="doctor_title">Find a Verified Doctor</div>
+      <div class="ud-doctor-subtitle" data-i18n="doctor_subtitle">Powered by SmartX-Ray Marketplace</div>
+    </div>
+
+    <div class="ud-search-bar">
+      <i class="ti ti-search"></i>
+      <input type="text" id="udDoctorSearch"
+             data-i18n-placeholder="doctor_search_ph"
+             placeholder="Search by name or specialty..."
+             oninput="udFilterDoctors()" />
+    </div>
+
+    <div class="ud-filter-pills">
+      <button class="ud-filter-pill active" data-filter="all"    onclick="udSetFilter(this)" data-i18n="filter_all">All</button>
+      <button class="ud-filter-pill" data-filter="Radiology"     onclick="udSetFilter(this)" data-i18n="filter_radiology">Radiology</button>
+      <button class="ud-filter-pill" data-filter="Pulmonology"   onclick="udSetFilter(this)" data-i18n="filter_pulmo">Pulmonology</button>
+      <button class="ud-filter-pill" data-filter="General"       onclick="udSetFilter(this)" data-i18n="filter_general">General</button>
+      <button class="ud-filter-pill" data-filter="Cardiology"    onclick="udSetFilter(this)" data-i18n="filter_cardio">Cardiology</button>
+    </div>
+
+    <div class="ud-doctor-grid" id="udDoctorGrid">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- ── COMPONENT 9 — APPOINTMENTS PANEL ─────────────────────────────── -->
+  <section class="ud-card ud-appt-card" id="appt-section">
+    <div class="ud-appt-title" data-i18n="appt_title">My Appointments</div>
+
+    <!-- Empty state (default) -->
+    <div class="ud-empty" id="udApptEmpty">
+      <i class="ti ti-calendar"></i>
+      <span class="ud-empty-h" data-i18n="appt_empty_h">No appointments yet</span>
+      <span class="ud-empty-sub" data-i18n="appt_empty_sub">Book a consultation from Find a Doctor</span>
+    </div>
+
+    <!-- Filled state (shown when booked) -->
+    <div id="udApptList"></div>
+  </section>
+
+  <!-- ── COMPONENT 10 — UPGRADE BANNER (free only) ─────────────────────── -->
+  <section class="ud-upgrade-banner" id="udUpgradeBanner">
+    <div class="ud-upgrade-content">
+      <div class="ud-upgrade-title" data-i18n="upgrade_title">
+        Unlock the full SmartX-Ray experience
+      </div>
+      <div class="ud-upgrade-features">
+        <div class="ud-upgrade-feat">
+          <i class="ti ti-check"></i>
+          <span data-i18n="upgrade_feat1">Unlimited X-ray scans per month</span>
+        </div>
+        <div class="ud-upgrade-feat">
+          <i class="ti ti-check"></i>
+          <span data-i18n="upgrade_feat2">AI PDF Report export</span>
+        </div>
+        <div class="ud-upgrade-feat">
+          <i class="ti ti-check"></i>
+          <span data-i18n="upgrade_feat3">Priority doctor matching</span>
+        </div>
+        <div class="ud-upgrade-feat">
+          <i class="ti ti-check"></i>
+          <span data-i18n="upgrade_feat4">No ads</span>
         </div>
       </div>
+      <div class="ud-upgrade-ctas">
+        <button class="ud-btn-monthly" onclick="window.location='/pricing'">
+          <span data-i18n="upgrade_monthly">Monthly — $9.99/mo</span>
+        </button>
+        <div class="ud-upgrade-cta-wrap">
+          <span class="ud-best-value" data-i18n="upgrade_best">Best value</span>
+          <button class="ud-btn-yearly" onclick="window.location='/pricing'">
+            <span data-i18n="upgrade_yearly">Yearly — $79.99/yr</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <i class="ti ti-scan ud-upgrade-icon"></i>
+  </section>
 
-      <!-- ══════════════════════════════════════════════════════════════════
-           Component 10 — Sidebar Ad (free only)
-           ══════════════════════════════════════════════════════════════════ -->
-      <div class="d-none" id="sidebarAdWrap"></div>
+</main>
 
-    </div><!-- /col-lg-4 -->
-  </div><!-- /row -->
-</div><!-- /container -->
-{% endblock %}
+<!-- ══════════════════════════════════════════════════════════════════════════
+     COMPONENT 11 — BOOK NOW MODAL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="ud-modal-overlay" id="udBookModal" onclick="udCloseModal(event)">
+  <div class="ud-modal">
+    <!-- Header -->
+    <div class="ud-modal-header">
+      <div class="ud-modal-doc-info">
+        <div class="ud-modal-doc-avatar" id="mdAvatar"
+             style="background:#EEF2FF;color:#6366F1;">SM</div>
+        <div>
+          <div class="ud-modal-doc-name" id="mdDocName">Dr. Sophal Meas</div>
+          <div class="ud-modal-doc-spec" id="mdDocSpec">Radiology</div>
+        </div>
+      </div>
+      <button class="ud-modal-close" onclick="udCloseBookModal()">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
 
-{% block scripts %}
+    <!-- Date -->
+    <div class="ud-modal-section-label" data-i18n="modal_select_date">Select date</div>
+    <div class="ud-mini-cal" id="udCal"></div>
+
+    <!-- Time -->
+    <div class="ud-modal-section-label" data-i18n="modal_select_time">Select time</div>
+    <div class="ud-time-grid" id="udTimeGrid">
+      <!-- populated by JS -->
+    </div>
+
+    <!-- Note -->
+    <div class="ud-modal-section-label" data-i18n="modal_note">Note for doctor (optional)</div>
+    <textarea class="ud-note-ta" id="udNote"
+              data-i18n-placeholder="modal_note_ph"
+              placeholder="e.g. I have a cough and need a review of my X-ray results."></textarea>
+
+    <!-- Pricing -->
+    <div class="ud-pricing-row">
+      <div>
+        <div class="ud-pricing-label" data-i18n="modal_fee">Consultation fee:</div>
+        <div class="ud-pricing-info" data-i18n="modal_payment">Payment: ABA KHQR</div>
+      </div>
+      <div class="ud-pricing-amount" id="mdFee">$15.00</div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ud-modal-footer">
+      <button class="ud-modal-cancel" onclick="udCloseBookModal()" data-i18n="modal_cancel">Cancel</button>
+      <button class="ud-btn-confirm" onclick="udConfirmBooking()" data-i18n="modal_confirm">
+        Confirm Booking
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="ud-toast-container" id="udToastContainer"></div>
+
+<!-- CSS spin animation -->
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCRIPTS
+     ══════════════════════════════════════════════════════════════════════════ -->
+<script src="/static/js/i18n.js"></script>
+<script src="/static/js/api.js"></script>
+
 <script>
-/* ── Add dashboard translations ─────────────────────────────────────── */
+/* ── Extra i18n keys for User Dashboard ─────────────────────────────────── */
 Object.assign(TRANSLATIONS, {
-  dash_quota_exceeded:  { en: "Daily scan limit reached.",               km: "ដល់កំណត់ស្កែនប្រចាំថ្ងៃ។" },
-  dash_quota_reset:     { en: "Resets at midnight UTC.",                 km: "ដូចស្ដីអ្នកឡើងវិញ UTC" },
-  dash_upgrade_link:    { en: "Upgrade for unlimited →",                 km: "ដំឡើងសម្រាប់គ្មានដែនកំណត់ →" },
-  dash_unlimited:       { en: "Unlimited Scans",                         km: "ស្កែនគ្មានដែនកំណត់" },
-  dash_no_limit:        { en: "No daily limit on your Pro plan.",        km: "គ្មានដែនកំណត់ប្រចាំថ្ងៃសម្រាប់ Pro" },
-  dash_pro_heatmap:     { en: "Grad-CAM heatmap download",               km: "ទាញយក Grad-CAM heatmap" },
-  dash_pro_active_title:{ en: "You're on Pro",                          km: "អ្នកស្ថិតនៅ Pro" },
-  dash_pro_active_sub:  { en: "Unlimited scans, PDF reports, no ads.",   km: "ស្កែនគ្មានដែនកំណត់ PDF រាយការណ៍ ហើយគ្មានការផ្សាយពាណិជ្ជកម្ម" },
-  dash_normal:          { en: "Normal",                                  km: "ធម្មតា" },
-  dash_confidence:      { en: "confidence",                              km: "ភាពជឿជាក់" },
-  dash_pdf_report:      { en: "PDF",                                     km: "PDF" },
-  dash_pdf_locked:      { en: "PDF (Pro only)",                          km: "PDF (Pro ប៉ុណ្ណោះ)" },
-  dash_no_scans:        { en: "No scans yet — upload your first X-ray above.", km: "មិនទាន់មានស្កែនទេ — ផ្ទុកឡើង X-ray ដំបូងរបស់អ្នកខាងលើ។" },
-  dash_loading_scans:   { en: "Loading scans…",                          km: "កំពុងផ្ទុកស្កែន…" },
-  dash_advertisement:   { en: "Advertisement",                           km: "ការផ្សាយពាណិជ្ជកម្ម" },
-  dash_learn_more:      { en: "Learn More",                              km: "ស្វែងយល់បន្ថែម" },
-  dash_show_heatmap:    { en: "Show Heatmap",                            km: "បង្ហាញ Heatmap" },
-  dash_show_original:   { en: "Show Original",                           km: "បង្ហាញដើម" },
+  brand_sub:               { en: "Medical AI Platform",                   km: "វេទិកា AI វេជ្ជសាស្ត្រ" },
+  nav_home:                { en: "Home",                                   km: "ផ្ទះ" },
+  nav_scan:                { en: "Scan",                                   km: "ស្កែន" },
+  nav_history:             { en: "History",                               km: "ប្រវត្តិ" },
+  nav_find_doctor_s:       { en: "Find a Doctor",                         km: "រកវេជ្ជបណ្ឌិត" },
+  nav_upgrade_link:        { en: "Upgrade",                               km: "ដំឡើង" },
+  dd_subscription:         { en: "Manage Subscription",                   km: "គ្រប់គ្រងការជាវ" },
+  ad_default:              { en: "Sponsored — Cambodia Medical Supplies",  km: "ឧបត្ថម្ភ — ក្រុមហ៊ុនផ្គត់ផ្គង់" },
+  welcome_upgrade:         { en: "Upgrade to Pro →",                      km: "ដំឡើងទៅ Pro →" },
+  qcard_scan:              { en: "Upload X-Ray",                          km: "បញ្ចូល X-Ray" },
+  qcard_history:           { en: "View History",                          km: "មើលប្រវត្តិ" },
+  qcard_doctor:            { en: "Find a Doctor",                         km: "រកវេជ្ជបណ្ឌិត" },
+  qcard_doctor_sub:        { en: "8 verified doctors",                    km: "វេជ្ជបណ្ឌិត 8 បានផ្ទៀង" },
+  qcard_pdf:               { en: "AI PDF Report",                         km: "របាយការណ៍ PDF AI" },
+  qcard_pdf_sub_free:      { en: "Upgrade to unlock",                     km: "ដំឡើងដើម្បីដោះសោ" },
+  qcard_pdf_sub_pro:       { en: "Export AI diagnosis report",            km: "នាំចេញរបាយការណ៍ AI" },
+  upload_title:            { en: "Upload X-Ray Image",                    km: "បញ្ចូលរូបភាព X-Ray" },
+  upload_drag:             { en: "Drag & drop your X-ray here",           km: "ទាញ & ទម្លាក់ X-Ray របស់អ្នក" },
+  upload_drag_sub:         { en: "or click to browse — PNG, JPG, DICOM accepted", km: "ឬចុចដើម្បីរក — PNG, JPG, DICOM" },
+  upload_browse:           { en: "Browse File",                           km: "រកឯកសារ" },
+  upload_analyse:          { en: "Analyze Now",                           km: "វិភាគឥឡូវ" },
+  upload_remove:           { en: "Remove",                                km: "លុប" },
+  upload_analyzing:        { en: "AI is analyzing your X-ray",            km: "AI កំពុងវិភាគ X-Ray" },
+  result_title:            { en: "AI Diagnosis Result",                   km: "លទ្ធផលរោគវិនិច្ឆ័យ AI" },
+  result_pneumonia:        { en: "PNEUMONIA DETECTED",                    km: "រកឃើញជំងឺ폐炎" },
+  result_normal:           { en: "NORMAL",                               km: "ធម្មតា" },
+  result_confidence_lbl:   { en: "Confidence Score",                      km: "ភាពជឿជាក់" },
+  result_proc_time:        { en: "AI Processing Time",                    km: "ពេលដំណើរការ AI" },
+  result_model_ver:        { en: "Model Version",                         km: "កំណែម៉ូដែល" },
+  result_scan_id:          { en: "Scan ID",                               km: "លេខស្កែន" },
+  result_university:       { en: "University",                            km: "សាកលវិទ្យាល័យ" },
+  result_save:             { en: "Save to History",                       km: "រក្សាទុកប្រវត្តិ" },
+  result_export_pdf:       { en: "Export PDF",                            km: "នាំចេញ PDF" },
+  result_heatmap_lbl:      { en: "Grad-CAM Heatmap",                      km: "ផែនទីកម្តៅ Grad-CAM" },
+  result_disclaimer_dash:  { en: "For reference only. Consult a licensed physician.", km: "សម្រាប់យោងប៉ុណ្ណោះ។ ពិគ្រោះជាមួយវេជ្ជបណ្ឌិត។" },
+  history_title:           { en: "My Scan History",                       km: "ប្រវត្តិស្កែនខ្ញុំ" },
+  history_view_all:        { en: "View all →",                            km: "មើលទាំងអស់ →" },
+  history_loading:         { en: "Loading scans…",                        km: "កំពុងផ្ទុក…" },
+  history_empty_h:         { en: "No scans yet",                          km: "មិនទាន់មានស្កែន" },
+  history_empty_sub:       { en: "Upload your first X-ray above to get started", km: "បញ្ចូល X-ray ដំបូងខាងលើ" },
+  hist_col_date:           { en: "Date",                                  km: "កាលបរិច្ឆេទ" },
+  hist_col_id:             { en: "Scan ID",                               km: "លេខស្កែន" },
+  hist_col_result:         { en: "Result",                                km: "លទ្ធផល" },
+  hist_col_conf:           { en: "Confidence",                            km: "ភាពជឿជាក់" },
+  hist_col_time:           { en: "AI Time",                               km: "ពេល AI" },
+  hist_col_actions:        { en: "Actions",                               km: "សកម្មភាព" },
+  hist_pill_pneumonia:     { en: "PNEUMONIA",                             km: "ជំងឺ폐炎" },
+  hist_pill_normal:        { en: "NORMAL",                                km: "ធម្មតា" },
+  hist_view:               { en: "View",                                  km: "មើល" },
+  hist_dl_locked:          { en: "Upgrade to Pro",                        km: "ដំឡើងដើម្បី Pro" },
+  doctor_title:            { en: "Find a Verified Doctor",                km: "រកវេជ្ជបណ្ឌិតបានផ្ទៀង" },
+  doctor_subtitle:         { en: "Powered by SmartX-Ray Marketplace",     km: "ដំណើរការដោយ SmartX-Ray" },
+  doctor_search_ph:        { en: "Search by name or specialty…",          km: "ស្វែងរកតាមឈ្មោះ ឬ ឯកទេស…" },
+  filter_all:              { en: "All",                                   km: "ទាំងអស់" },
+  filter_radiology:        { en: "Radiology",                             km: "វិទ្យុសាស្ត្រ" },
+  filter_pulmo:            { en: "Pulmonology",                           km: "ឯកទេសសួត" },
+  filter_general:          { en: "General",                               km: "ទូទៅ" },
+  filter_cardio:           { en: "Cardiology",                            km: "បេះដូង" },
+  doc_verified:            { en: "Verified",                              km: "ផ្ទៀងផ្ទាត់" },
+  doc_reviews:             { en: "reviews",                               km: "មតិ" },
+  doc_consult:             { en: "/ consultation",                        km: "/ ការពិគ្រោះ" },
+  doc_view:                { en: "View Profile",                          km: "មើលប្រវត្តិ" },
+  doc_book:                { en: "Book Now",                              km: "កក់ឥឡូវ" },
+  appt_title:              { en: "My Appointments",                       km: "ការណាត់ជួបខ្ញុំ" },
+  appt_empty_h:            { en: "No appointments yet",                   km: "មិនទាន់មានណាត់ជួប" },
+  appt_empty_sub:          { en: "Book a consultation from Find a Doctor", km: "កក់ការពិគ្រោះពី រកវេជ្ជបណ្ឌិត" },
+  appt_confirmed:          { en: "Confirmed",                             km: "បានបញ្ជាក់" },
+  appt_join:               { en: "Join Meeting",                          km: "ចូលរួមប្រជុំ" },
+  upgrade_title:           { en: "Unlock the full SmartX-Ray experience", km: "ដោះសោបទពិសោធន៍ SmartX-Ray ពេញ" },
+  upgrade_feat1:           { en: "Unlimited X-ray scans per month",       km: "ស្កែន X-Ray គ្មានដែនប្រចាំខែ" },
+  upgrade_feat2:           { en: "AI PDF Report export",                  km: "នាំចេញ PDF AI" },
+  upgrade_feat3:           { en: "Priority doctor matching",              km: "ផ្គូផ្គងវេជ្ជបណ្ឌិតអាទិភាព" },
+  upgrade_feat4:           { en: "No ads",                                km: "គ្មានពាណិជ្ជ" },
+  upgrade_monthly:         { en: "Monthly — $9.99/mo",                    km: "ប្រចាំខែ — $9.99/ខែ" },
+  upgrade_yearly:          { en: "Yearly — $79.99/yr",                    km: "ប្រចាំឆ្នាំ — $79.99/ឆ្នាំ" },
+  upgrade_best:            { en: "Best value",                            km: "តម្លៃល្អបំផុត" },
+  modal_select_date:       { en: "Select date",                           km: "ជ្រើសរើសកាលបរិច្ឆេទ" },
+  modal_select_time:       { en: "Select time",                           km: "ជ្រើសរើសម៉ោង" },
+  modal_note:              { en: "Note for doctor (optional)",             km: "កំណត់ចំណាំ (ស្រេចចិត្ត)" },
+  modal_note_ph:           { en: "e.g. I have a cough and need a review…", km: "ឧ. ខ្ញុំមានការក្អក..." },
+  modal_fee:               { en: "Consultation fee:",                     km: "កំណៃ:" },
+  modal_payment:           { en: "Payment: ABA KHQR",                    km: "ការទូទាត់: ABA KHQR" },
+  modal_cancel:            { en: "Cancel",                                km: "បោះបង់" },
+  modal_confirm:           { en: "Confirm Booking",                       km: "បញ្ជាក់ការណាត់" },
+  quota_free:              { en: "Free plan: 5 scans/month · remaining:",  km: "គម្រោងឥតគិតថ្លៃ: 5 ស្កែន/ខែ · នៅសល់:" },
+  quota_pro:               { en: "Pro plan: Unlimited scans",             km: "គម្រោង Pro: ស្កែនគ្មានដែន" },
+  toast_booked:            { en: "Appointment booked successfully!",       km: "ណាត់ជួបបានជោគជ័យ!" },
+  toast_saved:             { en: "Saved to history.",                      km: "រក្សាទុកក្នុងប្រវត្តិ។" },
+  toast_upgrade_pdf:       { en: "Upgrade to Pro to export PDF reports",   km: "ដំឡើងទៅ Pro ដើម្បីនាំចេញ PDF" },
 });
-
-/* ════════════════════════════════════════════════════════════════════════
-   Guard + state
-   ════════════════════════════════════════════════════════════════════════ */
-if (!Auth.requireLogin()) { /* redirected by requireLogin */ }
-
-let currentPage    = 1;
-let pneumoniaCount = 0;
-let normalCount    = 0;
-let isPro          = false;
-
-/* ════════════════════════════════════════════════════════════════════════
-   INIT — runs once on page load
-   ════════════════════════════════════════════════════════════════════════ */
-async function initDashboard() {
-  const user = User.get() || await Auth.me();
-  if (!user) return;
-
-  isPro = user.tier === 'pro';
-
-  /* ── Header ──────────────────────────────────────────────────────────── */
-  document.getElementById('dashGreeting').textContent =
-    I18n.t('nav_dashboard') + ' — ' + user.full_name;
-  document.getElementById('sidebarEmail').textContent = user.email;
-
-  const tierClass = isPro ? 'badge-pro' : 'badge-free';
-  const tierLabel = isPro ? 'PRO' : 'FREE';
-  ['dashTierBadge', 'accountTierBadge'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.textContent = tierLabel; el.className = 'badge ' + (id === 'dashTierBadge' ? 'fs-6 ' : '') + tierClass; }
-  });
-
-  /* ── Tier-specific layout ────────────────────────────────────────────── */
-  if (isPro) {
-    document.getElementById('quotaProCard').classList.remove('d-none');
-    document.getElementById('proActiveCard').classList.remove('d-none');
-    document.getElementById('manageSubBtn').classList.remove('d-none');
-  } else {
-    const used  = user.scans_today ?? 0;
-    const limit = 3;
-
-    document.getElementById('upgradeBtn').classList.remove('d-none');
-    document.getElementById('quotaCard').classList.remove('d-none');
-    document.getElementById('proTeaserCard').classList.remove('d-none');
-    document.getElementById('upgradeSubBtn').classList.remove('d-none');
-
-    updateQuota(used, limit);
-    if (used >= limit) document.getElementById('quotaAlert').classList.remove('d-none');
-
-    /* Ads — via shared AdBanner utility from user.js */
-    await Promise.all([
-      AdBanner.load('banner',  'bannerAdWrap'),
-      AdBanner.load('sidebar', 'sidebarAdWrap'),
-    ]);
-  }
-
-  /* ── Upload zone — via shared ScanUpload utility from user.js ─────── */
-  ScanUpload.init({
-    dropZoneId   : 'dropZone',
-    fileInputId  : 'fileInput',
-    previewSectId: 'previewSection',
-    previewImgId : 'previewImg',
-    previewNameId: 'previewName',
-    analyseBtnId : 'analyseBtn',
-    spinnerId    : 'uploadSpinner',
-    quotaTextId  : 'quotaText',
-    quotaAlertId : 'quotaAlert',
-    quotaLimit   : 3,
-    isPro        : isPro,
-  });
-
-  await loadScans();
-}
-
-/* ════════════════════════════════════════════════════════════════════════
-   Component 4 — Quota bar
-   ════════════════════════════════════════════════════════════════════════ */
-function updateQuota(used, limit) {
-  document.getElementById('quotaText').textContent = used + ' / ' + limit + ' used';
-  const pct = Math.min((used / limit) * 100, 100);
-  const bar = document.getElementById('quotaBar');
-  bar.style.width = pct + '%';
-  if (pct >= 100) bar.classList.add('danger');
-}
-
-/* ════════════════════════════════════════════════════════════════════════
-   Component 6 — Scan history
-   ════════════════════════════════════════════════════════════════════════ */
-async function loadScans(more = false) {
-  if (!more) { currentPage = 1; pneumoniaCount = 0; normalCount = 0; }
-
-  const res  = await api.get('/scan/history?page=' + currentPage + '&limit=10');
-  const data = await res.json();
-  const total = data.total ?? 0;
-
-  document.getElementById('statTotal').textContent = total;
-  document.getElementById('scanCount').textContent  = total + ' total';
-
-  const list = document.getElementById('scanList');
-  if (!more) list.innerHTML = '';
-
-  if (!data.scans?.length && !more) {
-    list.innerHTML = '<p class="text-muted text-center py-5">' + I18n.t('dash_no_scans') + '</p>';
-    updateStatsBar();
-    return;
-  }
-
-  data.scans.forEach(s => {
-    const isPneumonia = s.prediction === 'PNEUMONIA';
-    if (isPneumonia) pneumoniaCount++; else normalCount++;
-
-    const imgUrl  = s.image_path   ? '/static/' + s.image_path   : '';
-    const heatUrl = s.heatmap_path ? '/static/' + s.heatmap_path : '';
-    const pdfUrl  = s.pdf_path     ? '/static/' + s.pdf_path     : '';
-
-    const badgeCls = isPneumonia ? 'badge-pneumonia' : 'badge-normal';
-    const conf     = s.confidence?.toFixed(1) ?? '—';
-    const dateStr  = s.created_at
-      ? new Date(s.created_at).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })
-      : '—';
-
-    /* PDF button */
-    let pdfBtn = '';
-    if (pdfUrl && isPro) {
-      pdfBtn = '<a href="' + pdfUrl + '" download' +
-               ' class="btn btn-outline-danger btn-sm" title="' + I18n.t('dash_pdf_report') + '">' +
-               '<i class="fa-solid fa-file-pdf"></i></a>';
-    } else if (!isPro) {
-      pdfBtn = '<span class="btn btn-outline-secondary btn-sm pdf-locked"' +
-               ' title="' + I18n.t('dash_pdf_locked') + '"' +
-               ' onclick="showToast(I18n.t('\'dash_pro_pdf\'') + ' — Upgrade to Pro!','\'warning\'')">' +
-               '<i class="fa-solid fa-file-pdf"></i></span>';
-    }
-
-    const heatBtn = heatUrl
-      ? '<a href="' + heatUrl + '" target="_blank" class="btn btn-outline-secondary btn-sm" title="Heatmap">' +
-        '<i class="fa-solid fa-fire"></i></a>'
-      : '';
-
-    list.insertAdjacentHTML('beforeend',
-      '<div class="d-flex align-items-center gap-3 py-2 px-2 border-bottom scan-card scan-row">' +
-        '<a href="/scan/' + s.id + '" class="flex-shrink-0">' +
-          '<img src="' + imgUrl + '" alt="scan"' +
-               ' class="rounded-2 border"' +
-               ' style="width:54px;height:54px;object-fit:cover;background:#f1f5f9;"' +
-               ' onerror="this.style.display=\'none\'">' +
-        '</a>' +
-        '<div class="flex-grow-1 min-width-0">' +
-          '<div class="d-flex align-items-center gap-2 flex-wrap mb-1">' +
-            '<span class="badge ' + badgeCls + '">' + s.prediction + '</span>' +
-            '<span class="small text-muted">' + conf + '% ' + I18n.t('dash_confidence') + '</span>' +
-          '</div>' +
-          '<div class="small text-muted">' + dateStr + '</div>' +
-        '</div>' +
-        '<div class="flex-shrink-0 d-flex gap-1 flex-wrap justify-content-end">' +
-          heatBtn +
-          '<a href="/scan/' + s.id + '" class="btn btn-outline-primary btn-sm" title="View">' +
-            '<i class="fa-solid fa-eye"></i></a>' +
-          pdfBtn +
-        '</div>' +
-      '</div>'
-    );
-  });
-
-  updateStatsBar();
-  if (data.has_next) {
-    document.getElementById('loadMoreWrap').classList.remove('d-none');
-    currentPage++;
-  } else {
-    document.getElementById('loadMoreWrap').classList.add('d-none');
-  }
-}
-
-/* Component 9 helper */
-function updateStatsBar() {
-  const total = pneumoniaCount + normalCount;
-  document.getElementById('statPneumonia').textContent = pneumoniaCount;
-  document.getElementById('statNormal').textContent    = normalCount;
-
-  if (total > 0) {
-    const pPct = ((pneumoniaCount / total) * 100).toFixed(1);
-    const nPct = ((normalCount    / total) * 100).toFixed(1);
-    document.getElementById('ratioPneu').style.width      = pPct + '%';
-    document.getElementById('ratioNorm').style.width      = nPct + '%';
-    document.getElementById('ratioPneuLabel').textContent = pPct + '% Pneumonia';
-    document.getElementById('ratioNormLabel').textContent = 'Normal ' + nPct + '%';
-  }
-}
-
-/* ── HTML onclick="" shims ───────────────────────────────────────────── */
-function clearPreview() { ScanUpload.clear();  }
-function submitScan()   { ScanUpload.submit(); }
-
-/* ── Boot ────────────────────────────────────────────────────────────── */
-initDashboard();
 </script>
-{% endblock %}
+<script src="/static/js/user-dashboard.js"></script>
+</body>
+</html>
