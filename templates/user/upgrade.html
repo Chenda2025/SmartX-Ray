@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en" id="up-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upgrade to Pro — SmartX-Ray</title>
+
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="/static/css/vendor/tabler-icons.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --page-bg:      #F8FAFC;
+      --card-bg:      #FFFFFF;
+      --border:       #E2E8F0;
+      --text-primary: #0F172A;
+      --text-muted:   #64748B;
+      --text-hint:    #94A3B8;
+      --indigo:       #6366F1;
+      --indigo-dark:  #4F46E5;
+      --indigo-light: #EEF2FF;
+      --green:        #10B981;
+      --green-light:  #ECFDF5;
+      --amber:        #F59E0B;
+      --amber-light:  #FEF3C7;
+      --red:          #EF4444;
+      --navy:         #0F172A;
+      --r-card:       12px;
+      --r-btn:        8px;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:    0 4px 16px rgba(0,0,0,.10);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,.14);
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+      --font-km:      'Hanuman', 'Noto Sans Khmer', sans-serif;
+      --nav-h:        64px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--page-bg); font-family: var(--font-body); color: var(--text-primary); font-size: 14px; line-height: 1.6; min-height: 100vh; }
+    a { text-decoration: none; }
+    .ti { font-family: "tabler-icons" !important; }
+    :lang(km), [lang="km"] { font-family: var(--font-km); }
+
+    /* ── NAV ── */
+    .up-nav {
+      height: var(--nav-h); background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 40px;
+    }
+    .up-brand { display: flex; flex-direction: column; gap: 1px; }
+    .up-brand-name { font-family: var(--font-display); font-weight: 700; font-size: 18px; color: var(--text-primary); line-height: 1.1; }
+    .up-brand-sub  { font-size: 11px; color: var(--text-muted); }
+    .up-back {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      border: 1px solid var(--border); border-radius: var(--r-btn);
+      padding: 7px 14px; transition: color .15s, border-color .15s;
+    }
+    .up-back:hover { color: var(--indigo); border-color: var(--indigo); }
+
+    /* ── LAYOUT ── */
+    .up-wrap {
+      max-width: 960px; margin: 48px auto; padding: 0 24px;
+      display: grid; grid-template-columns: 1fr 400px; gap: 32px;
+      align-items: start;
+    }
+
+    /* ── LEFT PANEL — plan summary ── */
+    .up-plan-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px; overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    .up-plan-header {
+      background: linear-gradient(135deg, #4F46E5 0%, #6366F1 60%, #818CF8 100%);
+      padding: 28px 28px 24px;
+      position: relative; overflow: hidden;
+    }
+    .up-plan-header::before {
+      content: '';
+      position: absolute; top: -40px; right: -40px;
+      width: 160px; height: 160px;
+      background: rgba(255,255,255,.08);
+      border-radius: 50%;
+    }
+    .up-plan-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,.18); border-radius: 20px;
+      padding: 4px 12px; font-size: 11px; font-weight: 700;
+      letter-spacing: .06em; color: #fff; margin-bottom: 14px;
+    }
+    .up-plan-name { font-family: var(--font-display); font-size: 28px; font-weight: 700; color: #fff; }
+    .up-plan-desc { font-size: 13px; color: rgba(255,255,255,.7); margin-top: 6px; }
+
+    /* Toggle */
+    .up-toggle-wrap { padding: 20px 28px 0; }
+    .up-toggle {
+      display: flex; background: var(--page-bg);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 4px; gap: 4px;
+    }
+    .up-toggle-btn {
+      flex: 1; text-align: center; padding: 9px 12px;
+      border-radius: 7px; font-size: 13px; font-weight: 600;
+      cursor: pointer; border: none; background: none;
+      color: var(--text-muted); transition: all .15s;
+    }
+    .up-toggle-btn.active {
+      background: var(--card-bg); color: var(--indigo);
+      box-shadow: var(--shadow-sm);
+    }
+    .up-save-badge {
+      display: inline-block; margin-left: 6px;
+      background: #DCFCE7; color: #166534; border-radius: 6px;
+      font-size: 10px; font-weight: 700; padding: 1px 6px;
+    }
+
+    /* Price display */
+    .up-price-wrap {
+      padding: 18px 28px 4px;
+      display: flex; align-items: baseline; gap: 4px;
+    }
+    .up-price-num {
+      font-family: var(--font-display);
+      font-size: 44px; font-weight: 700; color: var(--navy);
+    }
+    .up-price-period { font-size: 14px; color: var(--text-muted); }
+    .up-price-note   { font-size: 12px; color: var(--text-hint); padding: 0 28px 16px; }
+
+    /* Features */
+    .up-features { padding: 0 28px 24px; }
+    .up-feat-title { font-size: 11px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--text-hint); margin-bottom: 12px; }
+    .up-feat {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--text-primary);
+    }
+    .up-feat:last-child { border-bottom: none; }
+    .up-feat .ti { color: var(--green); font-size: 16px; flex-shrink: 0; }
+    .up-feat-badge {
+      margin-left: auto; font-size: 10px; font-weight: 700;
+      background: var(--amber-light); color: #92400E;
+      border-radius: 4px; padding: 1px 6px;
+    }
+
+    /* ── RIGHT PANEL — payment form ── */
+    .up-form-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+    .up-form-head {
+      padding: 24px 24px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+    .up-form-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+    .up-form-sub   { font-size: 12px; color: var(--text-muted); padding-bottom: 16px; }
+    .up-form-body  { padding: 20px 24px 24px; }
+
+    /* Secure badge */
+    .up-secure {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--green-light); border: 1px solid #A7F3D0;
+      border-radius: 8px; padding: 8px 12px; margin-bottom: 18px;
+      font-size: 12px; font-weight: 600; color: #065F46;
+    }
+    .up-secure .ti { font-size: 14px; color: var(--green); }
+
+    /* Form fields */
+    .up-field { margin-bottom: 14px; }
+    .up-label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--text-muted); margin-bottom: 6px;
+    }
+    .up-input {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--border); border-radius: var(--r-btn);
+      font-size: 14px; font-family: var(--font-body);
+      color: var(--text-primary); background: var(--card-bg);
+      transition: border-color .15s, box-shadow .15s;
+      outline: none;
+    }
+    .up-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .up-input.mock-card { letter-spacing: .08em; font-weight: 600; }
+    .up-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    /* Card brand icons */
+    .up-card-wrap { position: relative; }
+    .up-card-brands {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      display: flex; gap: 4px;
+    }
+    .up-card-brand {
+      height: 20px; width: 32px;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--card-bg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 800; color: var(--text-hint);
+    }
+    .up-card-brand.visa  { color: #1A1F71; }
+    .up-card-brand.mc    { background: #EB001B; color: #fff; border-color: #EB001B; }
+    .up-card-brand-input { padding-right: 86px; }
+
+    /* Order summary */
+    .up-order-box {
+      background: var(--page-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px 16px; margin-bottom: 18px;
+    }
+    .up-order-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--text-primary); padding: 4px 0;
+    }
+    .up-order-row.total {
+      border-top: 1px solid var(--border); margin-top: 8px; padding-top: 10px;
+      font-weight: 700; font-size: 14px;
+    }
+    .up-order-row span:last-child { font-weight: 600; }
+
+    /* Submit button */
+    .up-submit {
+      width: 100%; padding: 14px;
+      background: var(--indigo); color: #fff;
+      border: none; border-radius: var(--r-btn);
+      font-size: 15px; font-weight: 700; font-family: var(--font-body);
+      cursor: pointer; transition: background .15s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .up-submit:hover:not(:disabled) { background: var(--indigo-dark); transform: translateY(-1px); }
+    .up-submit:disabled { opacity: .6; cursor: not-allowed; }
+    .up-submit-note {
+      text-align: center; font-size: 11px; color: var(--text-hint);
+      margin-top: 10px;
+    }
+
+    /* ── SUCCESS STATE ── */
+    .up-success {
+      display: none;
+      text-align: center; padding: 40px 24px;
+    }
+    .up-success-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--green-light); border: 2px solid #A7F3D0;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 36px; color: var(--green);
+      margin-bottom: 20px;
+    }
+    .up-success h3 {
+      font-family: var(--font-display); font-size: 22px; font-weight: 700;
+      color: var(--navy); margin-bottom: 8px;
+    }
+    .up-success p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; }
+    .up-success-badge {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--amber-light); border: 1px solid #FCD34D;
+      border-radius: 20px; padding: 6px 16px;
+      font-size: 13px; font-weight: 700; color: #92400E;
+      margin-bottom: 28px;
+    }
+    .up-success-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--indigo); color: #fff;
+      border-radius: var(--r-btn); padding: 12px 28px;
+      font-size: 14px; font-weight: 700;
+    }
+    .up-success-btn:hover { background: var(--indigo-dark); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      .up-wrap { grid-template-columns: 1fr; }
+      .up-nav  { padding: 0 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="up-nav">
+  <a href="/dashboard" class="up-brand">
+    <span class="up-brand-name">SmartX-Ray</span>
+    <span class="up-brand-sub">Medical AI Platform</span>
+  </a>
+  <a href="/dashboard" class="up-back">
+    <i class="ti ti-arrow-left"></i>
+    Back to Dashboard
+  </a>
+</header>
+
+
+<div class="up-wrap">
+
+  <!-- ── LEFT: Plan Summary ── -->
+  <div class="up-plan-card">
+
+    <div class="up-plan-header">
+      <div class="up-plan-eyebrow">
+        <i class="ti ti-star-filled"></i>
+        UPGRADE
+      </div>
+      <div class="up-plan-name">SmartX-Ray Pro</div>
+      <div class="up-plan-desc">Unlimited scans, PDF reports, and priority doctor access.</div>
+    </div>
+
+    <!-- Toggle monthly / yearly -->
+    <div class="up-toggle-wrap">
+      <div class="up-toggle">
+        <button class="up-toggle-btn active" id="btnMonthly" onclick="upSetPlan('monthly')">Monthly</button>
+        <button class="up-toggle-btn"        id="btnYearly"  onclick="upSetPlan('yearly')">
+          Yearly
+          <span class="up-save-badge">Save 33%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Price -->
+    <div class="up-price-wrap">
+      <div class="up-price-num" id="upPriceNum">$9.99</div>
+      <div class="up-price-period" id="upPricePeriod">/month</div>
+    </div>
+    <div class="up-price-note" id="upPriceNote">Billed monthly. Cancel anytime.</div>
+
+    <!-- Features -->
+    <div class="up-features">
+      <div class="up-feat-title">What's included</div>
+      <div class="up-feat"><i class="ti ti-scan"></i> Unlimited X-ray scans per month</div>
+      <div class="up-feat"><i class="ti ti-file-type-pdf"></i> AI PDF report export <span class="up-feat-badge">NEW</span></div>
+      <div class="up-feat"><i class="ti ti-eye"></i> Grad-CAM heatmap overlays</div>
+      <div class="up-feat"><i class="ti ti-stethoscope"></i> Priority doctor matching</div>
+      <div class="up-feat"><i class="ti ti-ad-off"></i> Ad-free experience</div>
+      <div class="up-feat"><i class="ti ti-headset"></i> Priority support</div>
+    </div>
+
+  </div><!-- end left panel -->
+
+
+  <!-- ── RIGHT: Payment Form ── -->
+  <div class="up-form-card">
+
+    <!-- ── FORM VIEW ── -->
+    <div id="upFormView">
+      <div class="up-form-head">
+        <div class="up-form-title">Payment details</div>
+        <div class="up-form-sub">Demo mode — no real charge will be made.</div>
+      </div>
+      <div class="up-form-body">
+
+        <div class="up-secure">
+          <i class="ti ti-lock"></i>
+          Secured with 256-bit SSL encryption
+        </div>
+
+        <!-- Card holder name -->
+        <div class="up-field">
+          <label class="up-label">Cardholder name</label>
+          <input class="up-input" id="upCardName" type="text" placeholder="Full name on card" autocomplete="cc-name" />
+        </div>
+
+        <!-- Card number -->
+        <div class="up-field">
+          <label class="up-label">Card number</label>
+          <div class="up-card-wrap">
+            <input class="up-input mock-card up-card-brand-input" id="upCardNum"
+                   type="text" placeholder="1234  5678  9012  3456"
+                   maxlength="19" autocomplete="cc-number"
+                   oninput="upFormatCard(this)" />
+            <div class="up-card-brands">
+              <div class="up-card-brand visa">VISA</div>
+              <div class="up-card-brand mc">MC</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expiry + CVC -->
+        <div class="up-row">
+          <div class="up-field">
+            <label class="up-label">Expiry date</label>
+            <input class="up-input" id="upExpiry" type="text" placeholder="MM / YY"
+                   maxlength="7" autocomplete="cc-exp"
+                   oninput="upFormatExpiry(this)" />
+          </div>
+          <div class="up-field">
+            <label class="up-label">CVC</label>
+            <input class="up-input" id="upCvc" type="text" placeholder="···"
+                   maxlength="4" autocomplete="cc-csc"
+                   oninput="this.value=this.value.replace(/\D/g,'')" />
+          </div>
+        </div>
+
+        <!-- Order summary -->
+        <div class="up-order-box" id="upOrderBox">
+          <div class="up-order-row">
+            <span id="upOrderLabel">SmartX-Ray Pro · Monthly</span>
+            <span id="upOrderPrice">$9.99</span>
+          </div>
+          <div class="up-order-row">
+            <span>Tax</span>
+            <span>$0.00</span>
+          </div>
+          <div class="up-order-row total">
+            <span>Total due today</span>
+            <span id="upOrderTotal">$9.99</span>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button class="up-submit" id="upSubmitBtn" onclick="upSubmit()">
+          <i class="ti ti-lock"></i>
+          <span id="upSubmitLabel">Subscribe — $9.99/mo</span>
+        </button>
+        <div class="up-submit-note">
+          By subscribing you agree to our terms. Cancel anytime.
+        </div>
+
+      </div>
+    </div><!-- end form view -->
+
+    <!-- ── SUCCESS VIEW ── -->
+    <div class="up-success" id="upSuccessView">
+      <div class="up-success-icon"><i class="ti ti-check"></i></div>
+      <div class="up-success-badge">
+        <i class="ti ti-star-filled"></i>
+        <span>Pro Member</span>
+      </div>
+      <h3>You're now Pro!</h3>
+      <p id="upSuccessMsg">Your account has been upgraded. Enjoy unlimited scans and all Pro features.</p>
+      <a href="/dashboard" class="up-success-btn">
+        <i class="ti ti-layout-dashboard"></i>
+        Go to Dashboard
+      </a>
+    </div>
+
+  </div><!-- end right panel -->
+
+</div><!-- end wrap -->
+
+
+<script>
+/* ── state ── */
+let _upPlan = 'monthly';
+const _PLANS = {
+  monthly: { price: '$9.99', period: '/month', note: 'Billed monthly. Cancel anytime.', label: 'SmartX-Ray Pro · Monthly', submit: 'Subscribe — $9.99/mo' },
+  yearly:  { price: '$79.99', period: '/year', note: 'Billed annually — save 33% vs monthly.', label: 'SmartX-Ray Pro · Yearly', submit: 'Subscribe — $79.99/yr' },
+};
+
+function upSetPlan(plan) {
+  _upPlan = plan;
+  const p = _PLANS[plan];
+  document.getElementById('upPriceNum').textContent    = p.price;
+  document.getElementById('upPricePeriod').textContent = p.period;
+  document.getElementById('upPriceNote').textContent   = p.note;
+  document.getElementById('upOrderLabel').textContent  = p.label;
+  document.getElementById('upOrderPrice').textContent  = p.price;
+  document.getElementById('upOrderTotal').textContent  = p.price;
+  document.getElementById('upSubmitLabel').textContent = p.submit;
+  document.getElementById('btnMonthly').classList.toggle('active', plan === 'monthly');
+  document.getElementById('btnYearly').classList.toggle('active', plan === 'yearly');
+}
+
+/* ── card formatting ── */
+function upFormatCard(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 16);
+  el.value = v.replace(/(.{4})/g, '$1  ').trim();
+}
+function upFormatExpiry(el) {
+  let v = el.value.replace(/\D/g, '').slice(0, 4);
+  if (v.length >= 3) v = v.slice(0, 2) + ' / ' + v.slice(2);
+  el.value = v;
+}
+
+/* ── simple client-side validation ── */
+function upValidate() {
+  const name = document.getElementById('upCardName').value.trim();
+  const num  = document.getElementById('upCardNum').value.replace(/\s/g,'');
+  const exp  = document.getElementById('upExpiry').value.replace(/\s/g,'');
+  const cvc  = document.getElementById('upCvc').value.trim();
+  if (!name)            return 'Please enter the cardholder name.';
+  if (num.length < 16)  return 'Please enter a valid 16-digit card number.';
+  if (exp.length < 4)   return 'Please enter a valid expiry date.';
+  if (cvc.length < 3)   return 'Please enter a valid CVC.';
+  return null;
+}
+
+/* ── submit ── */
+async function upSubmit() {
+  const err = upValidate();
+  if (err) { alert(err); return; }
+
+  const btn = document.getElementById('upSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i> Processing…';
+
+  // add CSS spin animation if not already present
+  if (!document.getElementById('spinStyle')) {
+    const s = document.createElement('style');
+    s.id = 'spinStyle';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  try {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      window.location = '/login';
+      return;
+    }
+
+    // Simulate a brief "processing" delay for realism
+    await new Promise(r => setTimeout(r, 1800));
+
+    const res  = await fetch('/api/subscription/mock-upgrade', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': 'Bearer ' + token,
+      },
+      body: JSON.stringify({ plan: _upPlan }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      // Update stored user tier
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || '{}');
+        stored.tier = 'pro';
+        localStorage.setItem('user', JSON.stringify(stored));
+      } catch {}
+
+      // Show success
+      document.getElementById('upFormView').style.display    = 'none';
+      document.getElementById('upSuccessView').style.display = 'block';
+      const plan = _upPlan === 'yearly' ? '$79.99/year' : '$9.99/month';
+      document.getElementById('upSuccessMsg').textContent =
+        `Your Pro subscription is active at ${plan}. Enjoy unlimited scans and all Pro features.`;
+    } else {
+      throw new Error(data.error || 'Upgrade failed.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-lock"></i><span>' + _PLANS[_upPlan].submit + '</span>';
+    alert(e.message || 'Something went wrong. Please try again.');
+  }
+}
+</script>
+
+</body>
+</html>

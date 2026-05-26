@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Doctor Login — SmartX-Ray</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/static/css/vendor/tabler-icons.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
   <style>
 /* ═══════════════════════════════════════════════
@@ -574,6 +574,11 @@ body.kh, body.kh * { font-family: 'Hanuman', 'DM Sans', system-ui, sans-serif; }
           <div class="dl-divider" data-i18n="dl_or">or</div>
 
           <div class="dl-footer-link">
+            <span data-i18n="dl_no_account">New doctor?</span>&nbsp;
+            <a href="/doctor/register" data-i18n="dl_create_account">Create an account →</a>
+          </div>
+
+          <div class="dl-footer-link" style="margin-top:8px;">
             <span data-i18n="dl_not_a_doctor">Not a doctor?</span>&nbsp;
             <a href="/login" data-i18n="dl_user_login">Sign in as patient →</a>
           </div>
@@ -702,6 +707,8 @@ Object.assign(TRANSLATIONS, {
   dl_email:            { en:"Email Address",                          km:"អ៊ីមែល" },
   dl_continue:         { en:"Continue",                               km:"បន្ត" },
   dl_or:               { en:"or",                                     km:"ឬ" },
+  dl_no_account:       { en:"New doctor?",                            km:"វេជ្ជបណ្ឌិតថ្មី?" },
+  dl_create_account:   { en:"Create an account →",                    km:"បង្កើតគណនី →" },
   dl_not_a_doctor:     { en:"Not a doctor?",                          km:"មិនមែនវេជ្ជបណ្ឌិត?" },
   dl_user_login:       { en:"Sign in as patient →",                   km:"ចូលជាអ្នកជំងឺ →" },
   dl_back:             { en:"Back",                                   km:"ត្រឡប់" },
@@ -826,8 +833,19 @@ async function dlCheckEmail() {
     const data = await res.json();
 
     if (!data.exists) {
-      dlShowAlert('dlAlert1','dlAlert1Msg',
-        'No doctor profile found for this email. Please contact admin.');
+      /* Show error with a register link instead of a dead-end */
+      const ms = document.getElementById('dlAlert1Msg');
+      if (ms) ms.innerHTML =
+        'No doctor account found for this email. ' +
+        '<a href="/doctor/register" style="color:inherit;font-weight:700;text-decoration:underline;">' +
+        'Register here →</a>';
+      const el = document.getElementById('dlAlert1');
+      if (el) {
+        el.className = 'dl-alert error show';
+        void el.offsetWidth;
+        el.classList.add('shake');
+        el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
+      }
       emailEl.classList.add('error'); return;
     }
 

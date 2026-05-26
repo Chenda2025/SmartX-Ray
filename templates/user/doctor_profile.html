@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Doctor Profile — SmartX-Ray</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/static/css/vendor/tabler-icons.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
   <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -20,6 +20,7 @@
   }
   body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
   html[lang="km"] * { font-family:'Hanuman','DM Sans',sans-serif !important; }
+  .ti { font-family:"tabler-icons" !important; }  /* protect icons from Khmer font override */
 
   /* Nav */
   .dp-nav {
@@ -133,7 +134,7 @@
 
 <header class="dp-nav">
   <a href="/find-doctor" class="dp-back"><i class="ti ti-arrow-left"></i> <span data-i18n="dp_back">Doctors</span></a>
-  <a href="/" class="dp-brand">SmartX-Ray</a>
+
   <button class="dp-lang-btn" id="dpLangBtn" onclick="dpToggleLang()" style="margin-left:.75rem;">ខ្មែរ</button>
 </header>
 

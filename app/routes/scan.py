@@ -6,7 +6,7 @@ from app.extensions import db
 from app.models.scan import Scan
 from app.models.ad import Ad
 from app.models.report import Report
-from app.utils.auth_helpers import jwt_required_user, pro_required, _get_current_user, check_scan_quota
+from app.utils.auth_guard import jwt_required_user, pro_required, _get_current_user, check_scan_quota
 from app.utils.validators import allowed_image
 
 scan_bp = Blueprint("scan", __name__)

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Doctor Dashboard — SmartX-Ray</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/static/css/vendor/tabler-icons.min.css" />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/static/css/doctor-dashboard.css" />
 </head>
@@ -306,7 +306,7 @@
       <div class="dd-kpi-card">
         <div class="dd-kpi-icon" style="background:#EEF2FF;color:#6366F1;"><i class="ti ti-calendar"></i></div>
         <div class="dd-kpi-body">
-          <div class="dd-kpi-val indigo">24</div>
+          <div class="dd-kpi-val indigo" id="ddKpiTotal">—</div>
           <div class="dd-kpi-label" data-i18n="dd_total_appt">Total Appointments</div>
           <div class="dd-kpi-tag green" data-i18n="dd_plus3_week">+3 this week</div>
         </div>
@@ -314,25 +314,25 @@
       <div class="dd-kpi-card">
         <div class="dd-kpi-icon" style="background:#FEF3C7;color:#F59E0B;"><i class="ti ti-clock"></i></div>
         <div class="dd-kpi-body">
-          <div class="dd-kpi-val">3</div>
+          <div class="dd-kpi-val" id="ddKpiToday">—</div>
           <div class="dd-kpi-label" data-i18n="dd_today_sched">Today's Schedule</div>
-          <div class="dd-kpi-tag amber" data-i18n="dd_next_10">Next: 10:00 AM</div>
+          <div class="dd-kpi-tag amber" data-i18n="dd_next_10">confirmed today</div>
         </div>
       </div>
       <div class="dd-kpi-card">
         <div class="dd-kpi-icon" style="background:#ECFDF5;color:#10B981;"><i class="ti ti-users"></i></div>
         <div class="dd-kpi-body">
-          <div class="dd-kpi-val green">18</div>
+          <div class="dd-kpi-val green" id="ddKpiPatients">—</div>
           <div class="dd-kpi-label" data-i18n="dd_total_patients">Total Patients</div>
-          <div class="dd-kpi-tag green" data-i18n="dd_plus2_new">+2 new</div>
+          <div class="dd-kpi-tag green" data-i18n="dd_plus2_new">unique patients</div>
         </div>
       </div>
       <div class="dd-kpi-card">
         <div class="dd-kpi-icon" style="background:#ECFDF5;color:#10B981;"><i class="ti ti-cash"></i></div>
         <div class="dd-kpi-body">
-          <div class="dd-kpi-val">$270</div>
+          <div class="dd-kpi-val" id="ddKpiEarnings">—</div>
           <div class="dd-kpi-label" data-i18n="dd_earn_month">Earnings This Month</div>
-          <div class="dd-kpi-tag muted" data-i18n="dd_18sess">18 sessions × $15</div>
+          <div class="dd-kpi-tag muted" data-i18n="dd_18sess">ABA KHQR</div>
         </div>
       </div>
     </div>
@@ -452,35 +452,10 @@
                 <th data-i18n="dd_col_actions">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              <tr>
-                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#ECFDF5;color:#10B981;">SC</div><span>Sopheap C.</span></div></td>
-                <td>25 May · 10:00</td>
-                <td><em class="dd-note-text" data-i18n="dd_note_chest">chest pain</em></td>
-                <td><span class="dd-appt-pill confirmed" data-i18n="dd_confirmed">Confirmed</span></td>
-                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-join" onclick="ddShowToast('Joining…','info')"><i class="ti ti-video"></i></button></div></td>
-              </tr>
-              <tr>
-                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#EEF2FF;color:#6366F1;">DH</div><span>Dara H.</span></div></td>
-                <td>25 May · 14:00</td>
-                <td><span class="dd-note-text muted">—</span></td>
-                <td><span class="dd-appt-pill confirmed" data-i18n="dd_confirmed">Confirmed</span></td>
-                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-join" onclick="ddShowToast('Joining…','info')"><i class="ti ti-video"></i></button></div></td>
-              </tr>
-              <tr>
-                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#FEF3C7;color:#F59E0B;">VR</div><span>Vichet R.</span></div></td>
-                <td>26 May · 09:00</td>
-                <td><em class="dd-note-text" data-i18n="dd_note_followup">follow up</em></td>
-                <td><span class="dd-appt-pill upcoming" data-i18n="dd_upcoming">Upcoming</span></td>
-                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-cancel" onclick="ddShowToast('Cancelled.','error')"><i class="ti ti-x"></i></button></div></td>
-              </tr>
-              <tr>
-                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#F1F5F9;color:#64748B;">SK</div><span>Sreyla K.</span></div></td>
-                <td>27 May · 11:00</td>
-                <td><span class="dd-note-text muted">—</span></td>
-                <td><span class="dd-appt-pill upcoming" data-i18n="dd_upcoming">Upcoming</span></td>
-                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-cancel" onclick="ddShowToast('Cancelled.','error')"><i class="ti ti-x"></i></button></div></td>
-              </tr>
+            <tbody id="ddUpcomingTbody">
+              <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--dd-muted);font-size:.85rem;">
+                <span class="dd-spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:.4rem;"></span>Loading…
+              </td></tr>
             </tbody>
           </table>
         </div>
@@ -492,19 +467,19 @@
 
         <div class="dd-earn-block green-block">
           <div class="dd-earn-lbl" data-i18n="dd_this_month">This Month</div>
-          <div class="dd-earn-val green">$270</div>
-          <div class="dd-earn-sub" data-i18n="dd_18_sessions">18 sessions completed</div>
+          <div class="dd-earn-val green" id="ddEarnMonth">—</div>
+          <div class="dd-earn-sub" data-i18n="dd_18_sessions">sessions completed</div>
         </div>
 
         <div class="dd-earn-block">
           <div class="dd-earn-lbl" data-i18n="dd_pending_payout">Pending Payout</div>
-          <div class="dd-earn-val amber">$45</div>
-          <div class="dd-earn-sub" data-i18n="dd_3_pending">3 sessions pending</div>
+          <div class="dd-earn-val amber" id="ddEarnPending">—</div>
+          <div class="dd-earn-sub" data-i18n="dd_3_pending">sessions pending</div>
         </div>
 
         <div class="dd-earn-block">
           <div class="dd-earn-lbl" data-i18n="dd_total_alltime">Total All Time</div>
-          <div class="dd-earn-val">$1,840</div>
+          <div class="dd-earn-val" id="ddEarnTotal">—</div>
         </div>
 
         <!-- Progress bar -->

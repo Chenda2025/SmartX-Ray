@@ -1,198 +1,547 @@
-{% extends "base.html" %}
-{% block title %}Home{% endblock %}
+<!DOCTYPE html>
+<html lang="en" id="ix-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartX-Ray — AI Pneumonia Detection</title>
+  <meta name="description" content="Upload a chest X-ray and get an instant AI diagnosis with Grad-CAM heatmap visualisation. Built on a Hybrid CNN+ANN model with 97.03% validation accuracy." />
 
-{% block content %}
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
 
-<!-- ── Hero ───────────────────────────────────────────────────────────── -->
-<section class="hero">
-  <div class="container">
-    <div class="row align-items-center g-5">
-      <div class="col-lg-6">
-        <span class="badge bg-warning text-dark mb-3 px-3 py-2">
-          <i class="fa-solid fa-flask me-1"></i>
-          <span data-i18n="hero_badge">University Research Project</span>
-        </span>
-        <h1 data-i18n="hero_h1">AI-Powered Pneumonia Detection</h1>
-        <p class="lead my-4" data-i18n-html="hero_lead">
-          Upload a chest X-ray and get an instant AI diagnosis with Grad-CAM
-          heatmap visualisation — built on a Hybrid CNN+ANN model with
-          <strong>97.03% validation accuracy</strong>.
-        </p>
-        <div class="d-flex gap-3 flex-wrap">
-          <a href="/login" class="btn btn-warning btn-lg fw-bold px-4">
-            <i class="fa-solid fa-upload me-2"></i>
-            <span data-i18n="hero_cta_primary">Try Free — No Card Needed</span>
-          </a>
-          <a href="/pricing" class="btn btn-outline-light btn-lg px-4" data-i18n="hero_cta_plans">See Pro Plans</a>
-        </div>
-        <div class="mt-4 d-flex gap-4 text-white-50 small flex-wrap">
-          <span><i class="fa-solid fa-circle-check text-warning me-1"></i><span data-i18n="hero_check1">97.03% Val Accuracy</span></span>
-          <span><i class="fa-solid fa-circle-check text-warning me-1"></i><span data-i18n="hero_check2">Grad-CAM Heatmaps</span></span>
-          <span><i class="fa-solid fa-circle-check text-warning me-1"></i><span data-i18n="hero_check3">Free tier: 3 scans/day</span></span>
-        </div>
+  <!-- Tabler Icons (local) -->
+  <link rel="stylesheet" href="/static/css/vendor/tabler-icons.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────── */
+    :root {
+      --page-bg:      #F8FAFC;
+      --card-bg:      #FFFFFF;
+      --border:       #E2E8F0;
+      --text-primary: #0F172A;
+      --text-muted:   #64748B;
+      --text-hint:    #94A3B8;
+      --indigo:       #6366F1;
+      --indigo-dark:  #4F46E5;
+      --indigo-light: #EEF2FF;
+      --green:        #10B981;
+      --green-light:  #ECFDF5;
+      --amber:        #F59E0B;
+      --amber-light:  #FEF3C7;
+      --red:          #EF4444;
+      --navy:         #0F172A;
+      --r-card:       12px;
+      --r-pill:       24px;
+      --r-btn:        8px;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.08);
+      --shadow-md:    0 4px 16px rgba(0,0,0,.10);
+      --shadow-lg:    0 8px 32px rgba(0,0,0,.14);
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-body:    'DM Sans', system-ui, sans-serif;
+      --font-km:      'Hanuman', 'Noto Sans Khmer', sans-serif;
+      --nav-h:        64px;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--page-bg);
+      font-family: var(--font-body);
+      color: var(--text-primary);
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    a { text-decoration: none; }
+
+    /* Tabler icon fix for Khmer */
+    .ti { font-family: "tabler-icons" !important; }
+    :lang(km), [lang="km"] { font-family: var(--font-km); }
+
+    /* ── NAV ───────────────────────────────────────────────────────── */
+    .ix-nav {
+      position: sticky; top: 0; z-index: 100;
+      height: var(--nav-h);
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      padding: 0 40px; gap: 0;
+    }
+    .ix-brand {
+      display: flex; flex-direction: column; gap: 1px;
+      flex-shrink: 0; margin-right: auto; text-decoration: none;
+    }
+    .ix-brand-name {
+      font-family: var(--font-display);
+      font-weight: 700; font-size: 18px;
+      color: var(--text-primary); line-height: 1.1;
+    }
+    .ix-brand-sub { font-size: 11px; color: var(--text-muted); line-height: 1.1; }
+    .ix-nav-links {
+      display: flex; align-items: center; gap: 28px;
+      list-style: none;
+      position: absolute; left: 50%; transform: translateX(-50%);
+    }
+    .ix-nav-links a {
+      font-size: 14px; font-weight: 500; color: var(--text-muted);
+      transition: color .15s;
+    }
+    .ix-nav-links a:hover { color: var(--text-primary); }
+    .ix-nav-right { display: flex; align-items: center; gap: 10px; }
+    .ix-lang-btn {
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--r-btn); padding: 5px 12px;
+      font-size: 13px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; transition: border-color .15s, color .15s;
+    }
+    .ix-lang-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+    .ix-btn-ghost {
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--r-btn); padding: 7px 18px;
+      font-size: 13px; font-weight: 600; color: var(--text-primary);
+      cursor: pointer; transition: border-color .15s;
+    }
+    .ix-btn-ghost:hover { border-color: var(--indigo); color: var(--indigo); }
+    .ix-btn-primary {
+      background: var(--indigo); border: none;
+      border-radius: var(--r-btn); padding: 8px 20px;
+      font-size: 13px; font-weight: 600; color: #fff;
+      cursor: pointer; transition: background .15s;
+    }
+    .ix-btn-primary:hover { background: var(--indigo-dark); }
+
+    /* ── HERO ──────────────────────────────────────────────────────── */
+    .ix-hero {
+      max-width: 1160px; margin: 0 auto;
+      padding: 88px 40px 80px;
+      display: grid; grid-template-columns: 1fr 420px; gap: 64px;
+      align-items: center;
+    }
+    .ix-hero-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--amber-light); border: 1px solid #FCD34D;
+      border-radius: var(--r-pill); padding: 5px 14px;
+      font-size: 12px; font-weight: 600; color: #92400E;
+      margin-bottom: 22px;
+    }
+    .ix-hero h1 {
+      font-family: var(--font-display);
+      font-size: 48px; font-weight: 700;
+      color: var(--navy); line-height: 1.15;
+      margin-bottom: 20px;
+    }
+    .ix-hero h1 span { color: var(--indigo); }
+    .ix-hero-lead {
+      font-size: 16px; color: var(--text-muted);
+      line-height: 1.7; margin-bottom: 36px;
+      max-width: 500px;
+    }
+    .ix-hero-lead strong { color: var(--text-primary); }
+    .ix-hero-ctas {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 32px;
+    }
+    .ix-cta-primary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--indigo); color: #fff;
+      border-radius: var(--r-btn); padding: 13px 28px;
+      font-size: 15px; font-weight: 600;
+      transition: background .15s, transform .1s;
+    }
+    .ix-cta-primary:hover { background: var(--indigo-dark); transform: translateY(-1px); }
+    .ix-cta-secondary {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--card-bg); color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--r-btn); padding: 13px 28px;
+      font-size: 15px; font-weight: 600;
+      transition: border-color .15s, transform .1s;
+    }
+    .ix-cta-secondary:hover { border-color: var(--indigo); color: var(--indigo); transform: translateY(-1px); }
+    .ix-hero-checks {
+      display: flex; flex-wrap: wrap; gap: 18px;
+    }
+    .ix-hero-check {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 13px; color: var(--text-muted); font-weight: 500;
+    }
+    .ix-hero-check .ti { color: var(--green); font-size: 16px; }
+
+    /* Hero card (right side) */
+    .ix-hero-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+    }
+    .ix-hero-card-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 18px;
+    }
+    .ix-result-badge {
+      background: #FEF2F2; border: 1px solid #FECACA;
+      color: var(--red); border-radius: 8px;
+      padding: 6px 14px; font-size: 13px; font-weight: 700;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .ix-conf { font-size: 13px; color: var(--text-muted); }
+    .ix-conf strong { color: var(--text-primary); }
+    .ix-xray-preview {
+      background: var(--navy);
+      border-radius: 12px;
+      height: 180px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 18px; position: relative; overflow: hidden;
+    }
+    .ix-xray-preview .ti { font-size: 72px; color: rgba(255,255,255,.15); }
+    .ix-xray-glow {
+      position: absolute; width: 120px; height: 120px;
+      background: radial-gradient(circle, rgba(239,68,68,.3) 0%, transparent 70%);
+      top: 50%; left: 50%; transform: translate(-50%,-50%);
+    }
+    .ix-progress-wrap { margin-bottom: 10px; }
+    .ix-progress-bar-bg {
+      background: var(--border); border-radius: 99px; height: 8px;
+      overflow: hidden; margin-bottom: 6px;
+    }
+    .ix-progress-fill {
+      height: 100%; border-radius: 99px;
+      background: linear-gradient(90deg, var(--red) 0%, #DC2626 100%);
+    }
+    .ix-progress-labels {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--text-hint);
+    }
+    .ix-card-footer {
+      border-top: 1px solid var(--border);
+      margin-top: 16px; padding-top: 14px;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--text-muted);
+    }
+    .ix-card-footer .ti { color: var(--indigo); font-size: 14px; }
+
+    /* ── STATS BAR ─────────────────────────────────────────────────── */
+    .ix-stats {
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .ix-stats-inner {
+      max-width: 1160px; margin: 0 auto;
+      padding: 40px 40px;
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 0;
+    }
+    .ix-stat {
+      text-align: center; padding: 0 20px;
+      border-right: 1px solid var(--border);
+    }
+    .ix-stat:last-child { border-right: none; }
+    .ix-stat-num {
+      font-family: var(--font-display);
+      font-size: 32px; font-weight: 700;
+      color: var(--indigo); line-height: 1.1; margin-bottom: 6px;
+    }
+    .ix-stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+
+    /* ── CTA BANNER ────────────────────────────────────────────────── */
+    .ix-cta-banner {
+      background: linear-gradient(135deg, var(--navy) 0%, #1E293B 100%);
+      text-align: center; padding: 80px 40px;
+    }
+    .ix-cta-banner h2 {
+      font-family: var(--font-display);
+      font-size: 36px; font-weight: 700;
+      color: #fff; margin-bottom: 14px;
+    }
+    .ix-cta-banner p { font-size: 16px; color: rgba(255,255,255,.6); margin-bottom: 36px; }
+    .ix-cta-banner-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--indigo); color: #fff;
+      border-radius: var(--r-btn); padding: 15px 36px;
+      font-size: 16px; font-weight: 700;
+      transition: background .15s, transform .1s;
+    }
+    .ix-cta-banner-btn:hover { background: var(--indigo-dark); transform: translateY(-2px); }
+
+    /* ── FOOTER ────────────────────────────────────────────────────── */
+    .ix-footer {
+      background: var(--card-bg);
+      border-top: 1px solid var(--border);
+      padding: 32px 40px;
+      display: flex; align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap; gap: 16px;
+    }
+    .ix-footer-brand {
+      font-family: var(--font-display);
+      font-size: 16px; font-weight: 700; color: var(--text-primary);
+    }
+    .ix-footer-links { display: flex; gap: 24px; }
+    .ix-footer-links a { font-size: 13px; color: var(--text-muted); }
+    .ix-footer-links a:hover { color: var(--indigo); }
+    .ix-footer-copy { font-size: 13px; color: var(--text-hint); }
+
+    /* ── RESPONSIVE ────────────────────────────────────────────────── */
+    @media (max-width: 1024px) {
+      .ix-hero { grid-template-columns: 1fr; padding: 60px 24px; }
+      .ix-hero-card { max-width: 400px; }
+      .ix-stats-inner { grid-template-columns: repeat(2, 1fr); }
+      .ix-stat { border-right: none; border-bottom: 1px solid var(--border); padding: 20px; }
+      .ix-stat:last-child { border-bottom: none; }
+    }
+    @media (max-width: 768px) {
+      .ix-nav { padding: 0 20px; }
+      .ix-nav-links { display: none; }
+      .ix-hero { padding: 48px 20px; gap: 40px; }
+      .ix-hero h1 { font-size: 32px; }
+      .ix-hero-card { display: none; }
+      .ix-footer { flex-direction: column; text-align: center; padding: 24px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     NAV
+     ══════════════════════════════════════════════════════════════════════════ -->
+<header class="ix-nav">
+  <a href="/" class="ix-brand">
+    <span class="ix-brand-name">SmartX-Ray</span>
+    <span class="ix-brand-sub" data-i18n="brand_sub">Medical AI Platform</span>
+  </a>
+
+  <nav>
+    <ul class="ix-nav-links">
+      <li><a href="/find-doctor" data-i18n="nav_find_doctor_s">Find a Doctor</a></li>
+      <li><a href="/doctor/login" data-i18n="nav_doctor">Doctor Portal</a></li>
+    </ul>
+  </nav>
+
+  <div class="ix-nav-right">
+    <button class="ix-lang-btn" id="ixLangBtn" onclick="ixToggleLang()">ខ្មែរ</button>
+    <a href="/login" class="ix-btn-ghost" data-i18n="nav_login">Log In</a>
+    <a href="/login" class="ix-btn-primary" data-i18n="nav_signup">Get Started</a>
+  </div>
+</header>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     HERO
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="ix-hero">
+  <!-- Left: text -->
+  <div>
+    <div class="ix-hero-badge">
+      <i class="ti ti-flask"></i>
+      <span data-i18n="hero_badge">University Research Project</span>
+    </div>
+
+    <h1 data-i18n-html="hero_h1">AI-Powered<br><span>Pneumonia Detection</span></h1>
+
+    <p class="ix-hero-lead" data-i18n-html="hero_lead">
+      Upload a chest X-ray and get an instant AI diagnosis with Grad-CAM
+      heatmap visualisation — built on a <strong>Hybrid CNN+ANN</strong> model
+      with <strong>97.03% validation accuracy</strong>.
+    </p>
+
+    <div class="ix-hero-ctas">
+      <a href="/login" class="ix-cta-primary">
+        <i class="ti ti-upload"></i>
+        <span data-i18n="hero_cta_primary">Try Free — No Card Needed</span>
+      </a>
+      <a href="/find-doctor" class="ix-cta-secondary">
+        <i class="ti ti-stethoscope"></i>
+        <span data-i18n="hero_cta_plans">Find a Doctor</span>
+      </a>
+    </div>
+
+    <div class="ix-hero-checks">
+      <div class="ix-hero-check">
+        <i class="ti ti-circle-check"></i>
+        <span data-i18n="hero_check1">97.03% Val Accuracy</span>
       </div>
-      <div class="col-lg-6 text-center">
-        <div class="card border-0 shadow-lg p-4 text-start mx-auto" style="max-width:360px;border-radius:20px;">
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <span class="badge bg-danger px-3 py-2 fs-6">PNEUMONIA</span>
-            <span class="text-muted small">Confidence: <strong>94.7%</strong></span>
-          </div>
-          <div class="bg-dark rounded-3 d-flex align-items-center justify-content-center mb-3" style="height:180px;">
-            <i class="fa-solid fa-lungs text-white opacity-25" style="font-size:5rem;"></i>
-          </div>
-          <div class="progress mb-2" style="height:8px;">
-            <div class="progress-bar bg-danger" style="width:94.7%"></div>
-          </div>
-          <div class="d-flex justify-content-between small text-muted">
-            <span>Normal</span><span>Pneumonia</span>
-          </div>
-        </div>
+      <div class="ix-hero-check">
+        <i class="ti ti-circle-check"></i>
+        <span data-i18n="hero_check2">Grad-CAM Heatmaps</span>
       </div>
+      <div class="ix-hero-check">
+        <i class="ti ti-circle-check"></i>
+        <span data-i18n="hero_check3">Free tier: 3 scans/day</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: result card preview -->
+  <div class="ix-hero-card">
+    <div class="ix-hero-card-header">
+      <div class="ix-result-badge">
+        <i class="ti ti-lungs"></i>
+        PNEUMONIA
+      </div>
+      <span class="ix-conf">Confidence: <strong>94.7%</strong></span>
+    </div>
+
+    <div class="ix-xray-preview">
+      <div class="ix-xray-glow"></div>
+      <i class="ti ti-lungs"></i>
+    </div>
+
+    <div class="ix-progress-wrap">
+      <div class="ix-progress-bar-bg">
+        <div class="ix-progress-fill" style="width:94.7%"></div>
+      </div>
+      <div class="ix-progress-labels">
+        <span>Normal</span><span>Pneumonia</span>
+      </div>
+    </div>
+
+    <div class="ix-card-footer">
+      <i class="ti ti-eye"></i>
+      <span>Grad-CAM heatmap overlay active</span>
     </div>
   </div>
 </section>
 
-<!-- ── Stats ───────────────────────────────────────────────────────────── -->
-<section class="py-5 bg-white border-bottom">
-  <div class="container">
-    <div class="row text-center g-4">
-      <div class="col-6 col-md-3">
-        <div class="display-5 fw-bold text-brand">97.03%</div>
-        <div class="text-muted small mt-1" data-i18n="stat_val_acc">Validation Accuracy</div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="display-5 fw-bold text-brand">83.01%</div>
-        <div class="text-muted small mt-1" data-i18n="stat_test_acc">Test Accuracy</div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="display-5 fw-bold text-brand">CNN+ANN</div>
-        <div class="text-muted small mt-1" data-i18n="stat_architecture">Hybrid Architecture</div>
-      </div>
-      <div class="col-6 col-md-3">
-        <div class="display-5 fw-bold text-brand">Grad-CAM</div>
-        <div class="text-muted small mt-1" data-i18n="stat_xai">Explainable AI</div>
-      </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     STATS BAR
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="ix-stats">
+  <div class="ix-stats-inner">
+    <div class="ix-stat">
+      <div class="ix-stat-num">97.03%</div>
+      <div class="ix-stat-label" data-i18n="stat_val_acc">Validation Accuracy</div>
+    </div>
+    <div class="ix-stat">
+      <div class="ix-stat-num">83.01%</div>
+      <div class="ix-stat-label" data-i18n="stat_test_acc">Test Accuracy</div>
+    </div>
+    <div class="ix-stat">
+      <div class="ix-stat-num">CNN+ANN</div>
+      <div class="ix-stat-label" data-i18n="stat_architecture">Hybrid Architecture</div>
+    </div>
+    <div class="ix-stat">
+      <div class="ix-stat-num">Grad-CAM</div>
+      <div class="ix-stat-label" data-i18n="stat_xai">Explainable AI</div>
     </div>
   </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     CTA BANNER
+     ══════════════════════════════════════════════════════════════════════════ -->
+<section class="ix-cta-banner">
+  <h2 data-i18n="cta_title">Ready to analyse your first X-ray?</h2>
+  <p data-i18n="cta_sub">No credit card required. Start free in 30 seconds.</p>
+  <a href="/login" class="ix-cta-banner-btn">
+    <i class="ti ti-upload"></i>
+    <span data-i18n="cta_btn">Upload X-Ray Now</span>
+  </a>
 </section>
 
-<!-- ── Features ────────────────────────────────────────────────────────── -->
-<section class="py-5">
-  <div class="container">
-    <h2 class="section-title text-center mb-5" data-i18n="features_title">Everything You Need</h2>
-    <div class="row g-4">
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 p-4 text-center">
-          <div class="mb-3"><i class="fa-solid fa-bolt text-brand" style="font-size:2.2rem;"></i></div>
-          <h5 class="fw-bold" data-i18n="feat1_title">Instant Results</h5>
-          <p class="text-muted small" data-i18n="feat1_body">Upload an X-ray and receive a PNEUMONIA / NORMAL prediction in seconds.</p>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 p-4 text-center">
-          <div class="mb-3"><i class="fa-solid fa-eye text-brand" style="font-size:2.2rem;"></i></div>
-          <h5 class="fw-bold" data-i18n="feat2_title">Grad-CAM Heatmaps</h5>
-          <p class="text-muted small" data-i18n="feat2_body">Visualise exactly which regions of the X-ray drove the AI's decision.</p>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 p-4 text-center border-warning">
-          <div class="mb-3"><i class="fa-solid fa-file-pdf" style="font-size:2.2rem;color:#fbbc04;"></i></div>
-          <h5 class="fw-bold"><span data-i18n="feat3_title">PDF Reports</span> <span class="badge badge-pro ms-1">PRO</span></h5>
-          <p class="text-muted small" data-i18n="feat3_body">Download a branded diagnostic PDF with images, heatmaps, and clinical notes.</p>
-        </div>
-      </div>
-      <div class="col-md-6 col-lg-3">
-        <div class="card h-100 p-4 text-center">
-          <div class="mb-3"><i class="fa-solid fa-user-doctor text-brand" style="font-size:2.2rem;"></i></div>
-          <h5 class="fw-bold" data-i18n="feat4_title">Find a Doctor</h5>
-          <p class="text-muted small" data-i18n="feat4_body">Connect with verified pulmonologists and radiologists near you.</p>
-        </div>
-      </div>
-    </div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     FOOTER
+     ══════════════════════════════════════════════════════════════════════════ -->
+<footer class="ix-footer">
+  <div class="ix-footer-brand">SmartX-Ray</div>
+  <div class="ix-footer-links">
+    <a href="/login" data-i18n="footer_login">Log In</a>
+    <a href="/find-doctor" data-i18n="footer_find_doctor">Find a Doctor</a>
+    <a href="/doctor/login" data-i18n="footer_doctor">Doctor Portal</a>
   </div>
-</section>
+  <div class="ix-footer-copy" data-i18n="footer_copy">© 2025 SmartX-Ray · University Research Project</div>
+</footer>
 
-<!-- ── How it works ─────────────────────────────────────────────────────── -->
-<section class="py-5 bg-white">
-  <div class="container">
-    <h2 class="section-title text-center mb-5" data-i18n="how_title">How It Works</h2>
-    <div class="row g-4 align-items-center">
-      <div class="col-md-4 text-center">
-        <div class="rounded-circle bg-brand text-white d-inline-flex align-items-center justify-content-center mb-3"
-             style="width:60px;height:60px;font-size:1.5rem;font-weight:700;">1</div>
-        <h6 class="fw-bold" data-i18n="how1_title">Upload X-Ray</h6>
-        <p class="text-muted small" data-i18n="how1_body">Drag and drop a chest X-ray PNG or JPEG file (up to 16 MB).</p>
-      </div>
-      <div class="col-md-4 text-center">
-        <div class="rounded-circle bg-brand text-white d-inline-flex align-items-center justify-content-center mb-3"
-             style="width:60px;height:60px;font-size:1.5rem;font-weight:700;">2</div>
-        <h6 class="fw-bold" data-i18n="how2_title">AI Analysis</h6>
-        <p class="text-muted small" data-i18n="how2_body">Our Hybrid CNN+ANN model analyses the image and produces a prediction with Grad-CAM.</p>
-      </div>
-      <div class="col-md-4 text-center">
-        <div class="rounded-circle bg-brand text-white d-inline-flex align-items-center justify-content-center mb-3"
-             style="width:60px;height:60px;font-size:1.5rem;font-weight:700;">3</div>
-        <h6 class="fw-bold" data-i18n="how3_title">Review Results</h6>
-        <p class="text-muted small" data-i18n="how3_body">See the result, confidence score, heatmap, and (Pro) download a full PDF report.</p>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ── Pricing preview ──────────────────────────────────────────────────── -->
-<section class="py-5">
-  <div class="container text-center">
-    <h2 class="section-title mb-2" data-i18n="pricing_preview_title">Simple, Transparent Pricing</h2>
-    <p class="text-muted mb-5" data-i18n="pricing_preview_sub">Start free. Upgrade anytime.</p>
-    <div class="row g-4 justify-content-center">
-      <!-- Free -->
-      <div class="col-md-4">
-        <div class="card pricing-card p-4">
-          <h4 class="fw-bold" data-i18n="plan_free">Free</h4>
-          <div class="price-num">$0</div>
-          <p class="text-muted" data-i18n="plan_forever">forever</p>
-          <ul class="list-unstyled text-start mb-4">
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_3scans">3 scans per day</span></li>
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_heatmaps">Grad-CAM heatmaps</span></li>
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_history">Scan history</span></li>
-            <li class="py-1 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_no_pdf">PDF reports</span></li>
-            <li class="py-1 text-muted"><i class="fa-solid fa-xmark text-danger me-2"></i><span data-i18n="plan_no_adfree">Ad-free experience</span></li>
-          </ul>
-          <a href="/login" class="btn btn-outline-primary w-100" data-i18n="plan_get_free">Get Started Free</a>
-        </div>
-      </div>
-      <!-- Pro -->
-      <div class="col-md-4">
-        <div class="card pricing-card featured p-4">
-          <span class="badge badge-pro mb-2" data-i18n="plan_most_popular">MOST POPULAR</span>
-          <h4 class="fw-bold" data-i18n="plan_pro">Pro</h4>
-          <div class="price-num">$9.99</div>
-          <p class="text-muted">/month &nbsp;·&nbsp; or $79.99/year</p>
-          <ul class="list-unstyled text-start mb-4">
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_unlimited">Unlimited scans</span></li>
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_heatmaps">Grad-CAM heatmaps</span></li>
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_pdf">PDF diagnostic reports</span></li>
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_adfree">Ad-free experience</span></li>
-            <li class="py-1"><i class="fa-solid fa-check text-success me-2"></i><span data-i18n="plan_priority">Priority support</span></li>
-          </ul>
-          <a href="/pricing" class="btn btn-primary w-100 fw-bold" data-i18n="plan_upgrade">Upgrade to Pro</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
+<script>
+/* ── i18n (EN / KH) ──────────────────────────────────────────────────────── */
+const IX_I18N = {
+  en: {
+    brand_sub:          "Medical AI Platform",
+    nav_find_doctor_s:  "Find a Doctor",
+    nav_doctor:         "Doctor Portal",
+    nav_login:          "Log In",
+    nav_signup:         "Get Started",
+    hero_badge:         "University Research Project",
+    hero_h1:            "AI-Powered<br><span>Pneumonia Detection</span>",
+    hero_lead:          "Upload a chest X-ray and get an instant AI diagnosis with Grad-CAM heatmap visualisation — built on a <strong>Hybrid CNN+ANN</strong> model with <strong>97.03% validation accuracy</strong>.",
+    hero_cta_primary:   "Try Free — No Card Needed",
+    hero_cta_plans:     "Find a Doctor",
+    hero_check1:        "97.03% Val Accuracy",
+    hero_check2:        "Grad-CAM Heatmaps",
+    hero_check3:        "Free tier: 3 scans/day",
+    stat_val_acc:       "Validation Accuracy",
+    stat_test_acc:      "Test Accuracy",
+    stat_architecture:  "Hybrid Architecture",
+    stat_xai:           "Explainable AI",
+    cta_title:          "Ready to analyse your first X-ray?",
+    cta_sub:            "No credit card required. Start free in 30 seconds.",
+    cta_btn:            "Upload X-Ray Now",
+    footer_login:       "Log In",
+    footer_find_doctor: "Find a Doctor",
+    footer_doctor:      "Doctor Portal",
+    footer_copy:        "© 2025 SmartX-Ray · University Research Project",
+  },
+  km: {
+    brand_sub:          "វេទិកា AI វេជ្ជសាស្ត្រ",
+    nav_find_doctor_s:  "រកវេជ្ជបណ្ឌិត",
+    nav_doctor:         "វិបផតថលវេជ្ជបណ្ឌិត",
+    nav_login:          "ចូលប្រើ",
+    nav_signup:         "ចាប់ផ្ដើម",
+    hero_badge:         "គម្រោងស្រាវជ្រាវវិទ្យាល័យ",
+    hero_h1:            "AI រកឃើញ<br><span>ជំងឺរលាកសួត</span>",
+    hero_lead:          "ផ្ទុករូបភាពកាំរស្មី X ទ្រូង ហើយទទួលបានការ​វិនិច្ឆ័យ AI ភ្លាមៗ — បង្កើតលើម៉ូដែល <strong>Hybrid CNN+ANN</strong> ដែលមានភាពត្រឹមត្រូវ <strong>97.03%</strong>.",
+    hero_cta_primary:   "សាកល្បងដោយឥតគិតថ្លៃ",
+    hero_cta_plans:     "រកវេជ្ជបណ្ឌិត",
+    hero_check1:        "ភាពត្រឹមត្រូវ 97.03%",
+    hero_check2:        "Grad-CAM Heatmaps",
+    hero_check3:        "ឥតគិតថ្លៃ: 3 ស្កេន/ថ្ងៃ",
+    stat_val_acc:       "ភាពត្រឹមត្រូវវ៉ាលីដេស",
+    stat_test_acc:      "ភាពត្រឹមត្រូវតេស",
+    stat_architecture:  "រចនាសម្ព័ន្ធ Hybrid",
+    stat_xai:           "AI ពន្យល់បាន",
+    cta_title:          "ត្រៀមវិនិច្ឆ័យ X ដំបូងរបស់អ្នក?",
+    cta_sub:            "មិនត្រូវការប័ណ្ណឥណទាន. ចាប់ផ្ដើមដោយឥតគិតថ្លៃក្នុង 30 វិនាទី.",
+    cta_btn:            "ផ្ទុករូបភាព X ឥឡូវ",
+    footer_login:       "ចូលប្រើ",
+    footer_find_doctor: "រកវេជ្ជបណ្ឌិត",
+    footer_doctor:      "វិបផតថលវេជ្ជបណ្ឌិត",
+    footer_copy:        "© 2025 SmartX-Ray · គម្រោងស្រាវជ្រវវិទ្យាល័យ",
+  }
+};
 
-<!-- ── CTA ──────────────────────────────────────────────────────────────── -->
-<section class="py-5 bg-brand text-white text-center">
-  <div class="container">
-    <h2 class="fw-bold mb-3" data-i18n="cta_title">Ready to analyse your first X-ray?</h2>
-    <p class="lead opacity-75 mb-4" data-i18n="cta_sub">No credit card required. Start free in 30 seconds.</p>
-    <a href="/login" class="btn btn-warning btn-lg fw-bold px-5">
-      <i class="fa-solid fa-upload me-2"></i>
-      <span data-i18n="cta_btn">Upload X-Ray Now</span>
-    </a>
-  </div>
-</section>
+let _ixLang = localStorage.getItem('sx_lang') || 'en';
 
-{% endblock %}
+function ixToggleLang() {
+  _ixLang = _ixLang === 'en' ? 'km' : 'en';
+  localStorage.setItem('sx_lang', _ixLang);
+  ixApplyLang();
+}
+
+function ixApplyLang() {
+  const html = document.getElementById('ix-html');
+  html.lang = _ixLang;
+  const dict = IX_I18N[_ixLang] || IX_I18N.en;
+  const btn  = document.getElementById('ixLangBtn');
+  if (btn) btn.textContent = _ixLang === 'en' ? 'ខ្មែរ' : 'EN';
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (dict[key] !== undefined) el.textContent = dict[key];
+  });
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.dataset.i18nHtml;
+    if (dict[key] !== undefined) el.innerHTML = dict[key];
+  });
+}
+
+document.addEventListener('DOMContentLoaded', ixApplyLang);
+</script>
+
+</body>
+</html>

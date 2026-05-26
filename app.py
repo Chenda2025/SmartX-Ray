@@ -10,7 +10,7 @@ from app import create_app
 
 # Auto-download Khmer OS fonts if missing (safe no-op when already present)
 try:
-    from utils.download_fonts import download_khmer_fonts
+    from app.utils.download_fonts import download_khmer_fonts
     download_khmer_fonts()
 except Exception as _font_err:  # pragma: no cover
     import logging

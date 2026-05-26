@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 from app.extensions import db
 from app.models.ad import Ad
-from app.utils.auth_helpers import jwt_required_user, _get_current_user
+from app.utils.auth_guard import jwt_required_user, _get_current_user
 
 ads_bp = Blueprint("ads", __name__)
 

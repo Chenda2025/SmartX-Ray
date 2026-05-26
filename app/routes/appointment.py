@@ -254,7 +254,12 @@ def book_appointment():
             "error": "scheduled_at (ISO datetime) or appointment_date + appointment_time required."
         }), 400
 
-    if apt_date < date.today():
+    # Use Cambodia local date (UTC+7) so a booking for "today" in Phnom Penh
+    # is never wrongly rejected by a UTC server clock.
+    from datetime import timezone as _tz
+    _now_kh   = datetime.now(_tz(timedelta(hours=7)))
+    _today_kh = _now_kh.date()
+    if apt_date < _today_kh:
         return jsonify({"error": "Appointment date cannot be in the past."}), 400
 
     # ── Duplicate check ───────────────────────────────────────────────
@@ -958,8 +963,11 @@ def _parse_appointment_datetime(data: dict) -> tuple:
             scheduled_at = datetime.fromisoformat(raw_sched.replace("Z", "+00:00"))
             if scheduled_at.tzinfo is None:
                 scheduled_at = scheduled_at.replace(tzinfo=timezone.utc)
-            apt_date = scheduled_at.date()
-            apt_time = scheduled_at.strftime("%H:%M")
+            # Extract date/time from the *original string* so we get the
+            # local (client) date — not the UTC-converted date which shifts
+            # backwards for +07:00 morning slots.
+            apt_date = date.fromisoformat(raw_sched[:10])   # "YYYY-MM-DD"
+            apt_time = raw_sched[11:16]                     # "HH:MM"
         except ValueError:
             pass
 

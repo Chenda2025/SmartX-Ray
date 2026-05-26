@@ -26,7 +26,6 @@ def create_app(env: str | None = None) -> Flask:
     from app.routes.auth        import auth_bp
     from app.routes.scan        import scan_bp
     from app.routes.subscription import subscription_bp
-    from app.routes.marketplace import marketplace_bp
     from app.routes.ads         import ads_bp
     from app.routes.pages       import pages_bp
     from app.routes.admin       import admin_bp, admin_api_bp
@@ -36,7 +35,6 @@ def create_app(env: str | None = None) -> Flask:
     app.register_blueprint(auth_bp,          url_prefix="/api/auth")
     app.register_blueprint(scan_bp,          url_prefix="/api/scan")
     app.register_blueprint(subscription_bp,  url_prefix="/api/subscription")
-    app.register_blueprint(marketplace_bp,   url_prefix="/api/marketplace")
     app.register_blueprint(ads_bp,           url_prefix="/api/ads")
     app.register_blueprint(doctor_bp,        url_prefix="/api/doctor")
     app.register_blueprint(appointment_bp,   url_prefix="/api/appointments")
@@ -201,21 +199,15 @@ def create_app(env: str | None = None) -> Flask:
 
     # ── CLI commands ────────────────────────────────────────────────────────
     @app.cli.command("seed-db")
-    @click.option("--cambodia", is_flag=True, default=True,
-                  help="Use the Cambodian sample dataset (default).")
-    @click.option("--legacy",   is_flag=True, default=False,
-                  help="Use the legacy seed file (root seed.py).")
-    def seed_db(cambodia, legacy):
-        """Seed the database with sample data.
+    def seed_db():
+        """Seed the database with Cambodian sample data.
 
-        Default: Cambodian actors — admin, 4 doctors, 3 patients, scans,
-        appointments, reviews, telegram config.  (db/seed.py)
-
-        --legacy: original 6-doctor international dataset.  (seed.py)
+        Loads db/seed.py: admin, 4 doctors, 3 patients, scans,
+        appointments, reviews, telegram config.
         """
         import importlib.util, pathlib
         root = pathlib.Path(__file__).parent.parent
-        seed_file = root / ("seed.py" if legacy else "db/seed.py")
+        seed_file = root / "db/seed.py"
         spec   = importlib.util.spec_from_file_location("seed", seed_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)

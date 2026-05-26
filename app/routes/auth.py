@@ -7,7 +7,7 @@ from itsdangerous import URLSafeTimedSerializer, SignatureExpired, BadSignature
 from app.extensions import db
 from app.models.user import User
 from app.utils.validators import validate_email, validate_password
-from app.utils.auth_helpers import jwt_required_user, _get_current_user
+from app.utils.auth_guard import jwt_required_user, _get_current_user
 
 auth_bp = Blueprint("auth", __name__)
 

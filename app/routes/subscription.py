@@ -3,7 +3,7 @@ from flask import Blueprint, request, jsonify, current_app
 from app.extensions import db
 from app.models.subscription import Subscription
 from app.models.transaction import Transaction
-from app.utils.auth_helpers import jwt_required_user, _get_current_user
+from app.utils.auth_guard import jwt_required_user, _get_current_user
 
 subscription_bp = Blueprint("subscription", __name__)
 
@@ -59,6 +59,64 @@ def create_checkout():
     )
 
     return jsonify({"checkout_url": session.url, "session_id": session.id}), 200
+
+
+# ── POST /api/subscription/mock-upgrade ──────────────────────────────────
+@subscription_bp.route("/mock-upgrade", methods=["POST"])
+@jwt_required_user
+def mock_upgrade():
+    """
+    Demo / sandbox upgrade — no real payment processed.
+    Sets user.tier = 'pro' and creates a mock Subscription row.
+    """
+    from datetime import datetime, timezone, timedelta
+    from app.models.subscription import Subscription
+
+    data = request.get_json(silent=True) or {}
+    plan = data.get("plan", "monthly")   # "monthly" | "yearly"
+
+    user = _get_current_user()
+    if user.is_pro:
+        return jsonify({"message": "Already Pro.", "tier": "pro"}), 200
+
+    user.tier = "pro"
+
+    # Create or update Subscription row
+    sub = user.subscription
+    now = datetime.now(timezone.utc)
+    if plan == "yearly":
+        expires = now + timedelta(days=365)
+        amount  = 7999   # cents
+    else:
+        expires = now + timedelta(days=30)
+        amount  = 999    # cents
+
+    if sub:
+        sub.status              = "active"
+        sub.plan                = plan
+        sub.current_period_end  = expires
+        sub.cancel_at_period_end = False
+    else:
+        sub = Subscription(
+            user_id                 = user.id,
+            stripe_subscription_id  = f"mock_{user.id}_{int(now.timestamp())}",
+            stripe_customer_id      = f"cus_mock_{user.id}",
+            status                  = "active",
+            plan                    = plan,
+            current_period_start    = now,
+            current_period_end      = expires,
+            cancel_at_period_end    = False,
+        )
+        db.session.add(sub)
+
+    db.session.commit()
+    return jsonify({
+        "message": "Upgraded to Pro successfully.",
+        "tier":    "pro",
+        "plan":    plan,
+        "expires": expires.isoformat(),
+        "amount":  amount,
+    }), 200
 
 
 # ── POST /api/subscription/cancel ────────────────────────────────────────

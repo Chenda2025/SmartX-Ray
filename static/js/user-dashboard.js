@@ -12,7 +12,7 @@ let UD = {
   scanPage:     1,
   allScans:     [],
   scanMap:      {},          // id → scan object, for quick modal lookup
-  doctors:      [],            // loaded from /api/marketplace/doctors
+  doctors:      [],            // loaded from /api/doctors
   doctorFilter: 'all',
   selectedDate: null,
   selectedTime: null,
@@ -667,7 +667,7 @@ async function udInitDoctors() {
   if (grid) grid.innerHTML = `<div class="ud-empty" style="grid-column:1/-1;"><i class="ti ti-loader" style="animation:spin 1s linear infinite"></i></div>`;
 
   try {
-    const res  = await fetch('/api/marketplace/doctors?limit=12');
+    const res  = await fetch('/api/doctors?limit=12');
     const data = await res.json();
     UD.doctors = (data.doctors || []);
   } catch {
@@ -753,7 +753,7 @@ function udDoctorCardHTML(d, idx = 0) {
       </div>
       ${fee ? `<div class="ud-doc-price"><i class="ti ti-currency-dollar"></i>${fee} ${I18n.t('doc_consult') || '/ consultation'}</div>` : ''}
       <div class="ud-doc-actions">
-        <button class="ud-doc-view-btn" onclick="window.location='/marketplace'"
+        <button class="ud-doc-view-btn" onclick="window.location='/doctor/${d.id}'"
           data-i18n="doc_view">${I18n.t('doc_view') || 'View Profile'}</button>
         <button class="ud-doc-book-btn" onclick="udOpenBookModal(${d.id})"
           data-i18n="doc_book">${I18n.t('doc_book') || 'Book Now'}</button>
@@ -770,10 +770,14 @@ async function udInitAppointments() {
 
 async function udLoadAppointments() {
   try {
-    const res  = await API.get('/api/appointments');
+    const res  = await api.get('/patient/appointments');
     const data = await res.json();
-    if (res.ok && data.appointments) {
-      UD.bookedAppointments = data.appointments;
+    if (res.ok) {
+      // API returns { upcoming: [...], past: [...] }
+      UD.bookedAppointments = [
+        ...(data.upcoming || []),
+        ...(data.past    || []),
+      ];
     }
   } catch (_) { /* network error — keep empty array */ }
   udRenderAppointments();
@@ -792,13 +796,17 @@ function udRenderAppointments() {
   }
   empty.classList.add('ud-hidden');
 
-  list.innerHTML = active.map((a, idx) => {
-    const palette  = _DOC_PALETTE[a.doctor_id % _DOC_PALETTE.length];
-    const initials = (a.doctor_name || 'DR').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-    const dateStr  = _udFmtDate(a.appointment_date);
-    const fee      = a.fee_snapshot ? `$${Number(a.fee_snapshot).toFixed(2)}` : '';
-    const noteHtml = a.note
-      ? `<div class="ud-appt-note"><i class="ti ti-notes"></i> ${_udEsc(a.note)}</div>`
+  list.innerHTML = active.map((a) => {
+    // API shape: a.doctor.{id,full_name,specialty}, a.date, a.time, a.fee, a.patient_note
+    const doc      = a.doctor || {};
+    const docId    = doc.id || 0;
+    const palette  = _DOC_PALETTE[docId % _DOC_PALETTE.length];
+    const initials = (doc.full_name || 'DR').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    const dateStr  = _udFmtDate(a.date || a.scheduled_at);
+    const fee      = a.fee ? `$${Number(a.fee).toFixed(2)}` : '';
+    const note     = a.patient_note || a.note || '';
+    const noteHtml = note
+      ? `<div class="ud-appt-note"><i class="ti ti-notes"></i> ${_udEsc(note)}</div>`
       : '';
     const statusClass = a.status === 'completed' ? 'completed' : 'confirmed';
     const statusLabel = a.status === 'completed'
@@ -809,22 +817,23 @@ function udRenderAppointments() {
     <div class="ud-appt-row" id="appt-row-${a.id}">
       <div class="ud-appt-avatar" style="background:${palette.bg};color:${palette.color};">${initials}</div>
       <div class="ud-appt-info">
-        <div class="ud-appt-name">${_udEsc(a.doctor_name)}</div>
-        <div class="ud-appt-spec">${_udEsc(a.doctor_specialty)}</div>
+        <div class="ud-appt-name">${_udEsc(doc.full_name || '—')}</div>
+        <div class="ud-appt-spec">${_udEsc(doc.specialty || '—')}</div>
         <div class="ud-appt-time">
           <i class="ti ti-calendar"></i> ${dateStr}
           &nbsp;·&nbsp;
-          <i class="ti ti-clock"></i> ${_udEsc(a.appointment_time)}
+          <i class="ti ti-clock"></i> ${_udEsc(a.time || '')}
           ${fee ? `&nbsp;·&nbsp;<i class="ti ti-cash"></i> ${fee}` : ''}
         </div>
         ${noteHtml}
       </div>
       <span class="ud-status-pill ${statusClass}">${statusLabel}</span>
       <div class="ud-appt-actions">
-        <button class="ud-join-btn">
+        ${a.can_join ? `
+        <button class="ud-join-btn" onclick="window.open('${_udEsc(a.meeting_link || '')}','_blank')">
           <i class="ti ti-video"></i>
           ${I18n.t('appt_join') || 'Join Meeting'}
-        </button>
+        </button>` : ''}
         ${a.status === 'confirmed' ? `
         <button class="ud-cancel-appt-btn" onclick="udCancelAppointment(${a.id})">
           <i class="ti ti-x"></i>
@@ -840,7 +849,7 @@ async function udCancelAppointment(aptId) {
   if (!confirm(I18n.t('appt_cancel_confirm') || 'Cancel this appointment?')) return;
 
   try {
-    const res  = await API.patch(`/api/appointments/${aptId}/cancel`, {});
+    const res  = await api.patch(`/appointments/${aptId}/cancel`, {});
     const data = await res.json();
     if (res.ok) {
       // Update local state
@@ -1005,13 +1014,18 @@ async function udConfirmBooking() {
     return;
   }
 
-  /* Convert "May 26, 2026" → "2026-05-26" */
+  /* Convert "May 26, 2026" → "2026-05-26" using LOCAL date parts
+     (toISOString() shifts midnight local→UTC and returns the wrong day) */
   const parsed = new Date(UD.selectedDate);
   if (isNaN(parsed)) {
     udShowToast('Invalid date selected.', 'error');
     return;
   }
-  const isoDate = parsed.toISOString().split('T')[0];   // YYYY-MM-DD
+  const isoDate = [
+    parsed.getFullYear(),
+    String(parsed.getMonth() + 1).padStart(2, '0'),
+    String(parsed.getDate()).padStart(2, '0'),
+  ].join('-');   // YYYY-MM-DD in local timezone
 
   /* Show loading on the confirm button */
   const btn = document.querySelector('.ud-btn-confirm');
@@ -1022,20 +1036,19 @@ async function udConfirmBooking() {
   }
 
   try {
-    const res  = await API.post('/api/appointments', {
-      doctor_id:        UD.activeDoctorId,
-      appointment_date: isoDate,
-      appointment_time: UD.selectedTime,
-      note:             (document.getElementById('udNote')?.value || '').trim() || null,
+    const res  = await api.post('/appointments/book', {
+      doctor_id:   UD.activeDoctorId,
+      scheduled_at: `${isoDate}T${UD.selectedTime}:00+07:00`,
+      note:         (document.getElementById('udNote')?.value || '').trim() || null,
     });
     const data = await res.json();
 
     if (res.status === 201) {
-      /* Add the newly created appointment to local state */
-      UD.bookedAppointments.push(data.appointment);
+      /* Refresh appointments list from server then scroll to it */
       udCloseBookModal();
+      await udLoadAppointments();
       udRenderAppointments();
-      document.getElementById('appt-section').scrollIntoView({ behavior: 'smooth' });
+      document.getElementById('appt-section')?.scrollIntoView({ behavior: 'smooth' });
       udShowToast(I18n.t('toast_booked') || 'Appointment booked successfully!', 'success');
     } else if (res.status === 409) {
       udShowToast(data.error || 'You already have this appointment.', 'warning');

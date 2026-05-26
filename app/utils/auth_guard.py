@@ -31,9 +31,10 @@ Backward compat:
 from __future__ import annotations
 
 import logging
+from datetime import datetime, timezone, timedelta
 from functools import wraps
 
-from flask import jsonify, g
+from flask import current_app, jsonify, g
 from flask_jwt_extended import get_jwt, get_jwt_identity, verify_jwt_in_request
 
 from app.extensions import db
@@ -315,3 +316,53 @@ def pro_required(fn):
 #: should be migrated to ``from app.utils.auth_guard import admin_required``.
 jwt_required_admin = admin_required
 jwt_required_pro   = pro_required
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Compat shims  (replaces app/utils/auth_helpers.py entirely)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _get_current_user():
+    """Return the User for the current JWT identity (raises if no active JWT)."""
+    from app.models.user import User
+    try:
+        uid = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return None
+    return db.session.get(User, uid)
+
+
+def jwt_required_user(fn):
+    """Decorator: valid JWT + active user (any role)."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        verify_jwt_in_request()
+        user = _get_current_user()
+        if not user or not user.is_active:
+            return jsonify({"error": "Account not found or disabled."}), 401
+        return fn(*args, **kwargs)
+    return wrapper
+
+
+def check_scan_quota(user) -> tuple[bool, str | None]:
+    """
+    Returns (allowed: bool, error_msg: str | None).
+    Resets daily counter if it's a new UTC day.
+    Pro users are never rate-limited.
+    """
+    if user.is_pro:
+        return True, None
+
+    now = datetime.now(timezone.utc)
+    if not user.scans_reset_at or user.scans_reset_at.date() < now.date():
+        user.scans_today = 0
+        user.scans_reset_at = now
+        db.session.flush()
+
+    limit = current_app.config["FREE_SCANS_PER_DAY"]
+    if user.scans_today >= limit:
+        return False, (
+            f"Free tier limit reached ({limit} scans/day). "
+            "Upgrade to Pro for unlimited scans."
+        )
+    return True, None

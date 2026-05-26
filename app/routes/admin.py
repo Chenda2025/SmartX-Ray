@@ -9,7 +9,7 @@ Authentication
 Admin users have is_admin=True in the DB.
 POST /api/admin/login  issues a JWT with {"is_admin": True} in additional
 claims and an 8-hour expiry.  Every /api/admin/* route is protected by the
-@admin_required decorator from app.utils.auth_helpers.
+@admin_required decorator from app.utils.auth_guard.
 """
 
 from datetime import timedelta, datetime, timezone
@@ -21,11 +21,7 @@ from flask_jwt_extended import create_access_token
 from sqlalchemy import func, desc
 
 from app.extensions import db
-# admin_required: prefer new auth_guard; fall back to auth_helpers for compat
-try:
-    from app.utils.auth_guard import admin_required
-except ImportError:
-    from app.utils.auth_helpers import admin_required
+from app.utils.auth_guard import admin_required
 
 
 def _base_url() -> str:

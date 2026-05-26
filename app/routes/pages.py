@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, redirect, render_template, url_for
 
 pages_bp = Blueprint("pages", __name__)
 
@@ -21,11 +21,15 @@ def result(scan_id):
 
 @pages_bp.route("/pricing")
 def pricing():
-    return render_template("pricing.html")
+    return redirect(url_for("pages.upgrade"), 302)
+
+@pages_bp.route("/upgrade")
+def upgrade():
+    return render_template("user/upgrade.html")
 
 @pages_bp.route("/marketplace")
 def marketplace():
-    return render_template("marketplace.html")
+    return redirect(url_for("pages.find_doctor"), 301)
 
 @pages_bp.route("/forgot-password")
 def forgot_password():

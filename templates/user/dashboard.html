@@ -8,7 +8,7 @@
 
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
   <!-- Tabler Icons -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link rel="stylesheet" href="/static/css/vendor/tabler-icons.min.css" />
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,7 +33,7 @@
       <li><a href="javascript:void(0)" data-section="scan-section" data-i18n="nav_scan" onclick="udScrollTo('scan-section')">Scan</a></li>
       <li><a href="javascript:void(0)" data-section="history-section" data-i18n="nav_history" onclick="udScrollTo('history-section')">History</a></li>
       <li><a href="javascript:void(0)" data-section="doctor-section" data-i18n="nav_find_doctor_s" onclick="udScrollTo('doctor-section')">Find a Doctor</a></li>
-      <li class="nav-upgrade"><a href="/pricing" data-i18n="nav_upgrade_link">Upgrade</a></li>
+      <li class="nav-upgrade"><a href="/upgrade" data-i18n="nav_upgrade_link">Upgrade</a></li>
     </ul>
   </nav>
 
@@ -50,7 +50,7 @@
           <div style="font-size:13px;font-weight:600;color:var(--text-primary)" id="ddName">—</div>
           <div style="font-size:11px;color:var(--text-muted)" id="ddEmail">—</div>
         </div>
-        <a href="/pricing" class="ud-dropdown-item">
+        <a href="/upgrade" class="ud-dropdown-item">
           <i class="ti ti-credit-card"></i>
           <span data-i18n="dd_subscription">Manage Subscription</span>
         </a>
@@ -80,7 +80,7 @@
   <a href="javascript:void(0)" class="ud-tab-item" data-section="doctor-section" onclick="udScrollTo('doctor-section')">
     <i class="ti ti-stethoscope"></i><span data-i18n="nav_find_doctor_s">Doctor</span>
   </a>
-  <a href="/pricing" class="ud-tab-item nav-upgrade">
+  <a href="/upgrade" class="ud-tab-item nav-upgrade">
     <i class="ti ti-crown"></i><span data-i18n="nav_upgrade_link">Upgrade</span>
   </a>
 </div>
@@ -107,7 +107,7 @@
     <div class="ud-welcome-content">
       <div class="ud-welcome-greeting" id="udGreeting">Good morning, User</div>
       <div class="ud-welcome-sub" id="udWelcomeSub">RUPP · Free Plan</div>
-      <a href="/pricing" class="ud-welcome-btn" data-i18n="welcome_upgrade">
+      <a href="/upgrade" class="ud-welcome-btn" data-i18n="welcome_upgrade">
         Upgrade to Pro →
       </a>
     </div>
@@ -446,12 +446,12 @@
         </div>
       </div>
       <div class="ud-upgrade-ctas">
-        <button class="ud-btn-monthly" onclick="window.location='/pricing'">
+        <button class="ud-btn-monthly" onclick="window.location='/upgrade'">
           <span data-i18n="upgrade_monthly">Monthly — $9.99/mo</span>
         </button>
         <div class="ud-upgrade-cta-wrap">
           <span class="ud-best-value" data-i18n="upgrade_best">Best value</span>
-          <button class="ud-btn-yearly" onclick="window.location='/pricing'">
+          <button class="ud-btn-yearly" onclick="window.location='/upgrade'">
             <span data-i18n="upgrade_yearly">Yearly — $79.99/yr</span>
           </button>
         </div>
@@ -775,4 +775,5 @@ Object.assign(TRANSLATIONS, {
 <script src="/static/js/user-dashboard.js"></script>
 </body>
 </html>
+
 

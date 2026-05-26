@@ -34,6 +34,8 @@ async function _ddInitState() {
       if (res.ok) {
         const data = await res.json();
         _ddPopulate(data.doctor);
+        // Also load full dashboard data (KPIs + appointments)
+        _ddLoadDashboard(token);
         return; // _ddPopulate calls ddSwitchState internally
       }
       // 404 = no doctor profile yet — show registration form
@@ -133,6 +135,150 @@ function _ddPopulate(doc) {
   // Sync dev switcher
   const sel = document.getElementById('ddStateSwitcher');
   if (sel) sel.value = doc.status || 'pending';
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD DATA  —  KPIs + Upcoming Appointments
+   ══════════════════════════════════════════════════════════════ */
+async function _ddLoadDashboard(token) {
+  try {
+    const res  = await fetch('/api/doctor/dashboard', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // ── KPI cards ───────────────────────────────────────────
+    _ddSetKpi('ddKpiTotal',    data.kpi?.total_appointments);
+    _ddSetKpi('ddKpiToday',    data.kpi?.today_count);
+    _ddSetKpi('ddKpiPatients', data.kpi?.total_patients);
+    _ddSetKpi('ddKpiEarnings', data.kpi?.earnings_this_month != null
+      ? `$${Number(data.kpi.earnings_this_month).toFixed(0)}` : null);
+
+    // ── Earnings summary card ────────────────────────────────
+    const es = data.earnings_summary;
+    if (es) {
+      _ddSetText('ddEarnMonth',   `$${Number(es.this_month   || 0).toFixed(2)}`);
+      _ddSetText('ddEarnPending', `$${Number(es.pending      || 0).toFixed(2)}`);
+      _ddSetText('ddEarnTotal',   `$${Number(es.total_all_time || 0).toFixed(2)}`);
+    }
+
+    // ── Upcoming Appointments table ──────────────────────────
+    const upcoming = data.upcoming || [];
+    _ddRenderUpcoming(upcoming);
+
+  } catch (_) { /* network error — keep loading placeholder */ }
+}
+
+function _ddSetKpi(id, val) {
+  const el = document.getElementById(id);
+  if (el && val != null) el.textContent = val;
+}
+
+function _ddSetText(id, val) {
+  const el = document.getElementById(id);
+  if (el && val != null) el.textContent = val;
+}
+
+const _DD_COLORS = [
+  ['#4F46E5','#EEF2FF'], ['#10B981','#ECFDF5'], ['#F59E0B','#FEF3C7'],
+  ['#EF4444','#FEF2F2'], ['#0891B2','#ECFEFF'], ['#7C3AED','#F5F3FF'],
+];
+function _ddColorFor(name) {
+  let h = 0;
+  for (let i = 0; i < (name || '').length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return _DD_COLORS[h % _DD_COLORS.length];
+}
+function _ddInitials(name) {
+  if (!name) return '?';
+  return name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+}
+function _ddFmtDateTime(a) {
+  const date = a.date || (a.scheduled_at || '').slice(0, 10);
+  const time = a.time || (a.scheduled_at || '').slice(11, 16);
+  if (!date) return '—';
+  try {
+    const d = new Date(date + 'T00:00:00');
+    const mon = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${mon} · ${time || '—'}`;
+  } catch (_) { return `${date} ${time}`; }
+}
+
+function _ddRenderUpcoming(list) {
+  const tbody = document.getElementById('ddUpcomingTbody');
+  if (!tbody) return;
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--dd-muted);font-size:.85rem;">
+      <i class="ti ti-calendar-off" style="font-size:1.4rem;display:block;margin-bottom:.4rem;"></i>
+      No upcoming appointments
+    </td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(a => {
+    const [fg, bg] = _ddColorFor(a.patient_name || '');
+    const initials = _ddInitials(a.patient_name || '—');
+    const dateStr  = _ddFmtDateTime(a);
+    const note     = a.patient_note || '—';
+    const isPast   = a.status === 'confirmed' &&
+                     (a.date || '') < new Date().toISOString().slice(0, 10);
+    const pillCls  = isPast ? 'upcoming' : 'confirmed';
+    const pillLbl  = isPast ? 'Upcoming' : 'Confirmed';
+
+    return `
+    <tr>
+      <td>
+        <div class="dd-pat-cell">
+          <div class="dd-pat-av" style="background:${bg};color:${fg};">${initials}</div>
+          <span>${_ddEsc(a.patient_name || '—')}</span>
+        </div>
+      </td>
+      <td>${dateStr}</td>
+      <td><span class="dd-note-text ${note === '—' ? 'muted' : ''}">${_ddEsc(note)}</span></td>
+      <td><span class="dd-appt-pill ${pillCls}">${pillLbl}</span></td>
+      <td>
+        <div class="dd-tbl-actions">
+          ${a.meeting_link
+            ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-sm-join" title="Join">
+                 <i class="ti ti-video"></i>
+               </a>`
+            : `<button class="dd-btn-sm-join" onclick="ddShowToast('Meeting link not ready yet','info')" title="Join">
+                 <i class="ti ti-video"></i>
+               </button>`
+          }
+          <button class="dd-btn-sm-cancel" title="Cancel"
+            onclick="ddConfirmCancel(${a.appointment_id})">
+            <i class="ti ti-x"></i>
+          </button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function _ddEsc(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function ddConfirmCancel(aptId) {
+  if (!confirm('Cancel this appointment?')) return;
+  const token = localStorage.getItem('access_token');
+  try {
+    const res = await fetch(`/api/appointments/${aptId}/cancel`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (res.ok) {
+      ddShowToast('Appointment cancelled.', 'success');
+      _ddLoadDashboard(token);   // refresh table
+    } else {
+      ddShowToast(data.error || 'Could not cancel.', 'error');
+    }
+  } catch (_) { ddShowToast('Network error.', 'error'); }
 }
 
 /* ── Fill the approved-state "My Profile" form ────────────── */
