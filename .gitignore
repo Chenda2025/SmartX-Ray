@@ -49,3 +49,4 @@ migrations/versions/*.pyc
 .pytest_cache/
 htmlcov/
 .coverage
+.github/workflows/
