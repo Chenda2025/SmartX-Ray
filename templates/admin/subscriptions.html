@@ -3,196 +3,991 @@
 {% block topbar_title %}<span data-i18n="adm_nav_subs">Subscriptions</span>{% endblock %}
 {% block breadcrumb %}<span data-i18n="adm_nav_subs">Subscriptions</span>{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ══ KPI Revenue Cards ═══════════════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 900px)  { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px)  { .kpi-grid { grid-template-columns: 1fr; } }
+
+.kpi-card {
+  background: #fff; border-radius: 14px; border: 1px solid var(--color-border);
+  padding: 18px 20px; display: flex; flex-direction: column; gap: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  transition: box-shadow .15s, transform .15s;
+}
+.kpi-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.08); transform: translateY(-1px); }
+
+.kpi-icon-wrap {
+  width: 40px; height: 40px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; flex-shrink: 0; margin-bottom: 4px;
+}
+.kpi-value {
+  font-size: 28px; font-weight: 800; color: var(--color-navy, #0F172A);
+  line-height: 1.1; letter-spacing: -.02em;
+}
+.kpi-label {
+  font-size: 12px; color: var(--color-muted); font-weight: 500;
+  text-transform: uppercase; letter-spacing: .03em;
+}
+.kpi-secondary {
+  font-size: 13px; font-weight: 600; margin-top: 2px;
+}
+
+/* ══ Plan Reference Cards ════════════════════════════════════════════ */
+.plan-ref-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-bottom: 20px;
+}
+@media (max-width: 560px) { .plan-ref-grid { grid-template-columns: 1fr; } }
+
+.plan-ref-card {
+  border-radius: 14px; border: 1.5px solid var(--color-border);
+  padding: 18px 20px; background: #fff;
+  display: flex; align-items: center; gap: 16px;
+}
+.plan-ref-card.yearly { background: #FAF5FF; border-color: #DDD6FE; }
+.plan-icon-wrap {
+  width: 46px; height: 46px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.plan-price {
+  font-size: 22px; font-weight: 800; letter-spacing: -.02em;
+}
+.plan-period { font-size: 12px; font-weight: 400; opacity: .65; }
+.plan-badge-tag {
+  display: inline-block; padding: 2px 8px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; margin-left: 6px;
+  background: #DCFCE7; color: #166534;
+}
+
+/* ══ Plan Distribution Bar ═══════════════════════════════════════════ */
+.plan-dist-bar {
+  height: 8px; border-radius: 6px; overflow: hidden;
+  background: #F1F5F9; display: flex; margin-top: 6px;
+}
+.plan-dist-fill { height: 100%; transition: width .6s ease; }
+.plan-dist-fill.monthly { background: #6366F1; }
+.plan-dist-fill.yearly  { background: #7C3AED; }
+
+/* ══ Filter bar inputs ═══════════════════════════════════════════════ */
+.filter-input {
+  height: 36px; border: 1px solid var(--color-border); border-radius: 8px;
+  padding: 0 12px; font-size: 13px; color: var(--color-text); width: 100%;
+  background: #fff; outline: none;
+  transition: border-color .15s, box-shadow .15s;
+  font-family: 'Inter', sans-serif;
+}
+.filter-input:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.filter-input-wrap { position: relative; display: flex; align-items: center; }
+.filter-input-wrap .fi-icon {
+  position: absolute; left: 10px; color: var(--color-muted); font-size: 14px;
+  pointer-events: none;
+}
+.filter-input-wrap input { padding-left: 32px; }
+
+/* ══ Plan & Status badges ════════════════════════════════════════════ */
+.sub-plan-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  white-space: nowrap; border: 1.5px solid;
+}
+.sub-plan-pill.monthly { background:#EEF2FF; border-color:#C7D2FE; color:#4338CA; }
+.sub-plan-pill.yearly  { background:#F5F3FF; border-color:#DDD6FE; color:#6D28D9; }
+
+.sub-status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  white-space: nowrap; border: 1.5px solid;
+}
+.sub-status-pill.active   { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.sub-status-pill.trialing { background:#FEF9C3; border-color:#FDE68A; color:#854D0E; }
+.sub-status-pill.past_due { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
+.sub-status-pill.canceled { background:#F8FAFC; border-color:#CBD5E1; color:#475569; }
+.sub-status-pill.inactive { background:#F8FAFC; border-color:#CBD5E1; color:#64748B; }
+
+/* ══ Auto-Renew toggle pill ══════════════════════════════════════════ */
+.renew-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid; white-space: nowrap;
+  transition: transform .12s, box-shadow .12s;
+}
+.renew-pill:hover    { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.renew-pill.on  { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.renew-pill.off { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
+
+/* ══ Renewal urgency badges ══════════════════════════════════════════ */
+.renewal-badge {
+  display: inline-block; padding: 2px 7px; border-radius: 10px;
+  font-size: 10px; font-weight: 700; margin-left: 5px;
+}
+.renewal-badge.urgent { background:#FEF2F2; color:#991B1B; }
+.renewal-badge.soon   { background:#FEF9C3; color:#854D0E; }
+
+/* ══ Export dropdown ═════════════════════════════════════════════════ */
+#subExportToggle {
+  background: #EEF2FF !important; border: 1.5px solid #C7D2FE !important;
+  color: #4338CA !important; font-weight: 600;
+}
+#subExportToggle:hover { background: #E0E7FF !important; border-color: #A5B4FC !important; }
+#subExportToggle.open  { background: #E0E7FF !important; border-color: #A5B4FC !important; }
+
+.export-wrap { position: relative; display: inline-block; }
+.export-drop-menu {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  min-width: 170px; background: #fff; border: 1px solid var(--color-border);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 300; padding: 5px; display: none;
+}
+.export-drop-menu.open { display: block; }
+.export-drop-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px; border-radius: 7px; cursor: pointer;
+  font-size: 13px; color: var(--color-text);
+  background: none; border: none; width: 100%; text-align: left;
+  font-family: 'Inter', sans-serif;
+}
+.export-drop-item:hover { background: var(--color-indigo-light); color: var(--color-indigo); }
+
+/* ══ Pagination ══════════════════════════════════════════════════════ */
+.page-btn {
+  height: 30px; padding: 0 10px; border: 1px solid var(--color-border);
+  border-radius: 8px; background: #fff; cursor: pointer;
+  font-size: 12px; color: var(--color-text);
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: background .12s, border-color .12s, color .12s;
+  font-family: 'Inter', sans-serif;
+}
+.page-btn:hover:not(:disabled) {
+  background: var(--color-indigo-light);
+  border-color: var(--color-indigo); color: var(--color-indigo);
+}
+.page-btn:disabled { opacity: .38; cursor: default; }
+
+/* ══ Clear filter button ═════════════════════════════════════════════ */
+#subClearFilterBtn {
+  background: #EEF2FF !important; border: 1.5px solid #C7D2FE !important;
+  color: #4338CA !important; font-weight: 600;
+}
+#subClearFilterBtn:hover { background: #E0E7FF !important; border-color: #A5B4FC !important; }
+
+/* ══ Spinner ═════════════════════════════════════════════════════════ */
+@keyframes _spin { to { transform: rotate(360deg); } }
+.u-spin { animation: _spin .7s linear infinite; display: inline-block; }
+
+/* ══ Avatar cell ═════════════════════════════════════════════════════ */
+.sub-avatar {
+  width: 34px; height: 34px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-4">
-  <div>
-    <h4 class="fw-bold mb-0" data-i18n="adm_sub_title">Subscriptions</h4>
-    <p class="text-muted small mb-0" data-i18n="adm_sub_sub">Free vs Pro counts, revenue, and expiry dates</p>
-  </div>
-</div>
 
-<!-- Revenue Stats -->
-<div class="row g-3 mb-4" id="revenueRow">
-  <div class="col-sm-6 col-xl-3">
-    <div class="card stat-card p-3">
-      <div class="stat-icon mb-2" style="background:#f0fdf4"><i class="bi bi-people-fill text-success fs-4"></i></div>
-      <div class="fs-3 fw-bold text-success" id="r-monthly-subs">—</div>
-      <div class="small text-muted" data-i18n="adm_monthly_subs">Monthly Subscribers</div>
-      <div class="small text-success fw-medium" id="r-mrr">—</div>
+<!-- ══════════════════════════════════════════════════════════════════
+     PAGE HEADER
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="page-header" style="align-items:flex-start; flex-direction:column; gap:8px; margin-bottom:20px">
+  <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+    <div>
+      <h4 class="page-title" data-i18n="adm_sub_title">Subscriptions</h4>
+      <p class="page-sub"  data-i18n="adm_sub_sub">Manage Pro subscriber billing, revenue &amp; renewal cycles</p>
     </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="card stat-card p-3">
-      <div class="stat-icon mb-2" style="background:#faf5ff">
-        <i class="bi bi-star-fill fs-4" style="color:#7c3aed"></i>
+    <!-- Export dropdown -->
+    <div class="export-wrap" id="subExportWrap">
+      <button class="btn btn-sm btn-ghost" id="subExportToggle"
+              onclick="toggleSubExport(event)"
+              style="gap:6px; display:flex; align-items:center">
+        <i class="ti ti-download" style="font-size:14px"></i>
+        <span data-i18n="adm_export">Export</span>
+        <i class="ti ti-chevron-down" style="font-size:11px" id="subExportChevron"></i>
+      </button>
+      <div class="export-drop-menu" id="subExportMenu">
+        <button class="export-drop-item" onclick="exportSubs('pdf')">
+          <i class="ti ti-file-type-pdf" style="font-size:15px; color:#DC2626"></i>
+          <span data-i18n="adm_export_pdf">Export PDF</span>
+        </button>
+        <button class="export-drop-item" onclick="exportSubs('docx')">
+          <i class="ti ti-file-type-doc" style="font-size:15px; color:#2563EB"></i>
+          <span data-i18n="adm_export_docx">Export DOCX</span>
+        </button>
       </div>
-      <div class="fs-3 fw-bold" style="color:#7c3aed" id="r-yearly-subs">—</div>
-      <div class="small text-muted" data-i18n="adm_yearly_subs">Yearly Subscribers</div>
-      <div class="small fw-medium" style="color:#7c3aed" id="r-yearly-rev">—</div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="card stat-card p-3">
-      <div class="stat-icon mb-2" style="background:#eff6ff">
-        <i class="bi bi-currency-dollar text-primary fs-4"></i>
-      </div>
-      <div class="fs-3 fw-bold text-primary" id="r-total-rev">—</div>
-      <div class="small text-muted" data-i18n="adm_total_rev">Total Revenue (est.)</div>
-      <div class="small text-muted">Monthly + Yearly</div>
-    </div>
-  </div>
-  <div class="col-sm-6 col-xl-3">
-    <div class="card stat-card p-3">
-      <div class="stat-icon mb-2" style="background:#fff7ed">
-        <i class="bi bi-check-circle-fill text-warning fs-4"></i>
-      </div>
-      <div class="fs-3 fw-bold text-warning" id="r-active-total">—</div>
-      <div class="small text-muted">Active Subscriptions</div>
-      <div class="small text-muted">ABA KHQR payments</div>
     </div>
   </div>
 </div>
 
-<!-- Pricing Reference -->
-<div class="card table-card p-3 mb-4">
-  <h6 class="fw-semibold mb-3"><i class="bi bi-info-circle me-2 text-primary"></i><span data-i18n="adm_aba_plans">ABA KHQR Pricing Plans</span></h6>
-  <div class="row g-2">
-    <div class="col-md-6">
-      <div class="border rounded-3 p-3 d-flex align-items-center gap-3">
-        <div class="stat-icon" style="background:#eff6ff;width:42px;height:42px">
-          <i class="bi bi-calendar-month text-primary"></i>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     KPI REVENUE CARDS
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="kpi-grid">
+
+  <!-- Monthly Subscribers -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrap" style="background:#EEF2FF; color:var(--color-indigo)">
+      <i class="ti ti-calendar-month"></i>
+    </div>
+    <div class="kpi-value" id="kpi-monthly-subs">—</div>
+    <div class="kpi-label" data-i18n="adm_monthly_subs">Monthly Subscribers</div>
+    <div class="kpi-secondary" style="color:var(--color-indigo)" id="kpi-mrr">—</div>
+  </div>
+
+  <!-- Yearly Subscribers -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrap" style="background:#F5F3FF; color:#7C3AED">
+      <i class="ti ti-calendar-stats"></i>
+    </div>
+    <div class="kpi-value" id="kpi-yearly-subs" style="color:#7C3AED">—</div>
+    <div class="kpi-label" data-i18n="adm_yearly_subs">Yearly Subscribers</div>
+    <div class="kpi-secondary" style="color:#7C3AED" id="kpi-arr">—</div>
+  </div>
+
+  <!-- Total Revenue -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrap" style="background:#F0FDF4; color:#059669">
+      <i class="ti ti-currency-dollar"></i>
+    </div>
+    <div class="kpi-value" id="kpi-total-rev" style="color:#059669">—</div>
+    <div class="kpi-label" data-i18n="adm_total_rev">Total Revenue (est.)</div>
+    <div class="kpi-secondary" style="color:var(--color-muted)" data-i18n="adm_rev_note">Monthly + Yearly combined</div>
+  </div>
+
+  <!-- Trial Subscribers -->
+  <div class="kpi-card">
+    <div class="kpi-icon-wrap" style="background:#FEF9C3; color:#854D0E">
+      <i class="ti ti-clock-hour-3"></i>
+    </div>
+    <div class="kpi-value" id="kpi-trial-subs" style="color:#854D0E">—</div>
+    <div class="kpi-label" data-i18n="adm_trial_count">Trialing</div>
+    <div class="kpi-secondary" style="color:var(--color-muted)" data-i18n="adm_trial_note">Converting to paid</div>
+  </div>
+
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PRICING PLANS REFERENCE  +  PLAN DISTRIBUTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="panel-card" style="margin-bottom:16px">
+  <div style="padding:18px 20px">
+
+    <!-- Section title -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:10px">
+      <div style="display:flex; align-items:center; gap:8px">
+        <i class="ti ti-credit-card" style="font-size:16px; color:var(--color-indigo)"></i>
+        <span style="font-weight:700; font-size:14px; color:var(--color-navy)" data-i18n="adm_aba_plans">ABA KHQR Pricing Plans</span>
+      </div>
+      <!-- Plan distribution bar -->
+      <div style="flex:1; min-width:200px; max-width:340px">
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--color-muted); margin-bottom:4px">
+          <span>
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#6366F1; margin-right:4px"></span>
+            <span data-i18n="adm_plan_badge_monthly">Monthly</span>
+            <strong id="dist-monthly-pct" style="color:var(--color-indigo); margin-left:3px">—</strong>
+          </span>
+          <span>
+            <strong id="dist-yearly-pct" style="color:#7C3AED; margin-right:3px">—</strong>
+            <span data-i18n="adm_plan_badge_yearly">Yearly</span>
+            <span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#7C3AED; margin-left:4px"></span>
+          </span>
         </div>
-        <div>
-          <div class="fw-semibold" data-i18n="adm_monthly_plan">Monthly Plan</div>
-          <div class="fs-5 fw-bold text-primary">$9.99 <span class="text-muted small fw-normal">/ month</span></div>
+        <div class="plan-dist-bar">
+          <div class="plan-dist-fill monthly" id="dist-monthly-fill" style="width:50%"></div>
+          <div class="plan-dist-fill yearly"  id="dist-yearly-fill"  style="width:50%"></div>
         </div>
       </div>
     </div>
-    <div class="col-md-6">
-      <div class="border rounded-3 p-3 d-flex align-items-center gap-3" style="background:#faf5ff">
-        <div class="stat-icon" style="background:#ede9fe;width:42px;height:42px">
-          <i class="bi bi-calendar-year" style="color:#7c3aed"></i>
+
+    <!-- Plan cards -->
+    <div class="plan-ref-grid">
+
+      <!-- Monthly -->
+      <div class="plan-ref-card">
+        <div class="plan-icon-wrap" style="background:#EEF2FF; color:var(--color-indigo)">
+          <i class="ti ti-calendar-month"></i>
         </div>
         <div>
-          <div class="fw-semibold" data-i18n="adm_yearly_plan">Yearly Plan</div>
-          <div class="fs-5 fw-bold" style="color:#7c3aed">$79.99 <span class="text-muted small fw-normal">/ year</span>
-            <span class="badge bg-success ms-1" style="font-size:.7rem">33% off</span>
+          <div style="font-weight:700; font-size:13px; color:var(--color-text)" data-i18n="adm_monthly_plan">Monthly Plan</div>
+          <div style="font-size:11px; color:var(--color-muted); margin-bottom:4px" data-i18n="adm_plan_billed_monthly">Billed every 30 days</div>
+          <div class="plan-price" style="color:var(--color-indigo)">
+            $9.99 <span class="plan-period" data-i18n="adm_per_month">/ month</span>
           </div>
         </div>
       </div>
+
+      <!-- Yearly -->
+      <div class="plan-ref-card yearly">
+        <div class="plan-icon-wrap" style="background:#EDE9FE; color:#7C3AED">
+          <i class="ti ti-calendar-stats"></i>
+        </div>
+        <div>
+          <div style="font-weight:700; font-size:13px; color:#6D28D9">
+            <span data-i18n="adm_yearly_plan">Yearly Plan</span>
+            <span class="plan-badge-tag" data-i18n="adm_most_popular">Most Popular</span>
+          </div>
+          <div style="font-size:11px; color:var(--color-muted); margin-bottom:4px" data-i18n="adm_plan_billed_yearly">Billed annually — save 33%</div>
+          <div class="plan-price" style="color:#7C3AED">
+            $79.99 <span class="plan-period" data-i18n="adm_per_year">/ year</span>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- Subscriptions Table -->
-<div class="card table-card">
+
+<!-- ══════════════════════════════════════════════════════════════════
+     FILTER BAR
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="panel-card" style="margin-bottom:16px">
+  <div style="padding:14px 18px; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
+
+    <!-- Search -->
+    <div style="flex:2; min-width:180px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px"
+           data-i18n="adm_search_subs">Search</div>
+      <div class="filter-input-wrap">
+        <i class="ti ti-search fi-icon"></i>
+        <input type="text" class="filter-input" id="subSearch"
+               data-i18n-placeholder="adm_search_subs_ph"
+               placeholder="Name or email…" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Plan -->
+    <div style="flex:1; min-width:120px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px"
+           data-i18n="adm_sub_col_plan">Plan</div>
+      <select class="filter-input" id="subFilterPlan" style="cursor:pointer"
+              onchange="resetSubPage(); renderSubs()">
+        <option value=""        data-i18n="adm_all_plans">All Plans</option>
+        <option value="monthly" data-i18n="adm_plan_badge_monthly">Monthly</option>
+        <option value="yearly"  data-i18n="adm_plan_badge_yearly">Yearly</option>
+      </select>
+    </div>
+
+    <!-- Status -->
+    <div style="flex:1; min-width:120px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px"
+           data-i18n="adm_col_status">Status</div>
+      <select class="filter-input" id="subFilterStatus" style="cursor:pointer"
+              onchange="resetSubPage(); renderSubs()">
+        <option value=""         data-i18n="adm_all_status">All Status</option>
+        <option value="active"   data-i18n="adm_active">Active</option>
+        <option value="trialing" data-i18n="adm_sub_trial">Trial</option>
+        <option value="past_due" data-i18n="adm_sub_pastdue">Past Due</option>
+        <option value="canceled" data-i18n="adm_sub_canceled">Cancelled</option>
+      </select>
+    </div>
+
+    <!-- Auto-Renew -->
+    <div style="flex:1; min-width:130px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px"
+           data-i18n="adm_sub_col_autorenew">Auto-Renew</div>
+      <select class="filter-input" id="subFilterRenew" style="cursor:pointer"
+              onchange="resetSubPage(); renderSubs()">
+        <option value=""  data-i18n="adm_all_autorenew">All</option>
+        <option value="on"  data-i18n="adm_autorenew_yes">Auto-Renew: On</option>
+        <option value="off" data-i18n="adm_autorenew_no">Auto-Renew: Off</option>
+      </select>
+    </div>
+
+    <!-- Sort -->
+    <div style="flex:1; min-width:160px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px"
+           data-i18n="adm_sort_by">Sort</div>
+      <select class="filter-input" id="subSort" style="cursor:pointer"
+              onchange="resetSubPage(); renderSubs()">
+        <option value="created_desc"  data-i18n="adm_sort_created_desc">Newest First</option>
+        <option value="created_asc"   data-i18n="adm_sort_created_asc">Oldest First</option>
+        <option value="renewal_asc"   data-i18n="adm_sort_renewal_asc">Renewal: Soonest</option>
+        <option value="renewal_desc"  data-i18n="adm_sort_renewal_desc">Renewal: Latest</option>
+      </select>
+    </div>
+
+    <!-- Clear -->
+    <div style="flex:0 0 auto; padding-bottom:1px">
+      <button id="subClearFilterBtn" class="btn btn-sm btn-ghost"
+              onclick="clearSubFilters()"
+              style="height:36px; padding:0 14px; font-size:12px; gap:5px">
+        <i class="ti ti-filter-off" style="font-size:14px"></i>
+        <span data-i18n="adm_clear_filters">Clear</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SUBSCRIPTIONS TABLE
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="panel-card">
   <div class="table-responsive">
-    <table class="table table-hover mb-0">
+    <table class="admin-table" id="subsTableEl">
       <thead>
         <tr>
-          <th>ID</th>
-          <th>User</th>
-          <th>Plan</th>
-          <th>Status</th>
-          <th data-i18n="adm_col_renewal">Renewal Date</th>
-          <th data-i18n="adm_col_autorenew">Auto-Renew</th>
-          <th>Since</th>
+          <th style="width:44px; padding-left:18px">#</th>
+          <th data-i18n="adm_sub_col_user">Subscriber</th>
+          <th data-i18n="adm_sub_col_plan"    style="width:120px">Plan</th>
+          <th data-i18n="adm_col_status"      style="width:110px">Status</th>
+          <th data-i18n="adm_sub_col_renewal" style="width:160px">Renewal Date</th>
+          <th data-i18n="adm_sub_col_autorenew" style="width:110px">Auto-Renew</th>
+          <th data-i18n="adm_sub_col_since"   style="width:110px">Since</th>
         </tr>
       </thead>
       <tbody id="subsTable">
-        <tr><td colspan="7" class="text-center py-4 text-muted">Loading…</td></tr>
+        <tr>
+          <td colspan="7" style="text-align:center; padding:56px 0; color:var(--color-muted)">
+            <i class="ti ti-loader-2 u-spin" style="font-size:22px; display:block; margin-bottom:8px"></i>
+            <span data-i18n="adm_loading">Loading…</span>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
-  <div class="d-flex align-items-center justify-content-between p-3 border-top">
-    <small class="text-muted" id="subsPagInfo">—</small>
-    <div class="d-flex gap-2">
-      <button class="btn btn-sm btn-outline-secondary" id="subsBtn-prev"
-              onclick="loadSubs(subsPage - 1)" disabled>
-        <i class="bi bi-chevron-left"></i>
+
+  <!-- Table footer: info + pagination + timestamp -->
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+              padding:10px 18px; border-top:1px solid var(--color-border);
+              background:var(--color-bg-soft,#F8FAFC);">
+
+    <span style="font-size:12px; color:var(--color-muted)" id="subsResultInfo">—</span>
+
+    <div style="display:flex; align-items:center; gap:6px" id="subsPagination">
+      <button class="page-btn" id="subsPrevBtn" onclick="changeSubPage(-1)" disabled>
+        <i class="ti ti-chevron-left" style="font-size:12px"></i>
+        <span data-i18n="adm_page_prev">Prev</span>
       </button>
-      <button class="btn btn-sm btn-outline-secondary" id="subsBtn-next"
-              onclick="loadSubs(subsPage + 1)" disabled>
-        <i class="bi bi-chevron-right"></i>
+      <span id="subsPageInfo"
+            style="font-size:12px; color:var(--color-muted); min-width:90px; text-align:center">—</span>
+      <button class="page-btn" id="subsNextBtn" onclick="changeSubPage(1)" disabled>
+        <span data-i18n="adm_page_next">Next</span>
+        <i class="ti ti-chevron-right" style="font-size:12px"></i>
       </button>
     </div>
+
+    <span style="font-size:12px; color:var(--color-hint)" id="subsLastUpdated"></span>
   </div>
 </div>
+
 {% endblock %}
+
 
 {% block scripts %}
 <script>
-// ── i18n keys — Subscriptions page ──────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//  i18n — Subscriptions page
+// ══════════════════════════════════════════════════════════════════════════════
 Object.assign(TRANSLATIONS, {
-  adm_sub_title:      { en: 'Subscriptions',                 km: 'ការជាវ' },
-  adm_sub_sub:        { en: 'Free vs Pro counts, revenue, and expiry dates', km: 'ចំនួន Free/Pro, ចំណូល, និងកាលបរិច្ឆេទផុតកំណត់' },
-  adm_monthly_subs:   { en: 'Monthly Subscribers',           km: 'អ្នកជាវប្រចាំខែ' },
-  adm_yearly_subs:    { en: 'Yearly Subscribers',            km: 'អ្នកជាវប្រចាំឆ្នាំ' },
-  adm_total_rev:      { en: 'Total Revenue (est.)',           km: 'ចំណូលសរុប (ប.ច.)' },
-  adm_aba_plans:      { en: 'ABA KHQR Pricing Plans',        km: 'គម្រោងតម្លៃ ABA KHQR' },
-  adm_monthly_plan:   { en: 'Monthly Plan',                  km: 'គម្រោងប្រចាំខែ' },
-  adm_yearly_plan:    { en: 'Yearly Plan',                   km: 'គម្រោងប្រចាំឆ្នាំ' },
+  // ── Page header
+  adm_sub_title:       { en: 'Subscriptions',
+                         km: 'ការជាវ' },
+  adm_sub_sub:         { en: 'Manage Pro subscriber billing, revenue & renewal cycles',
+                         km: 'គ្រប់គ្រងការជាវ Pro, ចំណូល និងវដ្ដបង់ប្រាក់' },
+
+  // ── KPI cards
+  adm_monthly_subs:    { en: 'Monthly Subscribers',       km: 'អ្នកជាវប្រចាំខែ' },
+  adm_yearly_subs:     { en: 'Yearly Subscribers',        km: 'អ្នកជាវប្រចាំឆ្នាំ' },
+  adm_total_rev:       { en: 'Total Revenue (est.)',       km: 'ចំណូលសរុប (ប.ច.)' },
+  adm_rev_note:        { en: 'Monthly + Yearly combined',  km: 'ខែ + ឆ្នាំ រួមគ្នា' },
+  adm_trial_count:     { en: 'Trialing',                   km: 'សាកល្បង' },
+  adm_trial_note:      { en: 'Converting to paid',         km: ' កំពុងប្តូរទៅបង់ប្រាក់' },
+
+  // ── Pricing plans reference
+  adm_aba_plans:       { en: 'ABA KHQR Pricing Plans',    km: 'គម្រោងតម្លៃ ABA KHQR' },
+  adm_monthly_plan:    { en: 'Monthly Plan',               km: 'គម្រោងប្រចាំខែ' },
+  adm_yearly_plan:     { en: 'Yearly Plan',                km: 'គម្រោងប្រចាំឆ្នាំ' },
+  adm_most_popular:    { en: 'Most Popular',               km: 'ពេញនិយមបំផុត' },
+  adm_plan_billed_monthly: { en: 'Billed every 30 days',  km: 'ចេញវិក្កយបត្ររៀងរាល់ ៣០ ថ្ងៃ' },
+  adm_plan_billed_yearly:  { en: 'Billed annually — save 33%', km: 'ចេញប្រចាំឆ្នាំ — ចំណេញ ៣៣%' },
+  adm_per_month:       { en: '/ month',                    km: '/ ខែ' },
+  adm_per_year:        { en: '/ year',                     km: '/ ឆ្នាំ' },
+
+  // ── Filter bar
+  adm_search_subs:     { en: 'Search',                     km: 'ស្វែងរក' },
+  adm_search_subs_ph:  { en: 'Name or email…',             km: 'ឈ្មោះ ឬ អ៊ីមែល…' },
+  adm_all_plans:       { en: 'All Plans',                  km: 'គ្រប់គម្រោង' },
+  adm_all_autorenew:   { en: 'All',                        km: 'ទាំងអស់' },
+  adm_autorenew_yes:   { en: 'Auto-Renew: On',             km: 'បន្តស្វ័យ: បើក' },
+  adm_autorenew_no:    { en: 'Auto-Renew: Off',            km: 'បន្តស្វ័យ: បិទ' },
+  adm_sort_by:         { en: 'Sort',                       km: 'តម្រៀប' },
+  adm_clear_filters:   { en: 'Clear',                      km: 'សម្អាត' },
+
+  // ── Sort options
+  adm_sort_created_desc: { en: 'Newest First',             km: 'ថ្មី → ចាស់' },
+  adm_sort_created_asc:  { en: 'Oldest First',             km: 'ចាស់ → ថ្មី' },
+  adm_sort_renewal_asc:  { en: 'Renewal: Soonest',         km: 'ផ្ការ៉ូស: ជិត' },
+  adm_sort_renewal_desc: { en: 'Renewal: Latest',          km: 'ផ្ការ៉ូស: ឆ្ងាយ' },
+
+  // ── Export
+  adm_export:          { en: 'Export',                     km: 'នាំចេញ' },
+  adm_export_pdf:      { en: 'Export PDF',                 km: 'នាំចេញ PDF' },
+  adm_export_docx:     { en: 'Export DOCX',               km: 'នាំចេញ DOCX' },
+  adm_exporting:       { en: 'Exporting…',                km: 'កំពុងនាំចេញ…' },
+
+  // ── Table columns
+  adm_sub_col_user:      { en: 'Subscriber',              km: 'អ្នកជាវ' },
+  adm_sub_col_plan:      { en: 'Plan',                    km: 'គម្រោង' },
+  adm_sub_col_renewal:   { en: 'Renewal Date',            km: 'កាលបរិច្ឆេទបន្ត' },
+  adm_sub_col_autorenew: { en: 'Auto-Renew',              km: 'បន្តស្វ័យ' },
+  adm_sub_col_since:     { en: 'Since',                   km: 'ចាប់ពី' },
+
+  // ── Status pills
+  adm_sub_trial:         { en: 'Trial',                   km: 'សាកល្បង' },
+  adm_sub_pastdue:       { en: 'Past Due',                km: 'ហួសកំណត់' },
+  adm_sub_canceled:      { en: 'Cancelled',               km: 'បានបោះបង់' },
+  adm_sub_inactive:      { en: 'Inactive',                km: 'អសកម្ម' },
+
+  // ── Plan pills
+  adm_plan_badge_monthly: { en: 'Monthly',                km: 'ប្រចាំខែ' },
+  adm_plan_badge_yearly:  { en: 'Yearly ★',              km: 'ប្រចាំឆ្នាំ ★' },
+
+  // ── Auto-renew labels
+  adm_autorenew_on:      { en: 'On',                      km: 'បើក' },
+  adm_autorenew_off:     { en: 'Off',                     km: 'បិទ' },
+  adm_enable_renew:      { en: 'Click to enable auto-renew',  km: 'ចុចដើម្បីបើកការបន្ត' },
+  adm_disable_renew:     { en: 'Click to disable auto-renew', km: 'ចុចដើម្បីបិទការបន្ត' },
+  adm_renew_enabled:     { en: 'Auto-renew enabled.',     km: 'ការបន្តស្វ័យត្រូវបានបើក។' },
+  adm_renew_disabled:    { en: 'Auto-renew disabled.',    km: 'ការបន្តស្វ័យត្រូវបានបិទ។' },
+
+  // ── Renewal urgency
+  adm_expires_in:        { en: 'Expires in',              km: 'ផុតក្នុង' },
+  adm_days:              { en: 'd left',                  km: 'ថ្ងៃ' },
+  adm_expired_ago:       { en: 'd ago',                   km: 'ថ្ងៃ' },
+
+  // ── Pagination
+  adm_page_prev:         { en: 'Prev',                    km: 'មុន' },
+  adm_page_next:         { en: 'Next',                    km: 'បន្ទាប់' },
+
+  // ── Empty / feedback
+  adm_no_subs:           { en: 'No subscriptions found.', km: 'រកមិនឃើញការជាវ។' },
 });
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
-let subsPage = 1;
+// ══════════════════════════════════════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════════════════════════════════════
+let _allSubs     = [];
+let _subPage     = 1;
+const _subPerPg  = 20;
 
-async function loadSubs(page = 1) {
-  subsPage = page;
-  const r = await apiFetch(`/api/admin/subscriptions?page=${page}&limit=20`);
+function resetSubPage() { _subPage = 1; }
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Helpers — bilingual badge builders
+// ══════════════════════════════════════════════════════════════════════════════
+function escHtml(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function planPill(plan) {
+  if (plan === 'yearly') {
+    return `<span class="sub-plan-pill yearly">
+              <i class="ti ti-star" style="font-size:9px"></i>
+              ${escHtml(I18n.t('adm_plan_badge_yearly'))}
+            </span>`;
+  }
+  return `<span class="sub-plan-pill monthly">
+            <i class="ti ti-calendar" style="font-size:9px"></i>
+            ${escHtml(I18n.t('adm_plan_badge_monthly'))}
+          </span>`;
+}
+
+function statusPill(status) {
+  const lang = I18n.getLang();
+  const MAP = {
+    active:   { en: 'Active',     km: 'សកម្ម',       icon: 'ti-circle-filled', cls: 'active'   },
+    trialing: { en: 'Trial',      km: 'សាកល្បង',     icon: 'ti-clock-hour-3',  cls: 'trialing' },
+    past_due: { en: 'Past Due',   km: 'ហួសកំណត់',    icon: 'ti-alert-triangle',cls: 'past_due' },
+    canceled: { en: 'Cancelled',  km: 'បានបោះបង់',   icon: 'ti-ban',           cls: 'canceled' },
+    inactive: { en: 'Inactive',   km: 'អសកម្ម',      icon: 'ti-circle',        cls: 'inactive' },
+  };
+  const v = MAP[status] || { en: status, km: status, icon: 'ti-circle', cls: 'inactive' };
+  return `<span class="sub-status-pill ${v.cls}">
+            <i class="ti ${v.icon}" style="font-size:8px"></i>
+            ${escHtml(v[lang] || v.en)}
+          </span>`;
+}
+
+function renewalInfo(isoDate) {
+  if (!isoDate) return { text: '—', badge: '', urgency: '' };
+  const lang  = I18n.getLang();
+  const days  = Math.ceil((new Date(isoDate) - Date.now()) / 86400000);
+
+  const dateStr = new Date(isoDate).toLocaleDateString('en-US', {
+    year: 'numeric', month: 'short', day: '2-digit',
+  });
+
+  if (days < 0) {
+    const lbl = lang === 'km'
+      ? `ផុត ${Math.abs(days)} ថ្ងៃ` : `${Math.abs(days)}${I18n.t('adm_expired_ago')}`;
+    return { text: dateStr, urgency: 'urgent',
+             badge: `<span class="renewal-badge urgent">⚠ ${escHtml(lbl)}</span>` };
+  }
+  if (days <= 3) {
+    const lbl = lang === 'km' ? `${days} ថ្ងៃ` : `${days}${I18n.t('adm_days')}`;
+    return { text: dateStr, urgency: 'urgent',
+             badge: `<span class="renewal-badge urgent">⚠ ${escHtml(lbl)}</span>` };
+  }
+  if (days <= 7) {
+    const lbl = lang === 'km' ? `${days} ថ្ងៃ` : `${days}${I18n.t('adm_days')}`;
+    return { text: dateStr, urgency: 'soon',
+             badge: `<span class="renewal-badge soon">⚡ ${escHtml(lbl)}</span>` };
+  }
+  return { text: dateStr, badge: '', urgency: '' };
+}
+
+function renewPill(subId, cancelAtEnd) {
+  const lang = I18n.getLang();
+  if (!cancelAtEnd) {
+    // auto-renew is ON
+    return `<span class="renew-pill on"
+                  onclick="toggleAutoRenew(${subId}, true)"
+                  title="${escHtml(I18n.t('adm_disable_renew'))}">
+              <i class="ti ti-refresh" style="font-size:9px"></i>
+              ${escHtml(I18n.t('adm_autorenew_on'))}
+            </span>`;
+  }
+  // auto-renew is OFF (cancel at end = true means no renewal)
+  return `<span class="renew-pill off"
+                onclick="toggleAutoRenew(${subId}, false)"
+                title="${escHtml(I18n.t('adm_enable_renew'))}">
+            <i class="ti ti-refresh-alert" style="font-size:9px"></i>
+            ${escHtml(I18n.t('adm_autorenew_off'))}
+          </span>`;
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Load all subscriptions (client-side filter/sort/paginate)
+// ══════════════════════════════════════════════════════════════════════════════
+async function loadSubs() {
+  const r = await apiFetch('/api/admin/subscriptions?page=1&limit=1000&status=all');
   if (!r) return;
   const d = await r.json();
 
-  // Revenue cards
-  document.getElementById('r-monthly-subs').textContent  = d.revenue.monthly_subscribers;
-  document.getElementById('r-mrr').textContent           = `$${d.revenue.monthly_mrr.toFixed(2)} MRR`;
-  document.getElementById('r-yearly-subs').textContent   = d.revenue.yearly_subscribers;
-  document.getElementById('r-yearly-rev').textContent    = `$${d.revenue.yearly_revenue.toFixed(2)} ARR`;
-  document.getElementById('r-total-rev').textContent     = `$${d.revenue.total_arr.toFixed(2)}`;
-  document.getElementById('r-active-total').textContent  = d.total;
+  _allSubs = d.subscriptions || [];
+  renderSubs();
+  updateKpiCards();
+  updatePlanDist();
 
-  // Pagination
-  document.getElementById('subsPagInfo').textContent =
-    `Showing ${d.subscriptions.length} of ${d.total} (page ${d.page}/${d.pages})`;
-  document.getElementById('subsBtn-prev').disabled = d.page <= 1;
-  document.getElementById('subsBtn-next').disabled = !d.has_next;
+  const el = document.getElementById('subsLastUpdated');
+  if (el) el.textContent = I18n.t('adm_last_updated') + ': ' + new Date().toLocaleTimeString();
+}
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  KPI Cards — computed from _allSubs
+// ══════════════════════════════════════════════════════════════════════════════
+function updateKpiCards() {
+  const activeSubs  = _allSubs.filter(s => s.status === 'active');
+  const monthlySubs = activeSubs.filter(s => s.plan === 'monthly');
+  const yearlySubs  = activeSubs.filter(s => s.plan === 'yearly');
+  const trialSubs   = _allSubs.filter(s => s.status === 'trialing');
+
+  const mrr      = monthlySubs.length * 9.99;
+  const arr      = yearlySubs.length  * 79.99;
+  const totalRev = mrr + arr;
+
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('kpi-monthly-subs', monthlySubs.length);
+  set('kpi-mrr',          `$${mrr.toFixed(2)} MRR`);
+  set('kpi-yearly-subs',  yearlySubs.length);
+  set('kpi-arr',          `$${arr.toFixed(2)} ARR`);
+  set('kpi-total-rev',    `$${totalRev.toFixed(2)}`);
+  set('kpi-trial-subs',   trialSubs.length);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Plan Distribution Bar
+// ══════════════════════════════════════════════════════════════════════════════
+function updatePlanDist() {
+  const active   = _allSubs.filter(s => s.status === 'active');
+  const monthly  = active.filter(s => s.plan === 'monthly').length;
+  const yearly   = active.filter(s => s.plan === 'yearly').length;
+  const total    = monthly + yearly || 1;
+
+  const mPct = Math.round((monthly / total) * 100);
+  const yPct = 100 - mPct;
+
+  const setEl = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  const setW  = (id, v) => { const el = document.getElementById(id); if (el) el.style.width = v; };
+
+  setEl('dist-monthly-pct', `${mPct}%`);
+  setEl('dist-yearly-pct',  `${yPct}%`);
+  setW('dist-monthly-fill', `${mPct}%`);
+  setW('dist-yearly-fill',  `${yPct}%`);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Render (filter → sort → paginate → paint)
+// ══════════════════════════════════════════════════════════════════════════════
+function renderSubs() {
+  const search   = document.getElementById('subSearch').value.trim().toLowerCase();
+  const plan     = document.getElementById('subFilterPlan').value;
+  const status   = document.getElementById('subFilterStatus').value;
+  const renew    = document.getElementById('subFilterRenew').value;
+  const sort     = document.getElementById('subSort').value;
+  const lang     = I18n.getLang();
+
+  // ── 1. Filter ─────────────────────────────────────────────────────────────
+  let subs = _allSubs;
+
+  if (search) subs = subs.filter(s =>
+    (s.user_name  || '').toLowerCase().includes(search) ||
+    (s.user_email || '').toLowerCase().includes(search));
+
+  if (plan)   subs = subs.filter(s => s.plan === plan);
+  if (status) subs = subs.filter(s => s.status === status);
+
+  if (renew === 'on')  subs = subs.filter(s => !s.cancel_at_end);
+  if (renew === 'off') subs = subs.filter(s =>  s.cancel_at_end);
+
+  // ── 2. Sort ───────────────────────────────────────────────────────────────
+  subs = [...subs];
+  if (sort === 'created_asc') {
+    subs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  } else if (sort === 'created_desc') {
+    subs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  } else if (sort === 'renewal_asc') {
+    subs.sort((a, b) => new Date(a.period_end || 0) - new Date(b.period_end || 0));
+  } else if (sort === 'renewal_desc') {
+    subs.sort((a, b) => new Date(b.period_end || 0) - new Date(a.period_end || 0));
+  }
+
+  // ── 3. Paginate ───────────────────────────────────────────────────────────
+  const total      = subs.length;
+  const totalPages = Math.max(1, Math.ceil(total / _subPerPg));
+  _subPage         = Math.min(_subPage, totalPages);
+  const start      = (_subPage - 1) * _subPerPg;
+  const pageSubs   = subs.slice(start, start + _subPerPg);
+
+  const from = total === 0 ? 0 : start + 1;
+  const to   = Math.min(start + _subPerPg, total);
+
+  const info = document.getElementById('subsResultInfo');
+  if (info) {
+    info.textContent = lang === 'km'
+      ? `បង្ហាញ ${from}–${to} នៃ ${total} ការជាវ`
+      : `Showing ${from}–${to} of ${total} subscription${total !== 1 ? 's' : ''}`;
+  }
+
+  const pageInfo = document.getElementById('subsPageInfo');
+  if (pageInfo) {
+    pageInfo.textContent = lang === 'km'
+      ? `ទំព័រ ${_subPage} / ${totalPages}`
+      : `Page ${_subPage} of ${totalPages}`;
+  }
+
+  const prevBtn = document.getElementById('subsPrevBtn');
+  const nextBtn = document.getElementById('subsNextBtn');
+  if (prevBtn) prevBtn.disabled = _subPage <= 1;
+  if (nextBtn) nextBtn.disabled = _subPage >= totalPages;
+
+  // ── 4. Render rows ────────────────────────────────────────────────────────
   const tbody = document.getElementById('subsTable');
-  if (!d.subscriptions.length) {
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-4 text-muted">No active subscriptions.</td></tr>';
+  if (!tbody) return;
+
+  if (!pageSubs.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="7">
+        <div class="empty-state" style="padding:56px 0">
+          <i class="ti ti-credit-card empty-icon" style="font-size:36px"></i>
+          <p data-i18n="adm_no_subs">No subscriptions found.</p>
+        </div>
+      </td></tr>`;
+    if (typeof I18n !== 'undefined') I18n.applyAll();
     return;
   }
 
-  tbody.innerHTML = d.subscriptions.map(s => `
-    <tr>
-      <td class="text-muted small">#${s.id}</td>
+  tbody.innerHTML = pageSubs.map(s => {
+    const initials  = avatarInitials(s.user_name || s.user_email || '?');
+    const bgColor   = avatarColor(s.user_email || String(s.id));
+    const renInfo   = renewalInfo(s.period_end);
+    const renewalCss = renInfo.urgency === 'urgent'
+      ? 'color:var(--color-red)'
+      : renInfo.urgency === 'soon'
+        ? 'color:var(--color-amber,#D97706)'
+        : 'color:var(--color-muted)';
+
+    return `
+    <tr id="subrow-${s.id}">
+      <td style="padding-left:18px; color:var(--color-muted); font-size:12px">${s.id}</td>
+
       <td>
-        <div class="fw-medium">${s.user_name || '—'}</div>
-        <div class="text-muted small">${s.user_email || '—'}</div>
+        <div style="display:flex; align-items:center; gap:10px">
+          <div class="sub-avatar" style="background:${bgColor}">${escHtml(initials)}</div>
+          <div style="min-width:0">
+            <div style="font-size:13px; font-weight:600; color:var(--color-text);
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px">
+              ${escHtml(s.user_name || '—')}
+            </div>
+            <div style="font-size:11px; color:var(--color-muted); margin-top:1px;
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:190px">
+              ${escHtml(s.user_email || '—')}
+            </div>
+          </div>
+        </div>
       </td>
+
+      <td>${planPill(s.plan)}</td>
+
+      <td>${statusPill(s.status)}</td>
+
       <td>
-        ${s.plan === 'yearly'
-          ? '<span class="badge badge-pro">Yearly</span>'
-          : '<span class="badge bg-info">Monthly</span>'}
+        <div style="font-size:12px; font-weight:500; ${renewalCss}">
+          ${escHtml(renInfo.text)}
+        </div>
+        ${renInfo.badge}
       </td>
-      <td>
-        ${s.status === 'active'
-          ? '<span class="badge bg-success">Active</span>'
-          : s.status === 'trialing'
-            ? '<span class="badge bg-warning text-dark">Trial</span>'
-            : `<span class="badge bg-secondary">${s.status}</span>`}
+
+      <td id="subrenew-${s.id}">
+        ${renewPill(s.id, s.cancel_at_end)}
       </td>
-      <td class="small">${fmtDate(s.period_end)}</td>
-      <td>
-        ${!s.cancel_at_end
-          ? '<span class="badge bg-success">Yes</span>'
-          : '<span class="badge bg-secondary">No</span>'}
+
+      <td style="font-size:12px; color:var(--color-muted)">
+        ${escHtml(fmtDate(s.created_at))}
       </td>
-      <td class="small text-muted">${fmtDate(s.created_at)}</td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+
+  if (typeof I18n !== 'undefined') I18n.applyAll();
 }
 
+function changeSubPage(delta) {
+  _subPage += delta;
+  renderSubs();
+  const tableEl = document.getElementById('subsTableEl');
+  if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Filter event wiring
+// ══════════════════════════════════════════════════════════════════════════════
+document.getElementById('subSearch').addEventListener('input', () => { resetSubPage(); renderSubs(); });
+
+function clearSubFilters() {
+  document.getElementById('subSearch').value       = '';
+  document.getElementById('subFilterPlan').value   = '';
+  document.getElementById('subFilterStatus').value = '';
+  document.getElementById('subFilterRenew').value  = '';
+  document.getElementById('subSort').value         = 'created_desc';
+  resetSubPage();
+  renderSubs();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Export
+// ══════════════════════════════════════════════════════════════════════════════
+function toggleSubExport(e) {
+  e.stopPropagation();
+  const menu    = document.getElementById('subExportMenu');
+  const chevron = document.getElementById('subExportChevron');
+  const isOpen  = menu.classList.toggle('open');
+  chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('subExportWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('subExportMenu').classList.remove('open');
+    document.getElementById('subExportChevron').style.transform = '';
+  }
+});
+
+async function exportSubs(format) {
+  document.getElementById('subExportMenu').classList.remove('open');
+  document.getElementById('subExportChevron').style.transform = '';
+
+  const lang = I18n.getLang();
+  toast(I18n.t('adm_exporting'), 'info', 2000);
+
+  try {
+    const r = await apiFetch(`/api/admin/subscriptions/export/${format}?lang=${lang}`);
+    if (!r || !r.ok) { toast(I18n.t('adm_export') + ' failed.', 'error'); return; }
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `smartxray_subscriptions_${new Date().toISOString().slice(0,10)}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast(I18n.t('adm_export') + ' ready!', 'success');
+  } catch (err) {
+    toast('Export error: ' + err.message, 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Auto-Renew toggle
+// ══════════════════════════════════════════════════════════════════════════════
+async function toggleAutoRenew(subId, cancelAtEnd) {
+  const cell = document.getElementById(`subrenew-${subId}`);
+  const orig = cell ? cell.innerHTML : '';
+
+  // Optimistic UI — show spinner
+  if (cell) cell.innerHTML = `
+    <span class="renew-pill ${!cancelAtEnd ? 'on' : 'off'}" style="opacity:.5; cursor:default">
+      <i class="ti ti-loader-2 u-spin" style="font-size:9px"></i> …
+    </span>`;
+
+  const r = await apiFetch(`/api/admin/subscriptions/${subId}/toggle-renew`, {
+    method: 'PATCH',
+    body:   JSON.stringify({ cancel_at_end: cancelAtEnd }),
+  });
+
+  if (!r) { if (cell) cell.innerHTML = orig; return; }
+
+  if (r.ok) {
+    // Update cached record
+    const idx = _allSubs.findIndex(s => s.id === subId);
+    if (idx >= 0) _allSubs[idx].cancel_at_end = cancelAtEnd;
+
+    toast(I18n.t(cancelAtEnd ? 'adm_renew_disabled' : 'adm_renew_enabled'),
+          cancelAtEnd ? 'warning' : 'success');
+
+    if (cell) cell.innerHTML = renewPill(subId, cancelAtEnd);
+  } else {
+    if (cell) cell.innerHTML = orig;
+    const d = await r.json().catch(() => ({}));
+    toast(d.error || 'Failed.', 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Language toggle hook — re-render on switch
+// ══════════════════════════════════════════════════════════════════════════════
+const _origSubToggle = window.adminToggleLang;
+window.adminToggleLang = function () {
+  if (typeof _origSubToggle === 'function') _origSubToggle();
+  renderSubs();
+  updateKpiCards();
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════════════════════════════════════
 loadSubs();
 </script>
 {% endblock %}

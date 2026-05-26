@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en" id="ud-html">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard — SmartX-Ray</title>
 
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
   <!-- Tabler Icons -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
   <!-- Google Fonts -->
@@ -20,17 +22,17 @@
      COMPONENT 1 — USER NAVIGATION HEADER
      ══════════════════════════════════════════════════════════════════════════ -->
 <header class="ud-nav">
-  <a href="/dashboard" class="ud-brand">
+  <a href="javascript:void(0)" class="ud-brand" onclick="udScrollTo('top')">
     <span class="ud-brand-name">SmartX-Ray</span>
     <span class="ud-brand-sub" data-i18n="brand_sub">Medical AI Platform</span>
   </a>
 
   <nav>
     <ul class="ud-nav-links">
-      <li><a href="/dashboard" class="active" data-i18n="nav_home">Home</a></li>
-      <li><a href="#scan-section" data-i18n="nav_scan">Scan</a></li>
-      <li><a href="#history-section" data-i18n="nav_history">History</a></li>
-      <li><a href="#doctor-section" data-i18n="nav_find_doctor_s">Find a Doctor</a></li>
+      <li><a href="javascript:void(0)" class="active" data-section="top" data-i18n="nav_home" onclick="udScrollTo('top')">Home</a></li>
+      <li><a href="javascript:void(0)" data-section="scan-section" data-i18n="nav_scan" onclick="udScrollTo('scan-section')">Scan</a></li>
+      <li><a href="javascript:void(0)" data-section="history-section" data-i18n="nav_history" onclick="udScrollTo('history-section')">History</a></li>
+      <li><a href="javascript:void(0)" data-section="doctor-section" data-i18n="nav_find_doctor_s" onclick="udScrollTo('doctor-section')">Find a Doctor</a></li>
       <li class="nav-upgrade"><a href="/pricing" data-i18n="nav_upgrade_link">Upgrade</a></li>
     </ul>
   </nav>
@@ -66,16 +68,16 @@
      PHONE — BOTTOM TAB BAR
      ══════════════════════════════════════════════════════════════════════════ -->
 <div class="ud-tab-bar">
-  <a href="/dashboard" class="ud-tab-item active">
+  <a href="javascript:void(0)" class="ud-tab-item active" data-section="top" onclick="udScrollTo('top')">
     <i class="ti ti-home"></i><span data-i18n="nav_home">Home</span>
   </a>
-  <a href="#scan-section" class="ud-tab-item" onclick="document.getElementById('scan-section').scrollIntoView({behavior:'smooth'})">
+  <a href="javascript:void(0)" class="ud-tab-item" data-section="scan-section" onclick="udScrollTo('scan-section')">
     <i class="ti ti-scan"></i><span data-i18n="nav_scan">Scan</span>
   </a>
-  <a href="#history-section" class="ud-tab-item" onclick="document.getElementById('history-section').scrollIntoView({behavior:'smooth'})">
+  <a href="javascript:void(0)" class="ud-tab-item" data-section="history-section" onclick="udScrollTo('history-section')">
     <i class="ti ti-history"></i><span data-i18n="nav_history">History</span>
   </a>
-  <a href="#doctor-section" class="ud-tab-item" onclick="document.getElementById('doctor-section').scrollIntoView({behavior:'smooth'})">
+  <a href="javascript:void(0)" class="ud-tab-item" data-section="doctor-section" onclick="udScrollTo('doctor-section')">
     <i class="ti ti-stethoscope"></i><span data-i18n="nav_find_doctor_s">Doctor</span>
   </a>
   <a href="/pricing" class="ud-tab-item nav-upgrade">
@@ -116,16 +118,16 @@
   <div class="ud-quick-grid">
 
     <!-- Card A: New Scan -->
-    <a href="#scan-section" class="ud-qcard ud-qcard-scan"
-       onclick="document.getElementById('scan-section').scrollIntoView({behavior:'smooth'});return false;">
+    <a href="javascript:void(0)" class="ud-qcard ud-qcard-scan"
+       onclick="udScrollTo('scan-section')">
       <i class="ti ti-upload qcard-icon"></i>
       <span class="qcard-label" data-i18n="qcard_scan">Upload X-Ray</span>
       <span class="qcard-sub">PNG, JPG, DICOM</span>
     </a>
 
     <!-- Card B: History -->
-    <a href="#history-section" class="ud-qcard ud-qcard-white ud-qcard-history"
-       onclick="document.getElementById('history-section').scrollIntoView({behavior:'smooth'});return false;">
+    <a href="javascript:void(0)" class="ud-qcard ud-qcard-white ud-qcard-history"
+       onclick="udScrollTo('history-section')">
       <span class="qcard-badge ud-hidden" id="udScanBadge">0</span>
       <i class="ti ti-history qcard-icon"></i>
       <span class="qcard-label" data-i18n="qcard_history">View History</span>
@@ -133,8 +135,8 @@
     </a>
 
     <!-- Card C: Doctor -->
-    <a href="#doctor-section" class="ud-qcard ud-qcard-white ud-qcard-doctor"
-       onclick="document.getElementById('doctor-section').scrollIntoView({behavior:'smooth'});return false;">
+    <a href="javascript:void(0)" class="ud-qcard ud-qcard-white ud-qcard-doctor"
+       onclick="udScrollTo('doctor-section')">
       <i class="ti ti-stethoscope qcard-icon"></i>
       <span class="qcard-label" data-i18n="qcard_doctor">Find a Doctor</span>
       <span class="qcard-sub" data-i18n="qcard_doctor_sub">8 verified doctors</span>
@@ -289,10 +291,10 @@
             <span data-i18n="result_export_pdf">Export PDF</span>
           </button>
           <!-- Pro: active PDF -->
-          <a class="ud-btn-pdf-pro ud-hidden" id="udPdfBtnPro" href="#" target="_blank">
+          <button class="ud-btn-pdf-pro ud-hidden" id="udPdfBtnPro" onclick="udDownloadReport()">
             <i class="ti ti-file-export"></i>
             <span data-i18n="result_export_pdf">Export PDF</span>
-          </a>
+          </button>
         </div>
 
         <!-- Disclaimer -->
@@ -307,7 +309,7 @@
   <section class="ud-card ud-history-card" id="history-section">
     <div class="ud-history-header">
       <div class="ud-history-title" data-i18n="history_title">My Scan History</div>
-      <a href="/dashboard" class="ud-history-view-all" data-i18n="history_view_all">View all →</a>
+      <a href="javascript:void(0)" class="ud-history-view-all" data-i18n="history_view_all" onclick="udScrollTo('history-section')">View all →</a>
     </div>
 
     <!-- Desktop/Tablet: table -->
@@ -485,6 +487,119 @@
   </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     SCAN DETAIL DRAWER  — opens when user clicks "View" in history
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="ud-sdm-overlay" id="udScanDetailModal" onclick="udCloseScanDetail(event)">
+  <div class="ud-sdm-drawer">
+
+    <!-- ── Header ─────────────────────────────────────────────────────────── -->
+    <div class="ud-sdm-header">
+      <div class="ud-sdm-header-left">
+        <div class="ud-sdm-header-icon"><i class="ti ti-scan"></i></div>
+        <div>
+          <div class="ud-sdm-scan-id" id="sdmScanId">#SCN-001</div>
+          <div class="ud-sdm-date"    id="sdmDate">—</div>
+        </div>
+      </div>
+      <button class="ud-sdm-close" onclick="udCloseScanDetailModal()">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <!-- ── Body: two columns ─────────────────────────────────────────────── -->
+    <div class="ud-sdm-body">
+
+      <!-- LEFT — X-ray viewer -->
+      <div class="ud-sdm-left">
+        <div class="ud-xray-viewer ud-sdm-viewer" id="sdmViewer">
+          <img id="sdmXrayImg" src="" alt="X-ray" />
+          <div class="ud-heatmap-overlay" id="sdmHeatmapOverlay">
+            <img id="sdmHeatmapImg" src="" alt="Grad-CAM heatmap" />
+          </div>
+        </div>
+
+        <!-- Toolbar -->
+        <div class="ud-viewer-toolbar" style="margin-top:10px;">
+          <button class="ud-tool-btn" title="Zoom in"  onclick="sdmZoomIn()"><i class="ti ti-zoom-in"></i></button>
+          <button class="ud-tool-btn" title="Zoom out" onclick="sdmZoomOut()"><i class="ti ti-zoom-out"></i></button>
+          <button class="ud-tool-btn" title="Reset"    onclick="sdmZoomReset()"><i class="ti ti-refresh"></i></button>
+          <button class="ud-tool-btn" title="Download" onclick="sdmDownloadXray()"><i class="ti ti-download"></i></button>
+        </div>
+
+        <!-- Heatmap toggle -->
+        <div class="ud-heatmap-row" style="margin-top:10px;">
+          <span class="ud-heatmap-label" data-i18n="result_heatmap_lbl">Grad-CAM Heatmap</span>
+          <label class="ud-toggle">
+            <input type="checkbox" id="sdmHeatmapToggle" onchange="sdmToggleHeatmap(this)" />
+            <span class="ud-toggle-track"></span>
+          </label>
+        </div>
+
+        <!-- Disclaimer -->
+        <p class="ud-disclaimer" style="margin-top:14px;" data-i18n="result_disclaimer_dash">
+          For reference only. Consult a licensed physician.
+        </p>
+      </div>
+
+      <!-- RIGHT — Diagnosis details -->
+      <div class="ud-sdm-right">
+
+        <!-- Result badge -->
+        <div class="ud-sdm-result-label pneumonia" id="sdmResultLabel">PNEUMONIA DETECTED</div>
+
+        <!-- Confidence ring -->
+        <div class="ud-confidence-ring" style="margin-bottom:20px;">
+          <div class="ud-ring-wrap">
+            <svg viewBox="0 0 100 100" width="90" height="90">
+              <circle class="ud-ring-track" cx="50" cy="50" r="45" />
+              <circle class="ud-ring-fill pneumonia" id="sdmRingFill" cx="50" cy="50" r="45" />
+            </svg>
+            <div class="ud-ring-center" id="sdmRingPct" style="font-size:16px;">—</div>
+          </div>
+          <div class="ud-ring-label" data-i18n="result_confidence_lbl">Confidence Score</div>
+        </div>
+
+        <!-- Detail rows -->
+        <div class="ud-detail-rows" style="margin-bottom:18px;">
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_scan_id">Scan ID</span>
+            <span class="ud-detail-value" id="sdmDetailId">—</span>
+          </div>
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_model_ver">Model Version</span>
+            <span class="ud-detail-value" id="sdmDetailModel">—</span>
+          </div>
+          <div class="ud-detail-row">
+            <span class="ud-detail-label">Grad-CAM</span>
+            <span class="ud-detail-value" id="sdmDetailGradcam">—</span>
+          </div>
+          <div class="ud-detail-row">
+            <span class="ud-detail-label" data-i18n="result_university">University</span>
+            <span class="ud-detail-value" id="sdmDetailUni">—</span>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="ud-sdm-actions">
+          <!-- PDF locked (free) -->
+          <button class="ud-sdm-pdf-locked ud-hidden" id="sdmPdfLocked"
+                  onclick="udShowToast('Upgrade to Pro to export PDF reports','warning')">
+            <i class="ti ti-lock"></i>
+            <span data-i18n="result_export_pdf">Export PDF</span>
+          </button>
+          <!-- PDF active (pro) -->
+          <button class="ud-sdm-pdf-pro ud-hidden" id="sdmPdfPro" onclick="udDownloadReport()">
+            <i class="ti ti-file-export"></i>
+            <span data-i18n="result_export_pdf">Export PDF</span>
+          </button>
+        </div>
+
+      </div>
+    </div><!-- /ud-sdm-body -->
+  </div><!-- /ud-sdm-drawer -->
+</div>
+
 <!-- Toast container -->
 <div class="ud-toast-container" id="udToastContainer"></div>
 
@@ -526,7 +641,7 @@ Object.assign(TRANSLATIONS, {
   upload_remove:           { en: "Remove",                                km: "លុប" },
   upload_analyzing:        { en: "AI is analyzing your X-ray",            km: "AI កំពុងវិភាគ X-Ray" },
   result_title:            { en: "AI Diagnosis Result",                   km: "លទ្ធផលរោគវិនិច្ឆ័យ AI" },
-  result_pneumonia:        { en: "PNEUMONIA DETECTED",                    km: "រកឃើញជំងឺ폐炎" },
+  result_pneumonia:        { en: "PNEUMONIA DETECTED",                    km: "រកឃើញជំងឺ" },
   result_normal:           { en: "NORMAL",                               km: "ធម្មតា" },
   result_confidence_lbl:   { en: "Confidence Score",                      km: "ភាពជឿជាក់" },
   result_proc_time:        { en: "AI Processing Time",                    km: "ពេលដំណើរការ AI" },
@@ -548,7 +663,7 @@ Object.assign(TRANSLATIONS, {
   hist_col_conf:           { en: "Confidence",                            km: "ភាពជឿជាក់" },
   hist_col_time:           { en: "AI Time",                               km: "ពេល AI" },
   hist_col_actions:        { en: "Actions",                               km: "សកម្មភាព" },
-  hist_pill_pneumonia:     { en: "PNEUMONIA",                             km: "ជំងឺ폐炎" },
+  hist_pill_pneumonia:     { en: "PNEUMONIA",                             km: "ជំង" },
   hist_pill_normal:        { en: "NORMAL",                                km: "ធម្មតា" },
   hist_view:               { en: "View",                                  km: "មើល" },
   hist_dl_locked:          { en: "Upgrade to Pro",                        km: "ដំឡើងដើម្បី Pro" },
@@ -596,3 +711,4 @@ Object.assign(TRANSLATIONS, {
 <script src="/static/js/user-dashboard.js"></script>
 </body>
 </html>
+

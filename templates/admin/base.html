@@ -8,7 +8,7 @@
   <!-- ── Fonts ──────────────────────────────────────────────────────────── -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Hanuman:wght@400;700&family=Noto+Sans+Khmer:wght@400;600;700&display=swap" rel="stylesheet">
 
   <!-- ── Icons ──────────────────────────────────────────────────────────── -->
   <!-- Tabler Icons (new design system) -->
@@ -25,9 +25,16 @@
 
   <!-- ── Override Bootstrap defaults to match new tokens ───────────────── -->
   <style>
-    /* Ensure Inter wins over Bootstrap's system-ui stack */
+    /* Body uses DM Sans (Figma spec), Bootstrap overrides reset here */
     body, .btn, .form-control, .form-select, .table, .modal-body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif !important;
+    }
+
+    /* Display headings, KPI numbers, brand → Space Grotesk */
+    .brand-name, .page-title, .topbar-title,
+    .kpi-value, .kpi-label, .panel-card-title,
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+      font-family: 'Space Grotesk', system-ui, sans-serif !important;
     }
 
     /* Khmer language override — text elements */
@@ -175,7 +182,7 @@
     </li>
 
     <li class="nav-item">
-      <a href="#" onclick="event.preventDefault(); showTgConfigModal()"
+      <a href="/admin/telegram"
          class="nav-link {% if active == 'telegram' %}active{% endif %}">
         <i class="ti ti-brand-telegram nav-icon"></i>
         <span class="nav-label" data-i18n="adm_nav_telegram">Telegram Alerts</span>
@@ -184,27 +191,87 @@
 
   </ul>
 
-  <!-- Footer — user row -->
+  <!-- Footer — professional profile section -->
   <div class="sidebar-footer">
-    <!-- Back to app link -->
-    <a href="/" class="nav-link" style="margin-bottom:4px; font-size:12px; opacity:.7;">
-      <i class="ti ti-arrow-left nav-icon" style="font-size:13px"></i>
-      <span class="nav-label" data-i18n="adm_back_app">Back to App</span>
-    </a>
 
-    <!-- User row -->
-    <div class="sidebar-user" onclick="adminLogout()" title="Logout">
-      <div class="avatar avatar-sm" id="sidebarAvatar"
-           style="background:var(--color-indigo); color:#fff; font-size:11px; flex-shrink:0">
-        AD
+    <!-- Profile dropdown (slides up above the trigger) -->
+    <div class="profile-dropdown" id="profileDropdown">
+
+      <!-- Header: large avatar + name + email + role badge -->
+      <div class="pdd-header">
+        <div class="pdd-avatar-wrap">
+          <div class="pdd-avatar" id="ddAvatar">AD</div>
+          <span class="pdd-online-dot"></span>
+        </div>
+        <div class="pdd-meta">
+          <div class="pdd-name"  id="ddName">Admin</div>
+          <div class="pdd-email" id="ddEmail">admin@smartxray.com</div>
+          <span class="pdd-badge">
+            <i class="ti ti-shield-check"></i>
+            Super Admin
+          </span>
+        </div>
       </div>
-      <div style="flex:1; min-width:0;">
-        <div class="user-name" id="sidebarEmail">Admin</div>
-        <div class="user-role" data-i18n="adm_brand_sub">Admin Panel</div>
+
+      <!-- Stats strip: session time + token expiry + live status -->
+      <div class="pdd-stats">
+        <div class="pdd-stat">
+          <div class="pdd-stat-val" id="ddSession">—</div>
+          <div class="pdd-stat-lbl">Session</div>
+        </div>
+        <div class="pdd-stat">
+          <div class="pdd-stat-val" id="ddExpiry">—</div>
+          <div class="pdd-stat-lbl">Expires in</div>
+        </div>
+        <div class="pdd-stat">
+          <div class="pdd-stat-val" style="color:var(--color-green)">● Live</div>
+          <div class="pdd-stat-lbl">Status</div>
+        </div>
       </div>
-      <i class="ti ti-logout logout-icon"></i>
+
+      <!-- Action buttons -->
+      <div class="pdd-actions">
+        <a href="/admin/logs" class="pdd-btn" onclick="closeProfileMenu()">
+          <i class="ti ti-file-text"></i>
+          <span data-i18n="adm_nav_logs">System Logs</span>
+        </a>
+        <a href="/admin/telegram" class="pdd-btn" onclick="closeProfileMenu()">
+          <i class="ti ti-brand-telegram"></i>
+          <span data-i18n="adm_nav_telegram">Telegram Alerts</span>
+        </a>
+        <a href="/" class="pdd-btn" onclick="closeProfileMenu()">
+          <i class="ti ti-arrow-left"></i>
+          <span data-i18n="adm_back_app">Back to App</span>
+        </a>
+        <div class="pdd-divider"></div>
+        <button class="pdd-btn pdd-danger" onclick="adminLogout()">
+          <i class="ti ti-logout"></i>
+          <span data-i18n="adm_logout">Logout</span>
+        </button>
+      </div>
+
+    </div><!-- /.profile-dropdown -->
+
+    <!-- Profile trigger row -->
+    <div class="sidebar-profile" id="sidebarProfile" onclick="toggleProfileMenu()">
+      <div class="profile-avatar-wrap">
+        <div class="avatar avatar-sm" id="sidebarAvatar"
+             style="background:var(--color-indigo); color:#fff; font-size:11px; flex-shrink:0">
+          AD
+        </div>
+        <span class="profile-online-dot"></span>
+      </div>
+      <div class="profile-info">
+        <div class="pi-name" id="sidebarEmail">Admin</div>
+        <div class="pi-role">
+          <span class="pi-role-dot"></span>
+          <span data-i18n="adm_brand_sub">Admin Panel</span>
+        </div>
+      </div>
+      <i class="ti ti-chevron-up profile-chevron"></i>
     </div>
-  </div>
+
+  </div><!-- /.sidebar-footer -->
 
 </nav><!-- /#sidebar -->
 
@@ -542,7 +609,8 @@ function _renderTgModalStatus(d, statusEl, testBtn) {
   if (!statusEl) return;
 
   if (d.configured && d.reachable) {
-    const botLine = d.bot_username
+    // ── Fully connected ──────────────────────────────────────────────────
+    const botLine  = d.bot_username
       ? `<div style="font-weight:600">@${d.bot_username}${d.bot_name ? ' — ' + d.bot_name : ''}</div>`
       : '';
     const chatLine = d.chat_id_preview
@@ -553,14 +621,52 @@ function _renderTgModalStatus(d, statusEl, testBtn) {
                   padding:10px 14px;font-size:12px;color:#166534;
                   display:flex;align-items:flex-start;gap:10px">
         <i class="ti ti-circle-check" style="font-size:18px;color:#16a34a;flex-shrink:0;margin-top:1px"></i>
-        <div>
-          <div style="font-weight:700;margin-bottom:2px">Bot connected ✓</div>
-          ${botLine}${chatLine}
-        </div>
+        <div><div style="font-weight:700;margin-bottom:2px">Bot connected ✓</div>${botLine}${chatLine}</div>
       </div>`;
     if (testBtn) testBtn.style.display = '';
 
+  } else if (d.token_only && d.reachable) {
+    // ── Token present, no chat_id — show Discover flow ───────────────────
+    const botLine = d.bot_username
+      ? `<span style="font-weight:600">@${d.bot_username}</span> is online.` : 'Bot token is valid.';
+    statusEl.innerHTML = `
+      <div style="background:#EFF6FF;border:1px solid #bfdbfe;border-radius:8px;
+                  padding:12px 14px;font-size:12px;color:#1e40af">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <i class="ti ti-brand-telegram" style="font-size:16px;color:#2563eb;flex-shrink:0"></i>
+          <span style="font-weight:700">Token active — Chat ID needed</span>
+        </div>
+        <div style="margin-bottom:10px;line-height:1.6">
+          ${botLine}<br>
+          To receive alerts: <strong>open Telegram → send any message to your bot</strong>, then click Discover below.
+        </div>
+        <button id="tgDiscoverBtn" onclick="discoverTgChatId()"
+                class="btn btn-sm"
+                style="background:#2563eb;color:#fff;border:none;border-radius:8px;
+                       font-size:12px;padding:6px 16px;cursor:pointer;width:100%">
+          <i class="ti ti-radar" style="font-size:13px;margin-right:5px"></i>
+          Discover Chat ID
+        </button>
+        <div id="tgDiscoverResult" style="margin-top:8px;font-size:11px"></div>
+      </div>`;
+    if (testBtn) testBtn.style.display = 'none';
+
+  } else if (d.token_only && !d.reachable) {
+    // ── Token set but bot unreachable ─────────────────────────────────────
+    statusEl.innerHTML = `
+      <div style="background:#FFF7ED;border:1px solid #fed7aa;border-radius:8px;
+                  padding:10px 14px;font-size:12px;color:#92400e;
+                  display:flex;align-items:center;gap:10px">
+        <i class="ti ti-alert-triangle" style="font-size:18px;color:#d97706;flex-shrink:0"></i>
+        <div>
+          <div style="font-weight:700;margin-bottom:2px">Token set but bot unreachable</div>
+          <div>Check that <code>TELEGRAM_BOT_TOKEN</code> in <code>.env</code> is correct.</div>
+        </div>
+      </div>`;
+    if (testBtn) testBtn.style.display = 'none';
+
   } else if (d.configured && !d.reachable) {
+    // ── Both set but offline ──────────────────────────────────────────────
     statusEl.innerHTML = `
       <div style="background:#FFF7ED;border:1px solid #fed7aa;border-radius:8px;
                   padding:10px 14px;font-size:12px;color:#92400e;
@@ -574,6 +680,7 @@ function _renderTgModalStatus(d, statusEl, testBtn) {
     if (testBtn) testBtn.style.display = '';
 
   } else {
+    // ── Nothing configured ────────────────────────────────────────────────
     statusEl.innerHTML = `
       <div style="background:#FEF2F2;border:1px solid #fecaca;border-radius:8px;
                   padding:10px 14px;font-size:12px;color:#991b1b;
@@ -581,10 +688,52 @@ function _renderTgModalStatus(d, statusEl, testBtn) {
         <i class="ti ti-x-circle" style="font-size:18px;color:#ef4444;flex-shrink:0"></i>
         <div>
           <div style="font-weight:700;margin-bottom:2px">Not configured</div>
-          <div>Add <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_CHAT_ID</code> to <code>.env</code>, then restart.</div>
+          <div>Add <code>TELEGRAM_BOT_TOKEN</code> to <code>.env</code> and restart the server.</div>
         </div>
       </div>`;
     if (testBtn) testBtn.style.display = 'none';
+  }
+}
+
+// ── Discover Chat ID from getUpdates ─────────────────────────────────────
+async function discoverTgChatId() {
+  const btn    = document.getElementById('tgDiscoverBtn');
+  const result = document.getElementById('tgDiscoverResult');
+  if (btn) {
+    btn.disabled  = true;
+    btn.innerHTML = '<i class="ti ti-loader-2" style="font-size:13px;margin-right:5px"></i>Searching…';
+  }
+
+  try {
+    const r = await apiFetch('/api/admin/telegram/discover', { method: 'POST' });
+    const d = r ? await r.json() : null;
+
+    if (d && d.ok) {
+      if (result) result.innerHTML =
+        `<span style="color:#166534">✓ ${d.message}</span>`;
+      // Refresh status + update dashboard badge
+      window._tgStatus = null;
+      if (typeof loadTgStatus === 'function') loadTgStatus();
+      setTimeout(() => {
+        // Re-open modal with fresh status
+        showTgConfigModal();
+        const testBtn = document.getElementById('tgModalTestBtn');
+        if (testBtn) testBtn.style.display = '';
+      }, 800);
+    } else {
+      if (result) result.innerHTML =
+        `<span style="color:#92400e">⚠ ${(d && d.message) || 'No messages found — send a message to your bot first.'}</span>`;
+      if (btn) {
+        btn.disabled  = false;
+        btn.innerHTML = '<i class="ti ti-radar" style="font-size:13px;margin-right:5px"></i>Discover Chat ID';
+      }
+    }
+  } catch (e) {
+    if (result) result.innerHTML = `<span style="color:#991b1b">Network error.</span>`;
+    if (btn) {
+      btn.disabled  = false;
+      btn.innerHTML = '<i class="ti ti-radar" style="font-size:13px;margin-right:5px"></i>Discover Chat ID';
+    }
   }
 }
 
@@ -641,32 +790,109 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeSidebar();
 });
 
-// ── Topbar: populate email + avatar ──────────────────────────────────────
+// ── Topbar + Sidebar profile: populate from JWT ───────────────────────────
 (function _populateTopbar() {
   const t = getToken();
   if (!t) { goLogin(); return; }
 
-  let email = 'Admin';
+  let email = 'Admin', exp = null;
   try {
     const payload = JSON.parse(atob(t.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
     email = payload.email || payload.sub || 'Admin';
+    exp   = payload.exp   || null;
   } catch (_) {}
 
-  // Topbar email
+  const username = email.includes('@') ? email.split('@')[0] : email;
+  const initials = avatarInitials(username);
+  const color    = avatarColor(email);
+
+  // Topbar email (right-side dropdown)
   const topbarEl = document.getElementById('topbarEmail');
   if (topbarEl) topbarEl.textContent = email;
 
-  // Sidebar user row
+  // Sidebar trigger row: show username (not full email)
   const sidebarEl = document.getElementById('sidebarEmail');
-  if (sidebarEl) sidebarEl.textContent = email;
+  if (sidebarEl) sidebarEl.textContent = username;
 
-  // Sidebar avatar
+  // Sidebar small avatar
   const avatarEl = document.getElementById('sidebarAvatar');
   if (avatarEl) {
-    avatarEl.textContent    = avatarInitials(email.split('@')[0]);
-    avatarEl.style.background = avatarColor(email);
+    avatarEl.textContent      = initials;
+    avatarEl.style.background = color;
   }
+
+  // Profile dropdown: large avatar + full name + email
+  const ddAvatar = document.getElementById('ddAvatar');
+  if (ddAvatar) { ddAvatar.textContent = initials; ddAvatar.style.background = color; }
+
+  const ddName = document.getElementById('ddName');
+  if (ddName) ddName.textContent = username;
+
+  const ddEmail = document.getElementById('ddEmail');
+  if (ddEmail) ddEmail.textContent = email;
+
+  // ── Live stats: session elapsed + token expiry ──────────────────────────
+  const _sessionStart = Date.now();
+
+  function _fmtMins(mins) {
+    if (mins < 1)  return '<1m';
+    if (mins < 60) return mins + 'm';
+    const h = Math.floor(mins / 60), m = mins % 60;
+    return h + 'h ' + (m > 0 ? m + 'm' : '');
+  }
+
+  function _updateStats() {
+    const ddSession = document.getElementById('ddSession');
+    if (ddSession) {
+      const elapsed = Math.floor((Date.now() - _sessionStart) / 60000);
+      ddSession.textContent = _fmtMins(elapsed);
+    }
+
+    const ddExpiry = document.getElementById('ddExpiry');
+    if (ddExpiry) {
+      if (!exp) { ddExpiry.textContent = '—'; return; }
+      const secsLeft = Math.max(0, exp - Math.floor(Date.now() / 1000));
+      if (secsLeft <= 0) {
+        ddExpiry.textContent = 'Expired';
+        ddExpiry.style.color = 'var(--color-red)';
+      } else {
+        const h = Math.floor(secsLeft / 3600);
+        const m = Math.floor((secsLeft % 3600) / 60);
+        ddExpiry.textContent  = h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+        ddExpiry.style.color  = secsLeft < 600 ? 'var(--color-red)' : '';
+      }
+    }
+  }
+
+  _updateStats();
+  setInterval(_updateStats, 30000);   // refresh every 30 s
 })();
+
+// ── Sidebar profile menu ──────────────────────────────────────────────────
+function toggleProfileMenu() {
+  const trigger  = document.getElementById('sidebarProfile');
+  const dropdown = document.getElementById('profileDropdown');
+  if (!trigger || !dropdown) return;
+  const opening = !dropdown.classList.contains('open');
+  dropdown.classList.toggle('open', opening);
+  trigger.classList.toggle('open',  opening);
+}
+
+function closeProfileMenu() {
+  document.getElementById('sidebarProfile') ?.classList.remove('open');
+  document.getElementById('profileDropdown')?.classList.remove('open');
+}
+
+// Close dropdown when clicking outside the footer area
+document.addEventListener('click', function(e) {
+  const trigger  = document.getElementById('sidebarProfile');
+  const dropdown = document.getElementById('profileDropdown');
+  if (!trigger || !dropdown) return;
+  if (!trigger.contains(e.target) && !dropdown.contains(e.target)) {
+    trigger.classList.remove('open');
+    dropdown.classList.remove('open');
+  }
+});
 
 // ── Base i18n keys (admin-wide, loaded on every page) ────────────────────
 Object.assign(TRANSLATIONS, {
@@ -737,6 +963,12 @@ Object.assign(TRANSLATIONS, {
   adm_impressions:       { en: 'Impressions',                           km: 'ការបង្ហាញ' },
   adm_clicks:            { en: 'Clicks',                                km: 'ការចុច' },
   adm_filter:            { en: 'Filter',                                km: 'ត្រង' },
+  adm_last_updated:      { en: 'Updated',                              km: 'ធ្វើបច្ចុប្បន្នភាព' },
+  adm_search:            { en: 'Search',                               km: 'ស្វែងរក' },
+  adm_sort:              { en: 'Sort',                                  km: 'តម្រៀប' },
+  adm_all:               { en: 'All',                                   km: 'ទាំងអស់' },
+  adm_clear_filters:     { en: 'Clear',                                km: 'សម្អាតតម្រង' },
+  adm_export:            { en: 'Export',                               km: 'នាំចេញ' },
 });
 
 // ── Language button sync on load ──────────────────────────────────────────

@@ -35,12 +35,13 @@ class Scan(db.Model):
 
     def to_dict(self, include_paths: bool = False) -> dict:
         data = {
-            "id":            self.id,
-            "prediction":    self.prediction,
-            "confidence":    round(self.confidence * 100, 2),
-            "model_version": self.model_version,
+            "id":             self.id,
+            "prediction":     self.prediction,
+            "confidence":     round(self.confidence * 100, 2),
+            "model_version":  self.model_version,
             "gradcam_status": self.gradcam_status,
-            "created_at":    self.created_at.isoformat() if self.created_at else None,
+            "report_id":      self.report_id,
+            "created_at":     self.created_at.isoformat() if self.created_at else None,
         }
         if include_paths:
             data["image_path"]   = self.image_path

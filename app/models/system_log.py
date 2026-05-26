@@ -31,6 +31,11 @@ class SystemLog(db.Model):
                               default=lambda: datetime.now(timezone.utc),
                               index=True)
 
+    # ── Soft-delete ────────────────────────────────────────────────────────
+    is_deleted    = db.Column(db.Boolean, nullable=False, default=False,
+                              server_default="0", index=True)
+    deleted_at    = db.Column(db.DateTime(timezone=True), nullable=True)
+
     # ── Relationships ──────────────────────────────────────────────────────
     user = db.relationship("User", foreign_keys=[user_id], lazy="joined")
     scan = db.relationship("Scan", foreign_keys=[scan_id], lazy="joined")
@@ -87,6 +92,8 @@ class SystemLog(db.Model):
             "ip_address":    self.ip_address,
             "extra":         self.extra or {},
             "created_at":    self.created_at.isoformat() if self.created_at else None,
+            "is_deleted":    self.is_deleted,
+            "deleted_at":    self.deleted_at.isoformat() if self.deleted_at else None,
         }
 
     def __repr__(self) -> str:

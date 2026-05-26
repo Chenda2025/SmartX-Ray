@@ -4,177 +4,730 @@
 {% block breadcrumb %}<span data-i18n="adm_nav_marketplace">Marketplace</span>{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-4">
+<style>
+/* ── Marketplace page styles ─────────────────────────────────── */
+.mkt-tab-bar { display:flex; gap:.5rem; margin-bottom:1.25rem; flex-wrap:wrap; }
+.mkt-tab {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.4rem .95rem; border-radius:9px;
+  font-size:.83rem; font-weight:600; cursor:pointer;
+  border:1.5px solid var(--border-color,#E2E8F0);
+  background:#fff; color:#64748B;
+  transition:background .14s,color .14s,border-color .14s;
+  white-space:nowrap;
+}
+.mkt-tab.active { background:#6366F1; color:#fff; border-color:#6366F1; }
+.mkt-tab:not(.active):hover { background:#F8FAFC; }
+.tab-badge {
+  font-size:.68rem; font-weight:700; padding:.1rem .38rem;
+  border-radius:999px;
+}
+.mkt-tab.active .tab-badge { background:rgba(255,255,255,.22); color:#fff; }
+.mkt-tab:not(.active) .tab-badge { background:#F1F5F9; color:#64748B; }
+
+/* Doctor card */
+.doc-card {
+  background:#fff; border:1.5px solid #E8EAF6;
+  border-radius:14px; padding:1.1rem 1.1rem .9rem; height:100%;
+  display:flex; flex-direction:column;
+  transition:box-shadow .18s,border-color .18s;
+}
+.doc-card:hover { box-shadow:0 6px 26px rgba(99,102,241,.11); border-color:#C7D2FE; }
+.doc-avatar {
+  width:46px; height:46px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:.95rem; font-weight:700; color:#fff; flex-shrink:0;
+  letter-spacing:-.5px;
+}
+.doc-name     { font-weight:700; font-size:.91rem; color:#1E293B; line-height:1.25; }
+.doc-specialty{ font-size:.76rem; color:#6366F1; font-weight:600; margin-top:.1rem; }
+.doc-meta     { font-size:.75rem; color:#64748B; line-height:1.7; }
+.doc-meta i   { font-size:.78rem; margin-right:.22rem; color:#94A3B8; }
+
+/* Rating stars */
+.star-row { display:flex; align-items:center; gap:.15rem; margin-top:.3rem; }
+.star      { font-size:.75rem; line-height:1; }
+.star.on   { color:#F59E0B; }
+.star.off  { color:#E2E8F0; }
+.rating-val{ font-size:.71rem; color:#64748B; margin-left:.25rem; }
+
+/* Status pills */
+.doc-status-pill {
+  display:inline-flex; align-items:center; gap:.28rem;
+  font-size:.68rem; font-weight:700; padding:.2rem .6rem;
+  border-radius:999px; white-space:nowrap;
+}
+.pill-pending  { background:#FEF3C7; color:#92400E; }
+.pill-approved { background:#D1FAE5; color:#065F46; }
+.pill-rejected { background:#FEE2E2; color:#991B1B; }
+
+/* Featured toggle */
+.feat-pill {
+  display:inline-flex; align-items:center; gap:.28rem;
+  font-size:.68rem; font-weight:700; padding:.2rem .58rem;
+  border-radius:999px; cursor:pointer; border:none; outline:none;
+  transition:background .14s, transform .1s; white-space:nowrap;
+}
+.feat-pill:active { transform:scale(.95); }
+.feat-on  { background:#FDE68A; color:#78350F; }
+.feat-off { background:#F1F5F9; color:#64748B; }
+.feat-off:hover { background:#E0E7FF; color:#4338CA; }
+
+/* Action buttons */
+.doc-actions { display:flex; gap:.45rem; margin-top:auto; padding-top:.75rem; }
+
+/* Filter clear */
+#mktClearBtn {
+  background:#EEF2FF !important; border:1.5px solid #C7D2FE !important;
+  color:#4338CA !important; font-weight:600;
+}
+#mktClearBtn:hover { background:#E0E7FF !important; border-color:#A5B4FC !important; }
+
+/* Pagination */
+.page-btn {
+  min-width:32px; height:32px; border-radius:8px; padding:0 .5rem;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:.8rem; font-weight:600; cursor:pointer;
+  border:1.5px solid #E2E8F0; background:#fff; color:#374151;
+  transition:background .12s; white-space:nowrap;
+}
+.page-btn:hover:not([disabled]) { background:#EEF2FF; border-color:#C7D2FE; }
+.page-btn[disabled] { opacity:.38; cursor:not-allowed; }
+.page-btn.cur       { background:#6366F1; color:#fff; border-color:#6366F1; }
+
+/* Export button */
+#mktExportBtn {
+  background: #EEF2FF !important; border: 1.5px solid #C7D2FE !important;
+  color: #4338CA !important; font-weight: 600;
+}
+#mktExportBtn:hover,
+#mktExportBtn.show { background: #E0E7FF !important; border-color: #A5B4FC !important; }
+
+/* Export dropdown */
+.export-menu { min-width:148px; border-radius:10px;
+               box-shadow:0 4px 22px rgba(0,0,0,.12); }
+</style>
+
+<!-- ── Page header ──────────────────────────────────────────── -->
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
   <div>
     <h4 class="fw-bold mb-0" data-i18n="adm_mkt_title">Doctor Marketplace</h4>
-    <p class="text-muted small mb-0" data-i18n="adm_mkt_sub">Review Cambodian doctor license submissions — approve or reject</p>
+    <p class="text-muted small mb-0 mt-1" data-i18n="adm_mkt_sub">
+      Review Cambodian doctor submissions — approve, reject, feature
+    </p>
+  </div>
+  <div class="dropdown">
+    <button id="mktExportBtn" class="btn btn-sm btn-ghost dropdown-toggle" data-bs-toggle="dropdown">
+      <i class="ti ti-download me-1"></i><span data-i18n="adm_export">Export</span>
+    </button>
+    <ul class="dropdown-menu export-menu">
+      <li><button class="dropdown-item small" onclick="exportDoctors('pdf')">
+        <i class="ti ti-file-type-pdf me-2 text-danger"></i>PDF</button></li>
+      <li><button class="dropdown-item small" onclick="exportDoctors('docx')">
+        <i class="ti ti-file-type-doc me-2 text-primary"></i>DOCX</button></li>
+    </ul>
   </div>
 </div>
 
-<!-- Filter Tabs -->
-<ul class="nav nav-pills mb-4" id="docTabs">
-  <li class="nav-item">
-    <button class="nav-link active" data-status="pending" onclick="switchTab(this, 'pending')">
-      <i class="bi bi-clock-history me-1"></i><span data-i18n="adm_pending">Pending</span>
-      <span class="badge bg-danger ms-1" id="badge-pending">—</span>
-    </button>
-  </li>
-  <li class="nav-item">
-    <button class="nav-link" data-status="approved" onclick="switchTab(this, 'approved')">
-      <i class="bi bi-check-circle me-1"></i><span data-i18n="adm_approved">Approved</span>
-    </button>
-  </li>
-  <li class="nav-item">
-    <button class="nav-link" data-status="rejected" onclick="switchTab(this, 'rejected')">
-      <i class="bi bi-x-circle me-1"></i><span data-i18n="adm_rejected">Rejected</span>
-    </button>
-  </li>
-</ul>
-
-<!-- Doctors Grid -->
-<div id="doctorsGrid" class="row g-3">
-  <div class="col-12 text-center py-4 text-muted">Loading…</div>
+<!-- ── KPI cards ────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#EEF2FF">
+          <i class="ti ti-stethoscope" style="color:#6366F1"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_mkt_kpi_total">Total Doctors</div>
+          <div class="fw-bold fs-5" id="kpiTotal">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#FEF3C7">
+          <i class="ti ti-clock" style="color:#D97706"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_mkt_kpi_pending">Pending</div>
+          <div class="fw-bold fs-5" id="kpiPending">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#D1FAE5">
+          <i class="ti ti-circle-check" style="color:#059669"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_mkt_kpi_approved">Approved</div>
+          <div class="fw-bold fs-5" id="kpiApproved">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#FEE2E2">
+          <i class="ti ti-user-x" style="color:#DC2626"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_mkt_kpi_rejected">Rejected</div>
+          <div class="fw-bold fs-5" id="kpiRejected">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
-<!-- Pagination -->
-<div class="d-flex justify-content-between align-items-center mt-3">
-  <small class="text-muted" id="docPagInfo">—</small>
-  <div class="d-flex gap-2">
-    <button class="btn btn-sm btn-outline-secondary" id="docBtnPrev"
-            onclick="loadDoctors(docPage - 1)" disabled>
-      <i class="bi bi-chevron-left"></i>
-    </button>
-    <button class="btn btn-sm btn-outline-secondary" id="docBtnNext"
-            onclick="loadDoctors(docPage + 1)" disabled>
-      <i class="bi bi-chevron-right"></i>
-    </button>
+<!-- ── Tab navigation ────────────────────────────────────────── -->
+<div class="mkt-tab-bar" id="mktTabs">
+  <button class="mkt-tab active" data-tab="all" onclick="switchTab(this,'all')">
+    <i class="ti ti-layout-grid"></i>
+    <span data-i18n="adm_mkt_tab_all">All</span>
+    <span class="tab-badge" id="tb-all">—</span>
+  </button>
+  <button class="mkt-tab" data-tab="pending" onclick="switchTab(this,'pending')">
+    <i class="ti ti-clock"></i>
+    <span data-i18n="adm_pending">Pending</span>
+    <span class="tab-badge" id="tb-pending">—</span>
+  </button>
+  <button class="mkt-tab" data-tab="approved" onclick="switchTab(this,'approved')">
+    <i class="ti ti-circle-check"></i>
+    <span data-i18n="adm_approved">Approved</span>
+    <span class="tab-badge" id="tb-approved">—</span>
+  </button>
+  <button class="mkt-tab" data-tab="rejected" onclick="switchTab(this,'rejected')">
+    <i class="ti ti-user-x"></i>
+    <span data-i18n="adm_rejected">Rejected</span>
+    <span class="tab-badge" id="tb-rejected">—</span>
+  </button>
+</div>
+
+<!-- ── Filter bar ────────────────────────────────────────────── -->
+<div class="panel-card p-3 mb-4">
+  <div class="d-flex flex-wrap gap-2 align-items-end">
+    <div class="flex-grow-1" style="min-width:190px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_search">Search</label>
+      <div class="input-group input-group-sm">
+        <span class="input-group-text"><i class="ti ti-search"></i></span>
+        <input type="text" id="mktSearch" class="form-control"
+               data-i18n-placeholder="adm_mkt_search_ph"
+               placeholder="Name / Hospital / Specialty…"
+               oninput="resetMktPage(); renderDoctors()">
+      </div>
+    </div>
+
+    <div style="min-width:145px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_mkt_specialty">Specialty</label>
+      <select id="mktSpecialty" class="form-select form-select-sm"
+              onchange="resetMktPage(); renderDoctors()">
+        <option value="" data-i18n="adm_all">All</option>
+      </select>
+    </div>
+
+    <div style="min-width:130px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_mkt_featured_lbl">Featured</label>
+      <select id="mktFeatured" class="form-select form-select-sm"
+              onchange="resetMktPage(); renderDoctors()">
+        <option value=""    data-i18n="adm_all">All</option>
+        <option value="yes" data-i18n="adm_mkt_feat_only">Featured Only</option>
+        <option value="no"  data-i18n="adm_mkt_not_feat">Not Featured</option>
+      </select>
+    </div>
+
+    <div style="min-width:148px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_sort">Sort</label>
+      <select id="mktSort" class="form-select form-select-sm"
+              onchange="resetMktPage(); renderDoctors()">
+        <option value="newest"      data-i18n="adm_mkt_sort_new">Newest First</option>
+        <option value="oldest"      data-i18n="adm_mkt_sort_old">Oldest First</option>
+        <option value="rating_high" data-i18n="adm_mkt_sort_rhi">Rating High→Low</option>
+        <option value="rating_low"  data-i18n="adm_mkt_sort_rlo">Rating Low→High</option>
+        <option value="name_az"     data-i18n="adm_mkt_sort_az">Name A→Z</option>
+      </select>
+    </div>
+
+    <div>
+      <label class="form-label small mb-1" style="visibility:hidden">x</label>
+      <button id="mktClearBtn" class="btn btn-sm d-flex align-items-center gap-1"
+              onclick="clearMktFilters()">
+        <i class="ti ti-x"></i>
+        <span data-i18n="adm_clear_filters">Clear</span>
+      </button>
+    </div>
   </div>
+</div>
+
+<!-- ── Doctors grid ───────────────────────────────────────────── -->
+<div class="row g-3" id="doctorsGrid">
+  <div class="col-12 text-center py-5 text-muted">
+    <div class="spinner-border spinner-border-sm" role="status"></div>
+    <span class="ms-2" data-i18n="adm_loading">Loading…</span>
+  </div>
+</div>
+
+<!-- ── Pagination footer ─────────────────────────────────────── -->
+<div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+  <small class="text-muted" id="mktPagInfo">—</small>
+  <div class="d-flex align-items-center gap-1" id="mktPagBtns"></div>
+  <small class="text-muted" id="mktLastUpdated"></small>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-// ── i18n keys — Marketplace page ────────────────────────────────────────
+// ── i18n keys ──────────────────────────────────────────────────────────────
 Object.assign(TRANSLATIONS, {
-  adm_mkt_title:  { en: 'Doctor Marketplace',                          km: 'ផ្សារវេជ្ជបណ្ឌិត' },
-  adm_mkt_sub:    { en: 'Review Cambodian doctor license submissions — approve or reject',
-                   km: 'ពិនិត្យការដាក់ស្នើអាជ្ញាបណ្ណ — អនុម័ត ឬ បដិសេធ' },
+  adm_mkt_title:       { en: 'Doctor Marketplace',       km: 'ផ្សារវេជ្ជបណ្ឌិត' },
+  adm_mkt_sub:         { en: 'Review Cambodian doctor submissions — approve, reject, feature',
+                         km: 'ពិនិត្យការដាក់ស្នើវេជ្ជបណ្ឌិតកម្ពុជា — អនុម័ត, បដិសេធ, ធ្វើជាពិសេស' },
+  adm_mkt_kpi_total:   { en: 'Total Doctors',   km: 'វេជ្ជបណ្ឌិតសរុប' },
+  adm_mkt_kpi_pending: { en: 'Pending',         km: 'រង់ចាំ' },
+  adm_mkt_kpi_approved:{ en: 'Approved',        km: 'អនុម័ត' },
+  adm_mkt_kpi_rejected:{ en: 'Rejected',        km: 'បដិសេធ' },
+  adm_mkt_tab_all:     { en: 'All',             km: 'ទាំងអស់' },
+  adm_mkt_specialty:   { en: 'Specialty',       km: 'ឯកទេស' },
+  adm_mkt_featured_lbl:{ en: 'Featured',        km: 'ពិសេស' },
+  adm_mkt_feat_only:   { en: 'Featured Only',   km: 'ពិសេសតែ' },
+  adm_mkt_not_feat:    { en: 'Not Featured',    km: 'មិនពិសេស' },
+  adm_mkt_sort_new:    { en: 'Newest First',    km: 'ថ្មីជាងមុន' },
+  adm_mkt_sort_old:    { en: 'Oldest First',    km: 'ចាស់ជាងមុន' },
+  adm_mkt_sort_rhi:    { en: 'Rating High→Low', km: 'ការវាយតម្លៃ ↓' },
+  adm_mkt_sort_rlo:    { en: 'Rating Low→High', km: 'ការវាយតម្លៃ ↑' },
+  adm_mkt_sort_az:     { en: 'Name A→Z',        km: 'ឈ្មោះ A→Z' },
+  adm_mkt_search_ph:   { en: 'Name / Hospital / Specialty…', km: 'ឈ្មោះ / មន្ទីរពេទ្យ / ឯកទេស…' },
+  adm_mkt_reviews:     { en: 'reviews',         km: 'ការវាយតម្លៃ' },
+  adm_mkt_feat_on:     { en: '★ Featured',      km: '★ ពិសេស' },
+  adm_mkt_feat_off:    { en: '☆ Feature',       km: '☆ ធ្វើពិសេស' },
+  adm_mkt_approve:     { en: 'Approve',         km: 'អនុម័ត' },
+  adm_mkt_reject:      { en: 'Reject',          km: 'បដិសេធ' },
+  adm_mkt_revoke:      { en: 'Revoke',          km: 'ដកអនុម័ត' },
+  adm_mkt_restore:     { en: 'Restore',         km: 'ស្ដារ' },
+  adm_mkt_st_pending:  { en: 'Pending',         km: 'រង់ចាំ' },
+  adm_mkt_st_approved: { en: 'Verified',        km: 'បានផ្ទៀងផ្ទាត់' },
+  adm_mkt_st_rejected: { en: 'Rejected',        km: 'បានបដិសេធ' },
+  adm_mkt_app_title:   { en: 'Approve Doctor',  km: 'អនុម័តវេជ្ជបណ្ឌិត' },
+  adm_mkt_app_body:    { en: 'will appear in the public marketplace.', km: 'នឹងបង្ហាញក្នុងផ្សារសាធារណៈ។' },
+  adm_mkt_rej_title:   { en: 'Reject Doctor',   km: 'បដិសេធវេជ្ជបណ្ឌិត' },
+  adm_mkt_rej_body:    { en: 'will be removed from the marketplace.',  km: 'នឹងត្រូវបានដកចេញពីផ្សារ។' },
+  adm_mkt_rev_title:   { en: 'Revoke Approval', km: 'ដកអនុម័ត' },
+  adm_mkt_rev_body:    { en: 'will be moved back to pending review.',  km: 'នឹងត្រូវបានផ្ទេរទៅរង់ចាំពិនិត្យ។' },
+  adm_mkt_rst_title:   { en: 'Restore Doctor',  km: 'ស្ដារវេជ្ជបណ្ឌិត' },
+  adm_mkt_rst_body:    { en: 'will be restored to pending review.',    km: 'នឹងត្រូវបានស្ដារទៅស្ថានភាពរង់ចាំ។' },
+  adm_mkt_empty:       { en: 'No doctors found.', km: 'រកមិនឃើញវេជ្ជបណ្ឌិតទេ។' },
+  adm_mkt_no_result:   { en: 'No doctors match your filters.', km: 'គ្មានវេជ្ជបណ្ឌិតត្រូវនឹងតម្រង។' },
+  adm_mkt_showing:     { en: 'Showing',   km: 'បង្ហាញ' },
+  adm_mkt_of:          { en: 'of',        km: 'នៃ' },
+  adm_mkt_doctors:     { en: 'doctors',   km: 'វេជ្ជបណ្ឌិត' },
+  adm_mkt_page:        { en: 'Page',      km: 'ទំព័រ' },
 });
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
-let docPage   = 1;
-let docStatus = 'pending';
+// ── State ──────────────────────────────────────────────────────────────────
+let _allDocs   = [];
+let _mktPage   = 1;
+const _MKT_PP  = 20;
+let _curTab    = 'all';
 
-function switchTab(btn, status) {
-  document.querySelectorAll('#docTabs .nav-link').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  docStatus = status;
-  loadDoctors(1);
+// ── Helpers ────────────────────────────────────────────────────────────────
+function _docStatus(d) {
+  if (d.is_verified && d.is_active)  return 'approved';
+  if (!d.is_active)                  return 'rejected';
+  return 'pending';
 }
 
-async function loadDoctors(page = 1) {
-  docPage = page;
-  const r = await apiFetch(`/api/admin/marketplace/doctors?status=${docStatus}&page=${page}&limit=12`);
+function _esc(s) { return (s || '').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function _T(key) { return (typeof I18n !== 'undefined') ? I18n.t(key) : key; }
+
+function _stars(rating, cnt) {
+  const r = parseFloat(rating) || 0;
+  const n = parseInt(cnt)      || 0;
+  let s   = '';
+  for (let i = 1; i <= 5; i++) s += `<span class="star ${i <= Math.round(r) ? 'on' : 'off'}">★</span>`;
+  return `<div class="star-row">${s}
+    <span class="rating-val">${r > 0 ? r.toFixed(1) : '—'} (${n} ${_T('adm_mkt_reviews')})</span>
+  </div>`;
+}
+
+function _statusPill(status) {
+  const M = {
+    pending:  { cls: 'pill-pending',  icon: 'ti-clock',        key: 'adm_mkt_st_pending'  },
+    approved: { cls: 'pill-approved', icon: 'ti-circle-check', key: 'adm_mkt_st_approved' },
+    rejected: { cls: 'pill-rejected', icon: 'ti-user-x',       key: 'adm_mkt_st_rejected' },
+  };
+  const m = M[status] || M.pending;
+  return `<span class="doc-status-pill ${m.cls}"><i class="ti ${m.icon}"></i>${_T(m.key)}</span>`;
+}
+
+function _featPill(doc) {
+  if (doc.is_featured) {
+    return `<button class="feat-pill feat-on"
+              onclick="toggleFeature(${doc.id}, true, '${_esc(doc.full_name)}')">
+              ${_T('adm_mkt_feat_on')}</button>`;
+  }
+  return `<button class="feat-pill feat-off"
+            onclick="toggleFeature(${doc.id}, false, '${_esc(doc.full_name)}')">
+            ${_T('adm_mkt_feat_off')}</button>`;
+}
+
+// ── Load ───────────────────────────────────────────────────────────────────
+async function loadDoctors() {
+  const r = await apiFetch('/api/admin/marketplace/doctors?status=all&limit=1000');
   if (!r) return;
   const d = await r.json();
+  _allDocs = d.doctors || [];
+  _updateKpis();
+  _buildSpecialtyOptions();
+  renderDoctors();
+  const ts = new Date().toLocaleTimeString();
+  document.getElementById('mktLastUpdated').textContent =
+    `${_T('adm_last_updated')}: ${ts}`;
+}
 
+function _updateKpis() {
+  const total    = _allDocs.length;
+  const pending  = _allDocs.filter(d => _docStatus(d) === 'pending').length;
+  const approved = _allDocs.filter(d => _docStatus(d) === 'approved').length;
+  const rejected = _allDocs.filter(d => _docStatus(d) === 'rejected').length;
+
+  document.getElementById('kpiTotal').textContent    = total;
+  document.getElementById('kpiPending').textContent  = pending;
+  document.getElementById('kpiApproved').textContent = approved;
+  document.getElementById('kpiRejected').textContent = rejected;
+
+  document.getElementById('tb-all').textContent      = total;
+  document.getElementById('tb-pending').textContent  = pending;
+  document.getElementById('tb-approved').textContent = approved;
+  document.getElementById('tb-rejected').textContent = rejected;
+}
+
+function _buildSpecialtyOptions() {
+  const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+  const sps  = [...new Set(_allDocs.map(d => d.specialty).filter(Boolean))].sort();
+  const sel  = document.getElementById('mktSpecialty');
+  const cur  = sel.value;
+  sel.innerHTML = `<option value="">${lang === 'km' ? 'ទាំងអស់' : 'All'}</option>`;
+  sps.forEach(sp => {
+    const o = document.createElement('option');
+    o.value = o.textContent = sp;
+    if (sp === cur) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+// ── Tab switch ─────────────────────────────────────────────────────────────
+function switchTab(btn, tab) {
+  document.querySelectorAll('.mkt-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _curTab  = tab;
+  _mktPage = 1;
+  renderDoctors();
+}
+
+function resetMktPage() { _mktPage = 1; }
+
+function clearMktFilters() {
+  document.getElementById('mktSearch').value    = '';
+  document.getElementById('mktSpecialty').value = '';
+  document.getElementById('mktFeatured').value  = '';
+  document.getElementById('mktSort').value      = 'newest';
+  resetMktPage();
+  renderDoctors();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function renderDoctors() {
+  const search  = document.getElementById('mktSearch').value.trim().toLowerCase();
+  const sp      = document.getElementById('mktSpecialty').value;
+  const feat    = document.getElementById('mktFeatured').value;
+  const sort    = document.getElementById('mktSort').value;
+
+  let list = _allDocs.slice();
+
+  // Tab
+  if (_curTab !== 'all') list = list.filter(d => _docStatus(d) === _curTab);
+
+  // Search
+  if (search) list = list.filter(d =>
+    (d.full_name || '').toLowerCase().includes(search) ||
+    (d.specialty || '').toLowerCase().includes(search) ||
+    (d.hospital  || '').toLowerCase().includes(search)
+  );
+  // Specialty
+  if (sp) list = list.filter(d => d.specialty === sp);
+  // Featured
+  if (feat === 'yes') list = list.filter(d =>  d.is_featured);
+  if (feat === 'no')  list = list.filter(d => !d.is_featured);
+
+  // Sort
+  if (sort === 'oldest')      list.sort((a,b) => new Date(a.created_at) - new Date(b.created_at));
+  else if (sort === 'newest') list.sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+  else if (sort === 'rating_high') list.sort((a,b) => (parseFloat(b.rating)||0) - (parseFloat(a.rating)||0));
+  else if (sort === 'rating_low')  list.sort((a,b) => (parseFloat(a.rating)||0) - (parseFloat(b.rating)||0));
+  else if (sort === 'name_az') list.sort((a,b) => (a.full_name||'').localeCompare(b.full_name||''));
+
+  // Paginate
+  const total = list.length;
+  const pages = Math.max(1, Math.ceil(total / _MKT_PP));
+  if (_mktPage > pages) _mktPage = pages;
+  const start = (_mktPage - 1) * _MKT_PP;
+  const slice = list.slice(start, start + _MKT_PP);
+
+  _paintGrid(slice, total);
+  _paintPagination(total, pages);
+}
+
+function _paintGrid(docs, total) {
   const grid = document.getElementById('doctorsGrid');
-  document.getElementById('docPagInfo').textContent =
-    `${d.total} doctor(s) — page ${d.page}/${d.pages || 1}`;
-  document.getElementById('docBtnPrev').disabled = d.page <= 1;
-  document.getElementById('docBtnNext').disabled = (d.page >= d.pages);
-
-  if (!d.doctors.length) {
+  if (!docs.length) {
+    const filtered = document.getElementById('mktSearch').value ||
+                     document.getElementById('mktSpecialty').value ||
+                     document.getElementById('mktFeatured').value;
     grid.innerHTML = `<div class="col-12 text-center py-5 text-muted">
-      <i class="bi bi-inbox fs-1 d-block mb-2"></i>No ${docStatus} doctors.
+      <i class="ti ti-stethoscope d-block mb-2 opacity-25" style="font-size:2.5rem"></i>
+      <div>${_T(filtered ? 'adm_mkt_no_result' : 'adm_mkt_empty')}</div>
     </div>`;
     return;
   }
 
-  // Update pending badge
-  if (docStatus === 'pending') {
-    document.getElementById('badge-pending').textContent = d.total;
-  }
+  grid.innerHTML = docs.map(doc => {
+    const st  = _docStatus(doc);
+    const ini = (typeof avatarInitials === 'function')
+                  ? avatarInitials(doc.full_name)
+                  : (doc.full_name || '?').charAt(0).toUpperCase();
+    const col = (typeof avatarColor === 'function')
+                  ? avatarColor(doc.full_name)
+                  : '#6366F1';
 
-  grid.innerHTML = d.doctors.map(doc => `
-    <div class="col-md-6 col-xl-4">
-      <div class="card border-0 shadow-sm rounded-3 h-100">
-        <div class="card-body p-3">
-          <div class="d-flex gap-3 mb-2">
-            <div class="stat-icon flex-shrink-0" style="background:#eff6ff;width:44px;height:44px">
-              <i class="bi bi-person-badge-fill text-primary fs-5"></i>
-            </div>
-            <div class="flex-grow-1 overflow-hidden">
-              <div class="fw-semibold text-truncate">Dr. ${doc.full_name}</div>
-              <div class="small text-muted">${doc.specialty}</div>
-            </div>
-          </div>
-          <div class="small mb-1">
-            <i class="bi bi-building me-1 text-muted"></i>${doc.hospital || '—'}
-          </div>
-          <div class="small mb-1">
-            <i class="bi bi-geo-alt me-1 text-muted"></i>${doc.city || '—'}, ${doc.country || 'Cambodia'}
-          </div>
-          ${doc.qualifications ? `<div class="small mb-2 text-muted">
-            <i class="bi bi-award me-1"></i>${doc.qualifications}</div>` : ''}
-          ${doc.email ? `<div class="small mb-2">
-            <i class="bi bi-envelope me-1 text-muted"></i>${doc.email}</div>` : ''}
+    // Action buttons
+    let actions = '';
+    if (st === 'pending') {
+      actions = `
+        <button class="btn btn-sm btn-primary flex-grow-1"
+                onclick="approveDoc(${doc.id},'${_esc(doc.full_name)}')">
+          <i class="ti ti-circle-check me-1"></i>${_T('adm_mkt_approve')}
+        </button>
+        <button class="btn btn-sm btn-ghost text-danger flex-grow-1"
+                onclick="rejectDoc(${doc.id},'${_esc(doc.full_name)}')">
+          <i class="ti ti-user-x me-1"></i>${_T('adm_mkt_reject')}
+        </button>`;
+    } else if (st === 'approved') {
+      actions = `
+        <button class="btn btn-sm btn-ghost text-warning w-100"
+                onclick="revokeDoc(${doc.id},'${_esc(doc.full_name)}')">
+          <i class="ti ti-arrow-back-up me-1"></i>${_T('adm_mkt_revoke')}
+        </button>`;
+    } else {
+      actions = `
+        <button class="btn btn-sm btn-primary w-100"
+                onclick="restoreDoc(${doc.id},'${_esc(doc.full_name)}')">
+          <i class="ti ti-refresh me-1"></i>${_T('adm_mkt_restore')}
+        </button>`;
+    }
 
-          ${docStatus === 'pending' ? `
-          <div class="d-flex gap-2 mt-3">
-            <button class="btn btn-sm btn-success flex-grow-1"
-                    onclick="approve(${doc.id}, '${doc.full_name.replace(/'/g,"\\'")}')">
-              <i class="bi bi-check-lg me-1"></i>Approve
-            </button>
-            <button class="btn btn-sm btn-outline-danger flex-grow-1"
-                    onclick="reject(${doc.id}, '${doc.full_name.replace(/'/g,"\\'")}')">
-              <i class="bi bi-x-lg me-1"></i>Reject
-            </button>
-          </div>` : docStatus === 'approved' ? `
-          <div class="mt-2">
-            <span class="badge bg-success"><i class="bi bi-patch-check-fill me-1"></i>Verified</span>
-          </div>` : `
-          <div class="mt-2">
-            <span class="badge bg-danger"><i class="bi bi-x-circle-fill me-1"></i>Rejected</span>
-          </div>`}
+    return `<div class="col-md-6 col-xl-4">
+  <div class="doc-card">
+    <!-- Header -->
+    <div class="d-flex gap-3 mb-2 align-items-start">
+      <div class="doc-avatar" style="background:${col}">${ini}</div>
+      <div class="flex-grow-1 min-w-0">
+        <div class="doc-name text-truncate" title="Dr. ${doc.full_name}">Dr. ${doc.full_name}</div>
+        <div class="doc-specialty text-truncate">${doc.specialty || '—'}</div>
+        <div class="mt-1 d-flex align-items-center gap-2 flex-wrap">
+          ${_statusPill(st)}
+          ${_featPill(doc)}
         </div>
       </div>
     </div>
-  `).join('');
+
+    <!-- Meta -->
+    <div class="doc-meta mb-1">
+      ${doc.hospital
+        ? `<div><i class="ti ti-building-hospital"></i>${doc.hospital}</div>` : ''}
+      ${(doc.city || doc.country)
+        ? `<div><i class="ti ti-map-pin"></i>${[doc.city, doc.country].filter(Boolean).join(', ')}</div>` : ''}
+      ${doc.qualifications
+        ? `<div><i class="ti ti-award"></i>${doc.qualifications.length > 55 ? doc.qualifications.slice(0,55)+'…' : doc.qualifications}</div>` : ''}
+      ${doc.email
+        ? `<div><i class="ti ti-mail"></i>${doc.email}</div>` : ''}
+      ${doc.phone
+        ? `<div><i class="ti ti-phone"></i>${doc.phone}</div>` : ''}
+    </div>
+
+    <!-- Rating -->
+    ${_stars(doc.rating, doc.review_count)}
+
+    <!-- Actions -->
+    <div class="doc-actions">${actions}</div>
+  </div>
+</div>`;
+  }).join('');
 }
 
-function approve(docId, name) {
+function _paintPagination(total, pages) {
+  const start = Math.min((_mktPage - 1) * _MKT_PP + 1, total || 1);
+  const end   = Math.min(_mktPage * _MKT_PP, total);
+  document.getElementById('mktPagInfo').textContent =
+    `${_T('adm_mkt_showing')} ${start}–${end} ${_T('adm_mkt_of')} ${total} ${_T('adm_mkt_doctors')}`;
+
+  let html = `<button class="page-btn" onclick="changeMktPage(-1)"
+    ${_mktPage <= 1 ? 'disabled' : ''}>
+    <i class="ti ti-chevron-left"></i></button>`;
+  html += `<span class="page-btn cur" style="min-width:auto;padding:0 .8rem">
+    ${_T('adm_mkt_page')} ${_mktPage}/${pages}</span>`;
+  html += `<button class="page-btn" onclick="changeMktPage(1)"
+    ${_mktPage >= pages ? 'disabled' : ''}>
+    <i class="ti ti-chevron-right"></i></button>`;
+
+  document.getElementById('mktPagBtns').innerHTML = html;
+}
+
+function changeMktPage(delta) {
+  _mktPage += delta;
+  renderDoctors();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+async function exportDoctors(format) {
+  const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+  const r = await apiFetch(`/api/admin/marketplace/doctors/export/${format}?lang=${lang}`);
+  if (!r || !r.ok) { toast(_T('adm_export_error') || 'Export failed.', 'error'); return; }
+  const blob = await r.blob();
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `smartxray_doctors_${new Date().toISOString().slice(0,10)}.${format}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Feature toggle ─────────────────────────────────────────────────────────
+async function toggleFeature(docId, currentFeatured, name) {
+  const newVal = !currentFeatured;
+  const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/feature`, {
+    method:  'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ is_featured: newVal }),
+  });
+  if (!r) return;
+  if (r.ok) {
+    const idx = _allDocs.findIndex(d => d.id === docId);
+    if (idx !== -1) _allDocs[idx].is_featured = newVal;
+    renderDoctors();
+    const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+    toast(`Dr. ${name} ${newVal
+      ? (lang === 'km' ? 'ធ្វើជាពិសេស' : 'marked as featured')
+      : (lang === 'km' ? 'ដកចេញពីពិសេស' : 'unfeatured')}.`);
+  } else {
+    const d = await r.json().catch(() => ({}));
+    toast(d.error || 'Failed.', 'error');
+  }
+}
+
+// ── Approve ────────────────────────────────────────────────────────────────
+function approveDoc(docId, name) {
   ConfirmModal.show({
-    title:       'Approve Doctor',
-    body:        `Approve <strong>Dr. ${name}</strong>? They will appear in the public marketplace.`,
-    confirmText: 'Approve',
+    title:       _T('adm_mkt_app_title'),
+    body:        `<strong>Dr. ${name}</strong> ${_T('adm_mkt_app_body')}`,
+    confirmText: _T('adm_mkt_approve'),
     variant:     'success',
     icon:        'ti ti-circle-check',
-    onConfirm:   async () => {
+    onConfirm: async () => {
       const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/approve`, { method: 'PATCH' });
       if (!r) return;
-      if (r.ok) { toast(`Dr. ${name} approved!`); loadDoctors(docPage); }
-      else { const d = await r.json(); toast(d.error || 'Failed.', 'danger'); }
+      if (r.ok) {
+        const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+        toast(`Dr. ${name} ${lang === 'km' ? 'បានអនុម័ត' : 'approved'}!`);
+        await loadDoctors();
+      } else {
+        const d = await r.json().catch(() => ({})); toast(d.error || 'Failed.', 'error');
+      }
     },
   });
 }
 
-function reject(docId, name) {
+// ── Reject ─────────────────────────────────────────────────────────────────
+function rejectDoc(docId, name) {
   ConfirmModal.show({
-    title:       'Reject Doctor',
-    body:        `Reject <strong>Dr. ${name}</strong>? Their listing will be removed from the marketplace.`,
-    confirmText: 'Reject',
+    title:       _T('adm_mkt_rej_title'),
+    body:        `<strong>Dr. ${name}</strong> ${_T('adm_mkt_rej_body')}`,
+    confirmText: _T('adm_mkt_reject'),
     variant:     'warning',
     icon:        'ti ti-user-x',
-    onConfirm:   async () => {
+    onConfirm: async () => {
       const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/reject`, { method: 'PATCH' });
       if (!r) return;
-      if (r.ok) { toast(`Dr. ${name} rejected.`, 'warning'); loadDoctors(docPage); }
-      else { const d = await r.json(); toast(d.error || 'Failed.', 'danger'); }
+      if (r.ok) {
+        const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+        toast(`Dr. ${name} ${lang === 'km' ? 'បានបដិសេធ' : 'rejected'}.`, 'warning');
+        await loadDoctors();
+      } else {
+        const d = await r.json().catch(() => ({})); toast(d.error || 'Failed.', 'error');
+      }
     },
   });
 }
 
+// ── Revoke (approved → pending) ────────────────────────────────────────────
+function revokeDoc(docId, name) {
+  ConfirmModal.show({
+    title:       _T('adm_mkt_rev_title'),
+    body:        `<strong>Dr. ${name}</strong> ${_T('adm_mkt_rev_body')}`,
+    confirmText: _T('adm_mkt_revoke'),
+    variant:     'warning',
+    icon:        'ti ti-arrow-back-up',
+    onConfirm: async () => {
+      const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/revoke`, { method: 'PATCH' });
+      if (!r) return;
+      if (r.ok) {
+        const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+        toast(`Dr. ${name} ${lang === 'km' ? 'ត្រឡប់ទៅរង់ចាំ' : 'moved to pending'}.`, 'warning');
+        await loadDoctors();
+      } else {
+        const d = await r.json().catch(() => ({})); toast(d.error || 'Failed.', 'error');
+      }
+    },
+  });
+}
+
+// ── Restore (rejected → pending) ───────────────────────────────────────────
+function restoreDoc(docId, name) {
+  ConfirmModal.show({
+    title:       _T('adm_mkt_rst_title'),
+    body:        `<strong>Dr. ${name}</strong> ${_T('adm_mkt_rst_body')}`,
+    confirmText: _T('adm_mkt_restore'),
+    variant:     'success',
+    icon:        'ti ti-refresh',
+    onConfirm: async () => {
+      const r = await apiFetch(`/api/admin/marketplace/doctors/${docId}/restore`, { method: 'PATCH' });
+      if (!r) return;
+      if (r.ok) {
+        const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+        toast(`Dr. ${name} ${lang === 'km' ? 'បានស្ដារ' : 'restored'}.`);
+        await loadDoctors();
+      } else {
+        const d = await r.json().catch(() => ({})); toast(d.error || 'Failed.', 'error');
+      }
+    },
+  });
+}
+
+// ── Language toggle hook ───────────────────────────────────────────────────
+const _prevMktToggle = window.adminToggleLang || (() => {});
+window.adminToggleLang = function () {
+  _prevMktToggle();
+  _buildSpecialtyOptions();
+  renderDoctors();
+};
+
+// ── Boot ───────────────────────────────────────────────────────────────────
 loadDoctors();
 </script>
 {% endblock %}

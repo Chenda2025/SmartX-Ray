@@ -76,6 +76,8 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
+    # Suppress email sending when SMTP credentials are not configured locally
+    MAIL_SUPPRESS_SEND = not bool(os.environ.get("MAIL_USERNAME"))
 
 
 class TestingConfig(Config):

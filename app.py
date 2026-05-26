@@ -8,6 +8,16 @@ For production:    gunicorn app:create_app() --bind 0.0.0.0:5000
 import os
 from app import create_app
 
+# Auto-download Khmer OS fonts if missing (safe no-op when already present)
+try:
+    from utils.download_fonts import download_khmer_fonts
+    download_khmer_fonts()
+except Exception as _font_err:  # pragma: no cover
+    import logging
+    logging.getLogger(__name__).warning(
+        "Could not download Khmer fonts: %s", _font_err
+    )
+
 app = create_app(os.environ.get("FLASK_ENV", "development"))
 
 if __name__ == "__main__":

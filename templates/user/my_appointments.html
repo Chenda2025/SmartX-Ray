@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en" id="ma-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Appointments — SmartX-Ray</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+  *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+  :root {
+    --indigo:   #6366F1; --indigo-dk:#4F46E5; --indigo-lt:#EEF2FF;
+    --green:    #10B981; --green-dk: #059669;  --green-lt: #ECFDF5;
+    --amber:    #F59E0B; --amber-lt: #FEF3C7;
+    --red:      #EF4444; --red-lt:   #FEF2F2;
+    --sky:      #0EA5E9; --sky-lt:   #E0F2FE;
+    --text:     #0F172A; --text2:#475569;  --muted:#94A3B8;
+    --bg:       #F0F4F8; --surface:#FFFFFF; --border:#E2E8F0;
+    --shadow:   0 1px 4px rgba(15,23,42,.07);
+    --shadow-md:0 4px 18px rgba(15,23,42,.1);
+    --r: 14px;
+  }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  html[lang="km"] * { font-family:'Hanuman','DM Sans',sans-serif !important; }
+
+  /* ── Navbar ──────────────────────────────────────────────────────────────── */
+  .ma-nav {
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:1rem;
+    padding:.75rem 1.5rem;
+    background:rgba(255,255,255,.95);
+    backdrop-filter:blur(12px);
+    border-bottom:1.5px solid var(--border);
+  }
+  .ma-back {
+    display:flex; align-items:center; gap:.4rem;
+    text-decoration:none; font-size:.84rem; font-weight:600; color:var(--text2);
+    padding:.35rem .75rem; border:1.5px solid var(--border); border-radius:8px;
+    background:#fff; transition:border-color .14s,color .14s;
+  }
+  .ma-back:hover { border-color:var(--indigo); color:var(--indigo); }
+  .ma-brand {
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem;
+    color:var(--indigo); text-decoration:none;
+  }
+  .nav-spacer { flex:1; }
+  .ma-find-btn {
+    display:flex; align-items:center; gap:.35rem;
+    padding:.42rem 1rem; border-radius:9px; border:none;
+    background:var(--indigo); color:#fff;
+    font-size:.84rem; font-weight:600; cursor:pointer;
+    text-decoration:none; transition:background .14s;
+  }
+  .ma-find-btn:hover { background:var(--indigo-dk); }
+  .ma-lang-btn {
+    padding:.32rem .75rem; border-radius:8px; border:1.5px solid var(--border);
+    background:#fff; font-size:.8rem; font-weight:600; cursor:pointer; color:var(--text2);
+    transition:border-color .14s,color .14s;
+  }
+  .ma-lang-btn:hover { border-color:var(--indigo); color:var(--indigo); }
+
+  /* ── Page layout ─────────────────────────────────────────────────────────── */
+  .ma-page { max-width:920px; margin:0 auto; padding:2rem 1.5rem; }
+
+  /* ── Header ──────────────────────────────────────────────────────────────── */
+  .ma-header { margin-bottom:1.75rem; }
+  .ma-title { font-family:'Space Grotesk',sans-serif; font-size:1.6rem; font-weight:700; margin-bottom:.3rem; }
+  .ma-sub   { font-size:.9rem; color:var(--text2); }
+
+  /* ── Tabs ────────────────────────────────────────────────────────────────── */
+  .ma-tabs { display:flex; gap:.55rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+  .ma-tab {
+    display:flex; align-items:center; gap:.4rem;
+    padding:.48rem 1.1rem; border-radius:10px; font-size:.87rem; font-weight:600;
+    cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text2);
+    transition:all .14s;
+  }
+  .ma-tab.active   { background:var(--indigo); color:#fff; border-color:var(--indigo); }
+  .ma-tab:not(.active):hover { background:#F8FAFC; border-color:var(--indigo); color:var(--indigo); }
+  .ma-tab-cnt {
+    font-size:.7rem; font-weight:700; padding:.1rem .42rem; border-radius:999px;
+    transition:background .14s, color .14s;
+  }
+  .ma-tab.active     .ma-tab-cnt { background:rgba(255,255,255,.22); color:#fff; }
+  .ma-tab:not(.active) .ma-tab-cnt { background:#F1F5F9; color:var(--text2); }
+
+  /* ── Appointment card ────────────────────────────────────────────────────── */
+  .ma-card {
+    background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r);
+    padding:1.35rem 1.4rem; margin-bottom:1rem; box-shadow:var(--shadow);
+    transition:border-color .14s, box-shadow .14s;
+  }
+  .ma-card:hover { border-color:#C7D2FE; box-shadow:var(--shadow-md); }
+  .ma-card.upcoming { border-left:3px solid var(--indigo); }
+  .ma-card.completed{ border-left:3px solid var(--green); }
+  .ma-card.cancelled{ border-left:3px solid var(--border); opacity:.75; }
+
+  /* card top row */
+  .ma-card-top { display:flex; align-items:flex-start; gap:1rem; }
+  .ma-doc-ava {
+    width:52px; height:52px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#fff;
+  }
+  .ma-doc-info { flex:1; min-width:0; }
+  .ma-doc-name  { font-weight:700; font-size:.97rem; }
+  .ma-doc-spec  { font-size:.78rem; color:var(--indigo); font-weight:600; margin-top:.1rem; }
+
+  /* meta chips */
+  .ma-meta { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.55rem; }
+  .ma-chip {
+    display:flex; align-items:center; gap:.28rem;
+    font-size:.76rem; color:var(--text2); background:#F8FAFC;
+    padding:.18rem .55rem; border-radius:6px; border:1px solid var(--border);
+  }
+  .ma-chip i { color:var(--muted); font-size:.8rem; }
+
+  /* status + fee column */
+  .ma-card-right {
+    display:flex; flex-direction:column; align-items:flex-end; gap:.45rem;
+    flex-shrink:0; margin-left:.5rem;
+  }
+  .ma-pill {
+    display:inline-flex; align-items:center; gap:.22rem;
+    font-size:.72rem; font-weight:700; padding:.22rem .6rem; border-radius:999px;
+    white-space:nowrap;
+  }
+  .pill-confirmed { background:var(--indigo-lt); color:var(--indigo-dk); }
+  .pill-completed { background:var(--green-lt);  color:#065F46; }
+  .pill-cancelled { background:#F1F5F9;          color:var(--muted); }
+  .pill-pending   { background:var(--amber-lt);  color:#92400E; }
+  .ma-fee { font-size:.88rem; font-weight:700; color:var(--green); }
+
+  /* meeting link banner */
+  .ma-meet-banner {
+    display:flex; align-items:center; gap:.6rem;
+    margin-top:.85rem; padding:.65rem 1rem; border-radius:9px;
+    background:linear-gradient(135deg, #EEF2FF 0%, #E0F2FE 100%);
+    border:1px solid #C7D2FE;
+  }
+  .ma-meet-icon { color:var(--indigo); font-size:1.1rem; }
+  .ma-meet-label{ font-size:.8rem; color:var(--text2); font-weight:500; }
+  .ma-meet-link {
+    font-size:.8rem; font-weight:700; color:var(--indigo);
+    text-decoration:none; word-break:break-all;
+    transition:color .14s;
+  }
+  .ma-meet-link:hover { color:var(--indigo-dk); text-decoration:underline; }
+
+  /* join-countdown badge */
+  .ma-join-window {
+    display:inline-flex; align-items:center; gap:.3rem;
+    font-size:.75rem; font-weight:600; color:var(--green-dk);
+    background:var(--green-lt); padding:.2rem .55rem; border-radius:999px;
+  }
+
+  /* patient note */
+  .ma-note {
+    display:flex; align-items:flex-start; gap:.45rem;
+    margin-top:.7rem; padding:.55rem .85rem; background:#F8FAFC;
+    border-radius:9px; font-size:.82rem; color:var(--text2); line-height:1.4;
+  }
+  .ma-note i { color:var(--muted); flex-shrink:0; margin-top:.05rem; }
+
+  /* actions */
+  .ma-card-actions { display:flex; gap:.55rem; margin-top:1rem; flex-wrap:wrap; }
+  .ma-btn {
+    display:inline-flex; align-items:center; gap:.3rem;
+    padding:.42rem .95rem; border-radius:9px; font-size:.82rem; font-weight:600;
+    cursor:pointer; border:none; transition:all .14s; text-decoration:none;
+  }
+  .btn-join     { background:var(--indigo); color:#fff; }
+  .btn-join:hover { background:var(--indigo-dk); }
+  .btn-join:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; pointer-events:all; }
+  .btn-cancel   { background:var(--red-lt);  color:var(--red); border:1.5px solid #FECACA; }
+  .btn-cancel:hover { background:#FECACA; }
+  .btn-review   { background:var(--amber-lt); color:#92400E; border:1.5px solid #FDE68A; }
+  .btn-review:hover { background:#FDE68A; }
+  .btn-secondary{ background:#F8FAFC; color:var(--text2); border:1.5px solid var(--border); }
+  .btn-secondary:hover { border-color:var(--indigo); color:var(--indigo); }
+  .reviewed-badge { /* same as pill-completed */ display:inline-flex;align-items:center;gap:.22rem;font-size:.78rem;font-weight:700;padding:.28rem .65rem;border-radius:999px;background:var(--green-lt);color:#065F46; }
+
+  /* ── Loading & empty ─────────────────────────────────────────────────────── */
+  .ma-loading { display:flex; flex-direction:column; align-items:center; gap:.75rem; padding:3rem; color:var(--muted); }
+  .ma-spinner { width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--indigo);border-radius:50%;animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .ma-empty { text-align:center; padding:3.5rem 1rem; color:var(--muted); }
+  .ma-empty-icon { font-size:3rem; display:block; margin-bottom:.75rem; }
+  .ma-empty h3 { font-family:'Space Grotesk',sans-serif; font-size:1.05rem; font-weight:700; color:var(--text); margin-bottom:.35rem; }
+  .ma-empty p  { font-size:.88rem; margin-bottom:1.1rem; }
+  .ma-empty-cta {
+    display:inline-flex; align-items:center; gap:.4rem;
+    padding:.55rem 1.3rem; border-radius:10px; border:none;
+    background:var(--indigo); color:#fff; font-size:.88rem; font-weight:600;
+    cursor:pointer; text-decoration:none; transition:background .14s;
+  }
+  .ma-empty-cta:hover { background:var(--indigo-dk); }
+
+  /* ── Review modal ────────────────────────────────────────────────────────── */
+  .ma-overlay {
+    position:fixed; inset:0; background:rgba(15,23,42,.55);
+    z-index:300; display:none; align-items:center; justify-content:center;
+    padding:1rem;
+  }
+  .ma-overlay.open { display:flex; }
+  .ma-modal {
+    background:#fff; border-radius:18px; padding:1.75rem 2rem;
+    max-width:450px; width:100%;
+    box-shadow:0 20px 60px rgba(0,0,0,.22);
+    animation:popIn .2s ease;
+  }
+  @keyframes popIn { from{opacity:0;transform:scale(.94) translateY(6px)} }
+
+  .ma-modal-head {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:1.1rem;
+  }
+  .ma-modal-title { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; }
+  .ma-modal-close {
+    width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border);
+    background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    color:var(--text2); transition:all .14s;
+  }
+  .ma-modal-close:hover { border-color:var(--red); color:var(--red); }
+
+  /* Doctor mini card inside modal */
+  .ma-modal-doctor {
+    display:flex; align-items:center; gap:.75rem;
+    padding:.65rem .85rem; background:#F8FAFC; border-radius:10px;
+    border:1px solid var(--border); margin-bottom:1.1rem;
+  }
+  .ma-modal-doc-ava { width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0; }
+  .ma-modal-doc-name { font-weight:700; font-size:.88rem; }
+  .ma-modal-doc-spec { font-size:.75rem; color:var(--indigo); font-weight:600; }
+
+  /* Stars */
+  .ma-star-label { font-size:.82rem; font-weight:600; color:var(--text2); margin-bottom:.45rem; }
+  .ma-stars { display:flex; gap:.3rem; margin-bottom:1rem; }
+  .ma-star {
+    font-size:1.7rem; cursor:pointer; color:var(--border);
+    transition:color .12s, transform .1s;
+  }
+  .ma-star.on { color:var(--amber); }
+  .ma-star:hover { transform:scale(1.15); }
+
+  /* Comment */
+  .ma-comment-label { font-size:.82rem; font-weight:600; color:var(--text2); margin-bottom:.4rem; }
+  .ma-comment {
+    width:100%; padding:.65rem .85rem; border-radius:9px;
+    border:1.5px solid var(--border); font-family:inherit; font-size:.88rem;
+    resize:vertical; min-height:90px; outline:none; transition:border-color .14s;
+  }
+  .ma-comment:focus { border-color:var(--indigo); }
+  .ma-modal-err { font-size:.79rem; color:var(--red); margin-top:.45rem; display:none; }
+  .ma-modal-footer { display:flex; gap:.6rem; justify-content:flex-end; margin-top:1.1rem; }
+  .ma-modal-submit {
+    padding:.5rem 1.3rem; border-radius:9px; border:none;
+    background:var(--indigo); color:#fff; font-size:.88rem; font-weight:700;
+    cursor:pointer; transition:background .14s;
+  }
+  .ma-modal-submit:hover { background:var(--indigo-dk); }
+  .ma-modal-submit:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; }
+  .ma-modal-sec {
+    padding:.5rem 1rem; border-radius:9px; border:1.5px solid var(--border);
+    background:#fff; font-size:.88rem; font-weight:600; cursor:pointer; color:var(--text2);
+    transition:all .14s;
+  }
+  .ma-modal-sec:hover { border-color:var(--indigo); color:var(--indigo); }
+
+  /* ── Cancel confirm modal ────────────────────────────────────────────────── */
+  .ma-cancel-modal .ma-modal { max-width:390px; }
+  .ma-cancel-icon { font-size:2.5rem; color:var(--red); text-align:center; margin-bottom:.6rem; }
+  .ma-cancel-title { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1rem; text-align:center; margin-bottom:.4rem; }
+  .ma-cancel-body  { font-size:.85rem; color:var(--text2); text-align:center; margin-bottom:1.1rem; line-height:1.5; }
+  .btn-confirm-cancel {
+    flex:1; padding:.5rem; border-radius:9px; border:none;
+    background:var(--red); color:#fff; font-size:.88rem; font-weight:700;
+    cursor:pointer; transition:background .14s;
+  }
+  .btn-confirm-cancel:hover { background:#DC2626; }
+  .ma-cancel-btns { display:flex; gap:.6rem; }
+
+  /* ── Toast ───────────────────────────────────────────────────────────────── */
+  .ma-toasts { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999; display:flex; flex-direction:column-reverse; gap:.5rem; pointer-events:none; }
+  .ma-toast {
+    display:flex; align-items:center; gap:.65rem;
+    padding:.72rem 1.05rem; border-radius:10px;
+    background:#1E293B; color:#fff; font-size:.84rem;
+    box-shadow:0 4px 20px rgba(0,0,0,.25); animation:fadeUp .25s ease;
+    pointer-events:auto;
+  }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} }
+  .ma-toast.success { border-left:3px solid var(--green); }
+  .ma-toast.error   { border-left:3px solid var(--red); }
+  .ma-toast.info    { border-left:3px solid var(--indigo); }
+
+  /* ── Responsive ──────────────────────────────────────────────────────────── */
+  @media (max-width:600px) {
+    .ma-page { padding:1rem; }
+    .ma-card-top { flex-wrap:wrap; }
+    .ma-card-right { flex-direction:row; align-items:center; }
+    .ma-modal { padding:1.35rem 1.2rem; }
+  }
+  </style>
+</head>
+<body>
+
+<!-- ── Navbar ─────────────────────────────────────────────────────────────── -->
+<header class="ma-nav">
+  <a href="/dashboard" class="ma-back">
+    <i class="ti ti-arrow-left"></i>
+    <span data-i18n="ma_back">Dashboard</span>
+  </a>
+  <a href="/" class="ma-brand">SmartX-Ray</a>
+  <div class="nav-spacer"></div>
+  <a href="/find-doctor" class="ma-find-btn">
+    <i class="ti ti-search"></i>
+    <span data-i18n="ma_find_doctor">Find a Doctor</span>
+  </a>
+  <button class="ma-lang-btn" id="maLangBtn" onclick="maToggleLang()">ខ្មែរ</button>
+</header>
+
+<!-- ── Page ───────────────────────────────────────────────────────────────── -->
+<main class="ma-page">
+
+  <div class="ma-header">
+    <h1 class="ma-title" data-i18n="ma_title">My Appointments</h1>
+    <p  class="ma-sub"  data-i18n="ma_sub">Manage your consultations and video meetings</p>
+  </div>
+
+  <!-- Tabs -->
+  <div class="ma-tabs">
+    <button class="ma-tab active" id="maTabUpcoming" onclick="maShowTab('upcoming')">
+      <i class="ti ti-calendar-time"></i>
+      <span data-i18n="ma_upcoming">Upcoming</span>
+      <span class="ma-tab-cnt" id="maCntUpcoming">—</span>
+    </button>
+    <button class="ma-tab" id="maTabPast" onclick="maShowTab('past')">
+      <i class="ti ti-history"></i>
+      <span data-i18n="ma_past">Past</span>
+      <span class="ma-tab-cnt" id="maCntPast">—</span>
+    </button>
+  </div>
+
+  <!-- Content area -->
+  <div id="maContent">
+    <div class="ma-loading">
+      <div class="ma-spinner"></div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ─────────────────────────────────────────────────────────────────────────
+     REVIEW MODAL
+     ───────────────────────────────────────────────────────────────────────── -->
+<div class="ma-overlay" id="maReviewOverlay" onclick="maOverlayClick(event,'review')">
+  <div class="ma-modal" role="dialog" aria-modal="true" aria-labelledby="maReviewTitle">
+    <div class="ma-modal-head">
+      <div class="ma-modal-title" id="maReviewTitle" data-i18n="ma_leave_review">Leave a Review</div>
+      <button class="ma-modal-close" onclick="maCloseReview()" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+
+    <!-- Mini doctor card -->
+    <div class="ma-modal-doctor" id="maReviewDocCard">
+      <div class="ma-modal-doc-ava" id="maReviewDocAva" style="background:#6366F1;">D</div>
+      <div>
+        <div class="ma-modal-doc-name" id="maReviewDocName">—</div>
+        <div class="ma-modal-doc-spec" id="maReviewDocSpec">—</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="maReviewAptId" />
+
+    <p class="ma-star-label" data-i18n="ma_rate_exp">Rate your experience</p>
+    <div class="ma-stars" id="maStarRow" role="radiogroup" aria-label="Star rating">
+      <span class="ma-star" data-val="1" onclick="maSetStar(1)" role="radio" aria-label="1 star" tabindex="0"><i class="ti ti-star-filled"></i></span>
+      <span class="ma-star" data-val="2" onclick="maSetStar(2)" role="radio" aria-label="2 stars" tabindex="0"><i class="ti ti-star-filled"></i></span>
+      <span class="ma-star" data-val="3" onclick="maSetStar(3)" role="radio" aria-label="3 stars" tabindex="0"><i class="ti ti-star-filled"></i></span>
+      <span class="ma-star" data-val="4" onclick="maSetStar(4)" role="radio" aria-label="4 stars" tabindex="0"><i class="ti ti-star-filled"></i></span>
+      <span class="ma-star" data-val="5" onclick="maSetStar(5)" role="radio" aria-label="5 stars" tabindex="0"><i class="ti ti-star-filled"></i></span>
+    </div>
+
+    <p class="ma-comment-label" data-i18n="ma_comment_label">Comment <span style="font-weight:400;color:var(--muted);">(optional)</span></p>
+    <textarea class="ma-comment" id="maReviewComment" rows="3"
+      placeholder="Share your experience with this doctor…"
+      data-i18n-placeholder="ma_review_ph"></textarea>
+    <p class="ma-modal-err" id="maReviewErr"></p>
+
+    <div class="ma-modal-footer">
+      <button class="ma-modal-sec" onclick="maCloseReview()" data-i18n="ma_cancel">Cancel</button>
+      <button class="ma-modal-submit" id="maReviewSubmitBtn" onclick="maSubmitReview()" data-i18n="ma_submit_review">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────────────────────────────────────
+     CANCEL CONFIRM MODAL
+     ───────────────────────────────────────────────────────────────────────── -->
+<div class="ma-overlay ma-cancel-modal" id="maCancelOverlay" onclick="maOverlayClick(event,'cancel')">
+  <div class="ma-modal">
+    <div class="ma-cancel-icon"><i class="ti ti-calendar-x"></i></div>
+    <div class="ma-cancel-title" data-i18n="ma_cancel_title">Cancel Appointment?</div>
+    <p class="ma-cancel-body" data-i18n="ma_cancel_body">
+      This will cancel your appointment. The doctor will be notified.<br>
+      This action cannot be undone.
+    </p>
+    <input type="hidden" id="maCancelAptId" />
+    <div class="ma-cancel-btns">
+      <button class="ma-modal-sec" style="flex:1;" onclick="maCloseCancelModal()" data-i18n="ma_keep">Keep It</button>
+      <button class="btn-confirm-cancel" id="maCancelConfirmBtn" onclick="maCancelConfirmed()">
+        <i class="ti ti-trash"></i> <span data-i18n="ma_cancel_confirm">Yes, Cancel</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toasts ─────────────────────────────────────────────────────────────── -->
+<div class="ma-toasts" id="maToasts"></div>
+
+<!-- ── Scripts ────────────────────────────────────────────────────────────── -->
+<script src="/static/js/i18n.js"></script>
+<script>
+/* ─── i18n strings ─────────────────────────────────────────────────────── */
+Object.assign(TRANSLATIONS, {
+  ma_back:           { en:'Dashboard',                             km:'ផ្ទាំងគ្រប់គ្រង' },
+  ma_find_doctor:    { en:'Find a Doctor',                         km:'រកវេជ្ជបណ្ឌិត' },
+  ma_title:          { en:'My Appointments',                       km:'ការណាត់ជួបខ្ញុំ' },
+  ma_sub:            { en:'Manage your consultations and video meetings', km:'គ្រប់គ្រងការពិគ្រោះ និងការប្រជុំតាម Video' },
+  ma_upcoming:       { en:'Upcoming',                              km:'ខាងមុខ' },
+  ma_past:           { en:'Past',                                  km:'ដែលបានកន្លង' },
+  ma_join_meeting:   { en:'Join Meeting',                          km:'ចូលរួមប្រជុំ' },
+  ma_join_opens:     { en:'Opens 15 min before',                   km:'បើក ១៥ នាទីមុន' },
+  ma_cancel:         { en:'Cancel',                                km:'បោះបង់' },
+  ma_cancel_title:   { en:'Cancel Appointment?',                   km:'បោះបង់ការណាត់ជួប?' },
+  ma_cancel_body:    { en:'This will cancel your appointment. The doctor will be notified. This action cannot be undone.', km:'វានឹងបោះបង់ការណាត់ជួបរបស់អ្នក។ វេជ្ជបណ្ឌិតនឹងទទួលបាន​សារជូនដំណឹង។' },
+  ma_keep:           { en:'Keep It',                               km:'រក្សាទុក' },
+  ma_cancel_confirm: { en:'Yes, Cancel',                           km:'បាទ/ចាស បោះបង់' },
+  ma_review:         { en:'Write Review',                          km:'សរសេរការវាយតម្លៃ' },
+  ma_reviewed:       { en:'Reviewed ✓',                            km:'បានវាយតម្លៃ ✓' },
+  ma_view_doctor:    { en:'View Doctor',                           km:'មើលវេជ្ជបណ្ឌិត' },
+  ma_no_upcoming:    { en:'No upcoming appointments',              km:'គ្មានការណាត់ជួបខាងមុខ' },
+  ma_no_upcoming_sub:{ en:"You haven't booked any consultations yet.", km:'អ្នកមិនទាន់ណាត់ជួបនៅឡើយ' },
+  ma_no_past:        { en:'No past appointments',                  km:'គ្មានការណាត់ជួបដែលបានកន្លង' },
+  ma_no_past_sub:    { en:'Your completed consultations will appear here.', km:'ការណាត់ជួបដែលបានបញ្ចប់នឹងបង្ហាញនៅទីនេះ' },
+  ma_book_cta:       { en:'Book a Consultation',                   km:'ណាត់ជួប' },
+  ma_leave_review:   { en:'Leave a Review',                        km:'ទុកការវាយតម្លៃ' },
+  ma_rate_exp:       { en:'Rate your experience',                  km:'ផ្ដល់ការវាយតម្លៃ' },
+  ma_comment_label:  { en:'Comment',                               km:'មតិ' },
+  ma_review_ph:      { en:'Share your experience with this doctor…', km:'ចែករំលែកបទពិសោធន៍របស់អ្នក…' },
+  ma_submit_review:  { en:'Submit Review',                         km:'ដាក់ការវាយតម្លៃ' },
+  ma_status_confirmed:{ en:'Confirmed',                            km:'បានបញ្ជាក់' },
+  ma_status_completed:{ en:'Completed',                            km:'បានបញ្ចប់' },
+  ma_status_cancelled:{ en:'Cancelled',                            km:'បានបោះបង់' },
+  ma_status_pending:  { en:'Pending',                              km:'កំពុងរង់ចាំ' },
+  ma_per_session:    { en:'/ session',                             km:'/ វគ្គ' },
+  ma_via_aba:        { en:'via ABA KHQR',                          km:'តាម ABA KHQR' },
+  ma_meet_link:      { en:'Meeting Link',                          km:'តំណប្រជុំ' },
+  ma_join_via:       { en:'Join via',                              km:'ចូលរួមតាម' },
+  ma_duration:       { en:'min',                                   km:'នាទី' },
+  ma_note_label:     { en:'Your note',                             km:'កំណត់ចំណាំ' },
+  ma_loading:        { en:'Loading appointments…',                 km:'កំពុងទាញយកការណាត់ជួប…' },
+});
+</script>
+<script>
+'use strict';
+
+/* ─── State ──────────────────────────────────────────────────────────────── */
+let LANG        = localStorage.getItem('lang') || 'en';
+let MA_DATA     = { upcoming:[], past:[] };
+let MA_TAB      = 'upcoming';
+let MA_RATING   = 0;
+let MA_REVIEW_DOC = null;   // { name, specialty, color }
+
+window.LANG = LANG;
+
+/* ─── i18n helper ────────────────────────────────────────────────────────── */
+const t = (k) => (LANG==='km' ? TRANSLATIONS[k]?.km : TRANSLATIONS[k]?.en) || k;
+
+/* ─── Avatar helpers ─────────────────────────────────────────────────────── */
+const COLORS = [
+  ['#4F46E5','#EEF2FF'],['#059669','#ECFDF5'],['#D97706','#FEF3C7'],
+  ['#DC2626','#FEF2F2'],['#0891B2','#ECFEFF'],['#7C3AED','#F5F3FF'],
+];
+function _colorFor(name) {
+  let h = 0;
+  for (let i = 0; i < (name||'').length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return COLORS[h % COLORS.length];
+}
+function _initials(name) {
+  if (!name) return '?';
+  const parts = name.replace(/^Dr\.?\s*/i,'').split(' ').filter(Boolean);
+  return ((parts[0]?.[0] || '') + (parts[1]?.[0] || '')).toUpperCase() || '?';
+}
+
+/* ─── Load data ──────────────────────────────────────────────────────────── */
+async function maLoad() {
+  const tok = localStorage.getItem('access_token');
+  if (!tok) { window.location = '/login'; return; }
+
+  document.getElementById('maContent').innerHTML = `
+    <div class="ma-loading">
+      <div class="ma-spinner"></div>
+      <span style="font-size:.85rem;">${t('ma_loading')}</span>
+    </div>`;
+
+  try {
+    const res = await fetch('/api/patient/appointments', {
+      headers: { Authorization: `Bearer ${tok}` },
+    });
+    if (res.status === 401) { window.location = '/login'; return; }
+    const data = await res.json();
+    MA_DATA = { upcoming: data.upcoming || [], past: data.past || [] };
+    document.getElementById('maCntUpcoming').textContent = MA_DATA.upcoming.length;
+    document.getElementById('maCntPast').textContent     = MA_DATA.past.length;
+    maRender();
+  } catch(e) {
+    document.getElementById('maContent').innerHTML = `
+      <div class="ma-empty">
+        <i class="ti ti-alert-circle ma-empty-icon" style="color:var(--red)"></i>
+        <h3>Could not load appointments</h3>
+        <p>${e.message}</p>
+        <button class="ma-empty-cta" onclick="maLoad()"><i class="ti ti-refresh"></i> Retry</button>
+      </div>`;
+  }
+}
+
+/* ─── Tab switch ─────────────────────────────────────────────────────────── */
+function maShowTab(tab) {
+  MA_TAB = tab;
+  ['upcoming','past'].forEach(t => {
+    const id  = 'maTab' + t.charAt(0).toUpperCase() + t.slice(1);
+    document.getElementById(id).classList.toggle('active', t === tab);
+  });
+  maRender();
+}
+
+/* ─── Render list ────────────────────────────────────────────────────────── */
+function maRender() {
+  const list = MA_DATA[MA_TAB] || [];
+  const wrap = document.getElementById('maContent');
+
+  if (!list.length) {
+    const isUpcoming = MA_TAB === 'upcoming';
+    wrap.innerHTML = `
+      <div class="ma-empty">
+        <i class="ti ti-calendar-x ma-empty-icon"></i>
+        <h3>${t(isUpcoming ? 'ma_no_upcoming' : 'ma_no_past')}</h3>
+        <p>${t(isUpcoming ? 'ma_no_upcoming_sub' : 'ma_no_past_sub')}</p>
+        ${isUpcoming ? `<a href="/find-doctor" class="ma-empty-cta"><i class="ti ti-search"></i>${t('ma_book_cta')}</a>` : ''}
+      </div>`;
+    return;
+  }
+
+  wrap.innerHTML = list.map(a => maCard(a)).join('');
+}
+
+/* ─── Single card HTML ───────────────────────────────────────────────────── */
+function maCard(a) {
+  const doc   = a.doctor || {};
+  const [fg]  = _colorFor(doc.full_name || 'D');
+  const init  = _initials(doc.full_name || 'Doctor');
+
+  /* Date/time display */
+  let displayDate = '—';
+  if (a.date) {
+    try {
+      const d = new Date(a.date + 'T00:00:00');
+      displayDate = d.toLocaleDateString(LANG === 'km' ? 'km-KH' : 'en-US',
+        { weekday:'short', day:'numeric', month:'short', year:'numeric' });
+    } catch {}
+  }
+  const displayTime = a.time || '';
+
+  /* Status */
+  const pillMap = {
+    confirmed: ['pill-confirmed', 'ma_status_confirmed', 'ti-calendar-check'],
+    completed: ['pill-completed', 'ma_status_completed', 'ti-circle-check'],
+    cancelled: ['pill-cancelled', 'ma_status_cancelled', 'ti-circle-x'],
+    pending:   ['pill-pending',   'ma_status_pending',   'ti-clock'],
+  };
+  const [pillCls, pillKey, pillIcon] = pillMap[a.status] || pillMap.pending;
+  const statusLabel = t(pillKey);
+  const cardCls     = { confirmed:'upcoming', completed:'completed', cancelled:'cancelled' }[a.status] || '';
+
+  /* Meeting link banner (only if present + not cancelled) */
+  let meetBanner = '';
+  if (a.meeting_link && a.status !== 'cancelled') {
+    meetBanner = `
+      <div class="ma-meet-banner">
+        <i class="ti ti-video ma-meet-icon"></i>
+        <span class="ma-meet-label">${t('ma_meet_link')}:</span>
+        <a href="${a.meeting_link}" target="_blank" rel="noopener" class="ma-meet-link">${a.meeting_link}</a>
+      </div>`;
+  }
+
+  /* Patient note */
+  let noteBanner = '';
+  if (a.patient_note) {
+    noteBanner = `
+      <div class="ma-note">
+        <i class="ti ti-notes"></i>
+        <span>${a.patient_note}</span>
+      </div>`;
+  }
+
+  /* Actions */
+  let actions = '';
+
+  if (a.status === 'confirmed') {
+    const canJoin   = !!a.can_join;
+    const joinTitle = canJoin ? '' : `title="${t('ma_join_opens')}"`;
+    actions += `
+      <button class="ma-btn btn-join" onclick="maJoin(${a.id})" ${canJoin ? '' : 'disabled'} ${joinTitle}>
+        <i class="ti ti-video"></i>${t('ma_join_meeting')}
+      </button>`;
+    if (!canJoin && a.date && a.time) {
+      actions += `<span class="ma-join-window"><i class="ti ti-clock"></i>${t('ma_join_opens')}</span>`;
+    }
+    actions += `
+      <button class="ma-btn btn-cancel" onclick="maOpenCancelModal(${a.id})">
+        <i class="ti ti-x"></i>${t('ma_cancel')}
+      </button>`;
+  }
+
+  if (a.status === 'completed') {
+    if (!a.has_review) {
+      const docData = encodeDocData(doc, fg);
+      actions += `
+        <button class="ma-btn btn-review" onclick="maOpenReview(${a.id}, ${docData})">
+          <i class="ti ti-star"></i>${t('ma_review')}
+        </button>`;
+    } else {
+      actions += `<span class="reviewed-badge"><i class="ti ti-circle-check"></i>${t('ma_reviewed')}</span>`;
+    }
+  }
+
+  if (doc.id) {
+    actions += `
+      <a href="/doctor/${doc.id}" class="ma-btn btn-secondary">
+        <i class="ti ti-user"></i>${t('ma_view_doctor')}
+      </a>`;
+  }
+
+  return `
+    <div class="ma-card ${cardCls}" data-apt-id="${a.id}">
+      <div class="ma-card-top">
+        <div class="ma-doc-ava" style="background:${fg};">${init}</div>
+        <div class="ma-doc-info">
+          <div class="ma-doc-name">${escHtml(doc.full_name || '—')}</div>
+          <div class="ma-doc-spec">${escHtml(doc.specialty || '—')}</div>
+          <div class="ma-meta">
+            <span class="ma-chip"><i class="ti ti-calendar"></i>${displayDate}</span>
+            ${displayTime ? `<span class="ma-chip"><i class="ti ti-clock"></i>${displayTime}</span>` : ''}
+            ${a.duration_min ? `<span class="ma-chip"><i class="ti ti-hourglass"></i>${a.duration_min} ${t('ma_duration')}</span>` : ''}
+            <span class="ma-chip"><i class="ti ti-device-desktop"></i>Video</span>
+            ${a.payment_method ? `<span class="ma-chip"><i class="ti ti-qrcode"></i>${escHtml(a.payment_method)}</span>` : ''}
+          </div>
+        </div>
+        <div class="ma-card-right">
+          <span class="ma-pill ${pillCls}"><i class="ti ${pillIcon}"></i>${statusLabel}</span>
+          ${a.fee != null ? `<span class="ma-fee">$${parseFloat(a.fee).toFixed(0)} ${t('ma_per_session')}</span>` : ''}
+        </div>
+      </div>
+      ${meetBanner}
+      ${noteBanner}
+      ${actions ? `<div class="ma-card-actions">${actions}</div>` : ''}
+    </div>`;
+}
+
+/* ─── Encode doctor data for onclick attr ────────────────────────────────── */
+function encodeDocData(doc, color) {
+  const obj = { name: doc.full_name || '—', spec: doc.specialty || '—', color };
+  return JSON.stringify(obj).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ─── Join meeting ───────────────────────────────────────────────────────── */
+async function maJoin(aptId) {
+  const tok = localStorage.getItem('access_token');
+  try {
+    const res  = await fetch(`/api/appointments/${aptId}/join`, {
+      headers: { Authorization: `Bearer ${tok}` },
+    });
+    const data = await res.json();
+    if (!res.ok) { maToast(data.message || data.error, 'error'); return; }
+    window.open(data.meeting_link, '_blank', 'noopener');
+  } catch(e) { maToast(e.message, 'error'); }
+}
+
+/* ─── Cancel modal ───────────────────────────────────────────────────────── */
+function maOpenCancelModal(aptId) {
+  document.getElementById('maCancelAptId').value = aptId;
+  document.getElementById('maCancelOverlay').classList.add('open');
+}
+function maCloseCancelModal() {
+  document.getElementById('maCancelOverlay').classList.remove('open');
+}
+async function maCancelConfirmed() {
+  const aptId = document.getElementById('maCancelAptId').value;
+  const btn   = document.getElementById('maCancelConfirmBtn');
+  btn.disabled = true;
+  const tok = localStorage.getItem('access_token');
+  try {
+    const res  = await fetch(`/api/appointments/${aptId}/cancel`, {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${tok}` },
+    });
+    const data = await res.json();
+    if (!res.ok) { maToast(data.error || data.message, 'error'); btn.disabled=false; return; }
+    maCloseCancelModal();
+    maToast(LANG==='km' ? 'បានបោះបង់ការណាត់ជួប' : 'Appointment cancelled', 'success');
+    await maLoad();
+  } catch(e) {
+    maToast(e.message, 'error');
+    btn.disabled = false;
+  }
+}
+
+/* ─── Review modal ───────────────────────────────────────────────────────── */
+function maOpenReview(aptId, docDataEncoded) {
+  let doc = {};
+  try { doc = JSON.parse(decodeURIComponent(docDataEncoded.replace(/&quot;/g,'"'))); } catch {}
+  if (typeof docDataEncoded === 'object') doc = docDataEncoded;
+
+  MA_REVIEW_DOC = doc;
+  MA_RATING     = 0;
+
+  document.getElementById('maReviewAptId').value        = aptId;
+  document.getElementById('maReviewComment').value      = '';
+  document.getElementById('maReviewErr').style.display  = 'none';
+  document.getElementById('maReviewSubmitBtn').disabled = false;
+
+  // Populate doctor card
+  const ava  = document.getElementById('maReviewDocAva');
+  ava.textContent = _initials(doc.name || '');
+  ava.style.background = doc.color || '#6366F1';
+  document.getElementById('maReviewDocName').textContent = doc.name || '—';
+  document.getElementById('maReviewDocSpec').textContent = doc.spec || '—';
+
+  maSetStar(0);
+  document.getElementById('maReviewOverlay').classList.add('open');
+  // Focus first star for keyboard accessibility
+  document.querySelector('.ma-star')?.focus();
+}
+function maCloseReview() {
+  document.getElementById('maReviewOverlay').classList.remove('open');
+}
+function maSetStar(val) {
+  MA_RATING = val;
+  document.querySelectorAll('.ma-star').forEach(s => {
+    s.classList.toggle('on', parseInt(s.dataset.val) <= val);
+  });
+}
+async function maSubmitReview() {
+  const aptId   = document.getElementById('maReviewAptId').value;
+  const comment = document.getElementById('maReviewComment').value.trim();
+  const errEl   = document.getElementById('maReviewErr');
+  const btn     = document.getElementById('maReviewSubmitBtn');
+
+  if (!MA_RATING) {
+    errEl.textContent = LANG === 'km' ? 'សូមជ្រើសរើសផ្កាយ' : 'Please select a star rating.';
+    errEl.style.display = 'block';
+    return;
+  }
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = '…';
+
+  const tok = localStorage.getItem('access_token');
+  try {
+    const res = await fetch(`/api/appointments/${aptId}/review`, {
+      method:  'POST',
+      headers: { Authorization: `Bearer ${tok}`, 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ rating: MA_RATING, comment: comment || undefined }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || data.message || 'Error';
+      errEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = t('ma_submit_review');
+      return;
+    }
+    maCloseReview();
+    maToast(LANG === 'km' ? 'ការវាយតម្លៃបានដាក់ជូន!' : 'Review submitted! Thank you.', 'success');
+    await maLoad();
+  } catch(e) {
+    errEl.textContent = e.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = t('ma_submit_review');
+  }
+}
+
+/* ─── Overlay click outside ──────────────────────────────────────────────── */
+function maOverlayClick(e, which) {
+  if (e.target !== e.currentTarget) return;
+  if (which === 'review') maCloseReview();
+  if (which === 'cancel') maCloseCancelModal();
+}
+
+/* ─── Language toggle ────────────────────────────────────────────────────── */
+function maToggleLang() {
+  LANG = LANG === 'en' ? 'km' : 'en';
+  window.LANG = LANG;
+  localStorage.setItem('lang', LANG);
+  document.getElementById('ma-html').setAttribute('lang', LANG === 'km' ? 'km' : 'en');
+  document.getElementById('maLangBtn').textContent = LANG === 'km' ? 'English' : 'ខ្មែរ';
+  if (typeof applyLang === 'function') applyLang(LANG);
+  maRender();
+}
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+function maToast(msg, type = 'info') {
+  const wrap = document.getElementById('maToasts');
+  const el   = document.createElement('div');
+  el.className = `ma-toast ${type}`;
+  const iconMap = { success:'circle-check', error:'alert-circle', info:'info-circle' };
+  el.innerHTML  = `<i class="ti ti-${iconMap[type]||'info-circle'}"></i>${msg}`;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+/* ─── Keyboard: Esc to close modals ─────────────────────────────────────── */
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  maCloseReview();
+  maCloseCancelModal();
+});
+
+/* ─── Init ───────────────────────────────────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  if (LANG === 'km') {
+    document.getElementById('ma-html').setAttribute('lang', 'km');
+    document.getElementById('maLangBtn').textContent = 'English';
+    if (typeof applyLang === 'function') applyLang('km');
+  }
+  maLoad();
+});
+</script>
+</body>
+</html>

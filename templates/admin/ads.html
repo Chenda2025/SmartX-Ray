@@ -3,222 +3,1299 @@
 {% block topbar_title %}<span data-i18n="adm_nav_ads">Ad Manager</span>{% endblock %}
 {% block breadcrumb %}<span data-i18n="adm_nav_ads">Ad Manager</span>{% endblock %}
 
+{% block extra_head %}
+<style>
+/* ── Placement pill ─────────────────────────────────────────────── */
+.placement-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  white-space: nowrap; border: 1.5px solid;
+}
+.placement-pill.banner       { background:#EEF2FF; border-color:#C7D2FE; color:#4338CA; }
+.placement-pill.sidebar      { background:#FEF3C7; border-color:#FCD34D; color:#92400E; }
+.placement-pill.result_page  { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.placement-pill.interstitial { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
+.placement-pill.footer       { background:#F5F3FF; border-color:#DDD6FE; color:#7C3AED; }
+
+/* ── Status toggle pill ─────────────────────────────────────────── */
+.status-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1.5px solid; transition: transform .12s, box-shadow .12s;
+  white-space: nowrap;
+}
+.status-pill:hover        { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+.status-pill.active       { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.status-pill.inactive     { background:#F8FAFC; border-color:#CBD5E1; color:#64748B; }
+
+/* ── CTR bar ────────────────────────────────────────────────────── */
+.ctr-wrap { display: flex; align-items: center; gap: 8px; min-width: 80px; }
+.ctr-bar  { flex: 1; height: 4px; background: #F1F5F9; border-radius: 4px; min-width: 36px; }
+.ctr-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+.ctr-fill.good    { background: var(--color-green); }
+.ctr-fill.mid     { background: var(--color-amber); }
+.ctr-fill.low     { background: var(--color-muted); }
+
+/* ── Priority badge ─────────────────────────────────────────────── */
+.prio-badge {
+  width: 26px; height: 26px; border-radius: 8px; display: inline-flex;
+  align-items: center; justify-content: center; font-size: 12px; font-weight: 700;
+  background: #F1F5F9; color: var(--color-muted);
+}
+.prio-badge.high { background: var(--color-red-light);   color: var(--color-red-dark); }
+.prio-badge.mid  { background: var(--color-amber-light); color: var(--color-amber-dark,#D97706); }
+
+/* ── Ad thumbnail preview ───────────────────────────────────────── */
+.ad-thumb {
+  width: 40px; height: 32px; border-radius: 6px; object-fit: cover;
+  background: #F1F5F9; flex-shrink: 0; border: 1px solid var(--color-border);
+}
+.ad-thumb-placeholder {
+  width: 40px; height: 32px; border-radius: 6px; flex-shrink: 0;
+  background: var(--color-indigo-light); display: flex; align-items: center;
+  justify-content: center; color: var(--color-indigo); font-size: 14px;
+  border: 1px solid #C7D2FE;
+}
+
+/* ── Action buttons ─────────────────────────────────────────────── */
+.action-btn {
+  width: 30px; height: 30px; border-radius: 8px; border: 1.5px solid;
+  background: #fff; cursor: pointer; display: inline-flex; align-items: center;
+  justify-content: center; font-size: 13px; transition: background .12s, transform .1s;
+}
+.action-btn:hover  { transform: scale(1.1); }
+.action-btn.edit   { border-color: #C7D2FE; color: var(--color-indigo); }
+.action-btn.edit:hover { background: var(--color-indigo-light); }
+.action-btn.trash  { border-color: var(--color-red-border); color: var(--color-red); }
+.action-btn.trash:hover { background: var(--color-red-light); }
+
+/* ── Filter bar inputs ──────────────────────────────────────────── */
+.filter-input {
+  height: 36px; border: 1px solid var(--color-border); border-radius: 8px;
+  padding: 0 12px; font-size: 13px; color: var(--color-text); width: 100%;
+  background: #fff; outline: none; transition: border-color .15s, box-shadow .15s;
+  font-family: 'Inter', sans-serif;
+}
+.filter-input:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.filter-input-wrap { position: relative; display: flex; align-items: center; }
+.filter-input-wrap .fi-icon {
+  position: absolute; left: 10px; color: var(--color-muted); font-size: 14px;
+  pointer-events: none;
+}
+.filter-input-wrap input { padding-left: 32px; }
+
+/* ── Loading spinner ─────────────────────────────────────────────── */
+@keyframes _spin { to { transform: rotate(360deg); } }
+.u-spin { animation: _spin .7s linear infinite; display: inline-block; }
+
+/* ── Modal — custom design system ───────────────────────────────── */
+.ad-modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 2100;
+  background: rgba(15,23,42,.5); align-items: center; justify-content: center;
+}
+.ad-modal-overlay.open { display: flex; }
+.ad-modal-box {
+  background: #fff; border-radius: 16px; padding: 28px;
+  max-width: 600px; width: 96%; max-height: 92vh; overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0,0,0,.22); position: relative;
+}
+.ad-modal-close {
+  position: absolute; top: 14px; right: 14px; background: none; border: none;
+  cursor: pointer; color: var(--color-hint); font-size: 18px; line-height: 1;
+}
+.ad-modal-close:hover { color: var(--color-text); }
+.ad-field-label {
+  display: block; font-size: 11px; font-weight: 600; color: var(--color-muted);
+  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px;
+}
+.ad-field-label .req { color: var(--color-red); margin-left: 2px; }
+.ad-input {
+  width: 100%; height: 38px; border: 1px solid var(--color-border);
+  border-radius: 8px; padding: 0 12px; font-size: 13px; color: var(--color-text);
+  background: #fff; outline: none; transition: border-color .15s, box-shadow .15s;
+  font-family: 'Inter', sans-serif; box-sizing: border-box;
+}
+.ad-input:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.ad-textarea {
+  width: 100%; border: 1px solid var(--color-border); border-radius: 8px;
+  padding: 10px 12px; font-size: 13px; color: var(--color-text); background: #fff;
+  outline: none; resize: vertical; min-height: 68px; font-family: 'Inter', sans-serif;
+  transition: border-color .15s, box-shadow .15s; box-sizing: border-box;
+}
+.ad-textarea:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.ad-select {
+  width: 100%; height: 38px; border: 1px solid var(--color-border);
+  border-radius: 8px; padding: 0 10px; font-size: 13px; color: var(--color-text);
+  background: #fff; outline: none; cursor: pointer; font-family: 'Inter', sans-serif;
+  transition: border-color .15s, box-shadow .15s; box-sizing: border-box;
+}
+.ad-select:focus {
+  border-color: var(--color-border-focus);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.1);
+}
+.ad-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.ad-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+@media (max-width: 560px) {
+  .ad-grid-2, .ad-grid-3 { grid-template-columns: 1fr; }
+}
+
+/* ── Stat chips ─────────────────────────────────────────────────── */
+.ad-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+.ad-chip {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 14px; border-radius: 10px; border: 1px solid var(--color-border);
+  background: #fff; font-size: 12px; color: var(--color-muted);
+}
+.ad-chip strong { font-size: 14px; font-weight: 700; color: var(--color-text); }
+.ad-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Export dropdown ─────────────────────────────────────────────── */
+#exportToggleBtn {
+  background: #EEF2FF !important; border: 1.5px solid #C7D2FE !important;
+  color: #4338CA !important; font-weight: 600;
+}
+#exportToggleBtn:hover { background: #E0E7FF !important; border-color: #A5B4FC !important; }
+#exportToggleBtn.open  { background: #E0E7FF !important; border-color: #A5B4FC !important; }
+
+.export-wrap { position: relative; display: inline-block; }
+.export-drop-menu {
+  position: absolute; top: calc(100% + 6px); right: 0;
+  min-width: 170px; background: #fff; border: 1px solid var(--color-border);
+  border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  z-index: 300; padding: 5px; display: none;
+}
+.export-drop-menu.open { display: block; }
+.export-drop-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 8px 12px; border-radius: 7px; cursor: pointer;
+  font-size: 13px; color: var(--color-text);
+  background: none; border: none; width: 100%; text-align: left;
+  font-family: 'Inter', sans-serif;
+}
+.export-drop-item:hover { background: var(--color-indigo-light); color: var(--color-indigo); }
+
+/* ── Pagination ──────────────────────────────────────────────────── */
+.page-btn {
+  height: 30px; padding: 0 10px; border: 1px solid var(--color-border);
+  border-radius: 8px; background: #fff; cursor: pointer;
+  font-size: 12px; color: var(--color-text);
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: background .12s, border-color .12s, color .12s;
+  font-family: 'Inter', sans-serif;
+}
+.page-btn:hover:not(:disabled) {
+  background: var(--color-indigo-light);
+  border-color: var(--color-indigo); color: var(--color-indigo);
+}
+.page-btn:disabled { opacity: .38; cursor: default; }
+
+/* ── Image upload zone ───────────────────────────────────────────── */
+.img-upload-zone {
+  border: 2px dashed var(--color-border); border-radius: 10px;
+  padding: 18px 14px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s;
+  background: #F8FAFC; box-sizing: border-box;
+}
+.img-upload-zone:hover, .img-upload-zone.drag-over {
+  border-color: var(--color-indigo);
+  background: var(--color-indigo-light,#EEF2FF);
+}
+.upload-icon { font-size: 26px; color: var(--color-muted); display: block; margin-bottom: 5px; }
+.upload-browse-btn {
+  color: var(--color-indigo); cursor: pointer; font-weight: 600;
+  text-decoration: underline; font-size: 13px;
+}
+.upload-hint { font-size: 11px; color: var(--color-hint,#94A3B8); margin-top: 3px; }
+
+/* ── Image preview wrap ─────────────────────────────────────────── */
+.img-preview-wrap {
+  position: relative; border-radius: 8px; border: 1px solid var(--color-border);
+  background: #F1F5F9; padding: 8px; box-sizing: border-box;
+}
+.img-preview-wrap img {
+  width: 100%; max-height: 130px; object-fit: contain;
+  border-radius: 6px; display: block;
+}
+.img-preview-clear {
+  position: absolute; top: 6px; right: 6px;
+  background: rgba(15,23,42,.6); color: #fff; border: none;
+  border-radius: 50%; width: 22px; height: 22px; cursor: pointer;
+  font-size: 11px; display: flex; align-items: center; justify-content: center;
+  transition: background .12s;
+}
+.img-preview-clear:hover { background: rgba(15,23,42,.85); }
+
+/* ── Clear filter button with distinct bg ────────────────────────── */
+#adClearFilterBtn {
+  background: #EEF2FF !important; border: 1.5px solid #C7D2FE !important;
+  color: #4338CA !important; font-weight: 600;
+}
+#adClearFilterBtn:hover {
+  background: #E0E7FF !important; border-color: #A5B4FC !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-4">
-  <div>
-    <h4 class="fw-bold mb-0" data-i18n="adm_ad_title">Ad Manager</h4>
-    <p class="text-muted small mb-0" data-i18n="adm_ad_sub">Upload banners, track CTR, toggle active/inactive</p>
-  </div>
-  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAdModal">
-    <i class="bi bi-plus-lg me-1"></i><span data-i18n="adm_new_ad">New Ad</span>
-  </button>
-</div>
 
-<!-- Table -->
-<div class="card table-card">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th data-i18n="adm_col_ad">Ad</th>
-          <th data-i18n="adm_col_placement">Placement</th>
-          <th data-i18n="adm_impressions">Impressions</th>
-          <th data-i18n="adm_clicks">Clicks</th>
-          <th>CTR</th>
-          <th data-i18n="adm_col_priority">Priority</th>
-          <th data-i18n="adm_col_status">Status</th>
-          <th data-i18n="adm_col_actions">Actions</th>
-        </tr>
-      </thead>
-      <tbody id="adsTable">
-        <tr><td colspan="9" class="text-center py-4 text-muted">Loading…</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+<!-- ══════════════════════════════════════════════════════════════════
+     PAGE HEADER
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="page-header" style="align-items:flex-start; flex-direction:column; gap:12px">
+  <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+    <div>
+      <h4 class="page-title" data-i18n="adm_ad_title">Ad Manager</h4>
+      <p class="page-sub" data-i18n="adm_ad_sub">Create, monitor, and optimise advertising campaigns</p>
+    </div>
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
 
-<!-- Create Ad Modal -->
-<div class="modal fade" id="createAdModal" tabindex="-1">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-megaphone-fill me-2 text-primary"></i><span data-i18n="adm_create_ad">Create New Ad</span></h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <div class="row g-3">
-          <div class="col-md-8">
-            <label class="form-label fw-medium">Title <span class="text-danger">*</span></label>
-            <input type="text" class="form-control" id="ad-title" placeholder="e.g. Calmette Hospital Banner">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label fw-medium">Advertiser</label>
-            <input type="text" class="form-control" id="ad-advertiser" placeholder="Company name">
-          </div>
-          <div class="col-12">
-            <label class="form-label fw-medium">Body Text <span class="text-danger">*</span></label>
-            <textarea class="form-control" id="ad-body" rows="2"
-                      placeholder="Short description shown under the banner…"></textarea>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-medium">Image URL</label>
-            <input type="url" class="form-control" id="ad-image-url"
-                   placeholder="https://…/banner.jpg">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label fw-medium">Target URL <span class="text-danger">*</span></label>
-            <input type="url" class="form-control" id="ad-target-url"
-                   placeholder="https://…">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label fw-medium">Placement</label>
-            <select class="form-select" id="ad-placement">
-              <option value="banner">Banner</option>
-              <option value="sidebar">Sidebar</option>
-              <option value="result_page">Result Page</option>
-              <option value="interstitial">Interstitial</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label fw-medium">Priority</label>
-            <input type="number" class="form-control" id="ad-priority"
-                   value="0" min="0" max="100">
-          </div>
-          <div class="col-md-4">
-            <label class="form-label fw-medium">Status</label>
-            <select class="form-select" id="ad-is-active">
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-          </div>
+      <!-- Export dropdown -->
+      <div class="export-wrap" id="exportWrap">
+        <button class="btn btn-sm btn-ghost" id="exportToggleBtn"
+                onclick="toggleExportMenu(event)"
+                style="gap:6px; display:flex; align-items:center">
+          <i class="ti ti-download" style="font-size:14px"></i>
+          <span data-i18n="adm_export">Export</span>
+          <i class="ti ti-chevron-down" style="font-size:11px" id="exportChevron"></i>
+        </button>
+        <div class="export-drop-menu" id="exportDropMenu">
+          <button class="export-drop-item" onclick="exportAds('pdf')">
+            <i class="ti ti-file-type-pdf" style="font-size:15px; color:#DC2626"></i>
+            <span data-i18n="adm_export_pdf">Export PDF</span>
+          </button>
+          <button class="export-drop-item" onclick="exportAds('docx')">
+            <i class="ti ti-file-type-doc" style="font-size:15px; color:#2563EB"></i>
+            <span data-i18n="adm_export_docx">Export DOCX</span>
+          </button>
         </div>
       </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                data-i18n="adm_cancel">Cancel</button>
-        <button type="button" class="btn btn-primary" onclick="createAd()">
-          <i class="bi bi-plus-lg me-1"></i><span data-i18n="adm_create_ad">Create Ad</span>
-        </button>
-      </div>
+
+      <!-- New Ad -->
+      <button class="btn btn-primary" onclick="openAdModal()" style="gap:7px">
+        <i class="ti ti-plus" style="font-size:15px"></i>
+        <span data-i18n="adm_new_ad">New Ad</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Stat chips -->
+  <div class="ad-chips">
+    <div class="ad-chip">
+      <div class="dot" style="background:var(--color-indigo)"></div>
+      <span data-i18n="adm_total_ads_chip">Total</span>
+      <strong id="chip-total">—</strong>
+    </div>
+    <div class="ad-chip">
+      <div class="dot" style="background:var(--color-green)"></div>
+      <span data-i18n="adm_active">Active</span>
+      <strong id="chip-active">—</strong>
+    </div>
+    <div class="ad-chip">
+      <div class="dot" style="background:var(--color-muted)"></div>
+      <span data-i18n="adm_inactive_chip">Inactive</span>
+      <strong id="chip-inactive">—</strong>
+    </div>
+    <div class="ad-chip">
+      <i class="ti ti-eye" style="font-size:13px; color:var(--color-indigo)"></i>
+      <span data-i18n="adm_impressions">Impressions</span>
+      <strong id="chip-impressions">—</strong>
+    </div>
+    <div class="ad-chip">
+      <i class="ti ti-cursor" style="font-size:13px; color:var(--color-amber)"></i>
+      <span data-i18n="adm_clicks">Clicks</span>
+      <strong id="chip-clicks">—</strong>
+    </div>
+    <div class="ad-chip">
+      <i class="ti ti-chart-bar" style="font-size:13px; color:var(--color-green)"></i>
+      <span>CTR</span>
+      <strong id="chip-ctr">—</strong>
     </div>
   </div>
 </div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     FILTER BAR
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="panel-card" style="margin-bottom:16px">
+  <div style="padding:14px 18px; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
+
+    <!-- Search -->
+    <div style="flex:2; min-width:180px">
+      <div class="ad-field-label" data-i18n="adm_search_ads">Search</div>
+      <div class="filter-input-wrap">
+        <i class="ti ti-search fi-icon"></i>
+        <input type="text" class="filter-input" id="adSearch"
+               data-i18n-placeholder="adm_search_ads_ph"
+               placeholder="Title or advertiser…" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Placement -->
+    <div style="flex:1; min-width:120px">
+      <div class="ad-field-label" data-i18n="adm_col_placement">Placement</div>
+      <select class="filter-input" id="adFilterPlacement" style="cursor:pointer"
+              onchange="resetPage(); renderAds()">
+        <option value="" data-i18n="adm_all_placements">All Placements</option>
+        <option value="banner"       data-i18n="adm_pos_top_banner">Top Header Banner</option>
+        <option value="sidebar"      data-i18n="adm_pos_sidebar">Dashboard Sidebar</option>
+        <option value="result_page"  data-i18n="adm_pos_result">Result Page Insert</option>
+        <option value="interstitial" data-i18n="adm_pos_interstitial">Fullscreen Interstitial</option>
+        <option value="footer"       data-i18n="adm_pos_footer">Footer Display</option>
+      </select>
+    </div>
+
+    <!-- Impressions Sort -->
+    <div style="flex:1; min-width:150px">
+      <div class="ad-field-label" data-i18n="adm_impressions">Impressions</div>
+      <select class="filter-input" id="adSortImpressions" style="cursor:pointer"
+              onchange="resetPage(); renderAds()">
+        <option value=""     data-i18n="adm_sort_default">Default Order</option>
+        <option value="asc"  data-i18n="adm_sort_impr_asc">Small → Big</option>
+        <option value="desc" data-i18n="adm_sort_impr_desc">Big → Small</option>
+      </select>
+    </div>
+
+    <!-- CTR Sort -->
+    <div style="flex:1; min-width:130px">
+      <div class="ad-field-label">CTR</div>
+      <select class="filter-input" id="adSortCTR" style="cursor:pointer"
+              onchange="resetPage(); renderAds()">
+        <option value=""     data-i18n="adm_sort_default">Default Order</option>
+        <option value="asc"  data-i18n="adm_sort_ctr_asc">Small → Big</option>
+        <option value="desc" data-i18n="adm_sort_ctr_desc">Big → Small</option>
+      </select>
+    </div>
+
+    <!-- Status -->
+    <div style="flex:1; min-width:110px">
+      <div class="ad-field-label" data-i18n="adm_col_status">Status</div>
+      <select class="filter-input" id="adFilterStatus" style="cursor:pointer"
+              onchange="resetPage(); renderAds()">
+        <option value=""         data-i18n="adm_all_status">All Status</option>
+        <option value="active"   data-i18n="adm_active">Active</option>
+        <option value="inactive" data-i18n="adm_inactive_chip">Inactive</option>
+      </select>
+    </div>
+
+    <!-- Clear -->
+    <div style="flex:0 0 auto; padding-bottom:1px">
+      <button id="adClearFilterBtn" class="btn btn-sm btn-ghost"
+              onclick="clearAdFilters()"
+              style="height:36px; padding:0 14px; font-size:12px; gap:5px">
+        <i class="ti ti-filter-off" style="font-size:14px"></i>
+        <span data-i18n="adm_clear_filters">Clear</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ADS TABLE
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="panel-card">
+  <div class="table-responsive">
+    <table class="admin-table" id="adsTableEl">
+      <thead>
+        <tr>
+          <th style="width:44px; padding-left:18px">#</th>
+          <th data-i18n="adm_col_ad">Ad</th>
+          <th data-i18n="adm_col_placement" style="width:160px">Placement</th>
+          <th data-i18n="adm_impressions" style="width:130px">Impressions</th>
+          <th style="width:120px">CTR</th>
+          <th data-i18n="adm_col_priority" style="width:80px; text-align:center">Priority</th>
+          <th data-i18n="adm_col_status"   style="width:110px">Status</th>
+          <th data-i18n="adm_col_actions"  style="width:84px; text-align:center">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="adsTable">
+        <tr>
+          <td colspan="8" style="text-align:center; padding:56px 0; color:var(--color-muted)">
+            <i class="ti ti-loader-2 u-spin" style="font-size:22px; display:block; margin-bottom:8px"></i>
+            <span data-i18n="adm_loading">Loading…</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Table footer: result info + pagination + last-updated -->
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+              padding:10px 18px; border-top:1px solid var(--color-border);
+              background:var(--color-bg-soft,#F8FAFC);">
+
+    <span style="font-size:12px; color:var(--color-muted)" id="adResultInfo">—</span>
+
+    <!-- Pagination controls -->
+    <div style="display:flex; align-items:center; gap:6px" id="adPagination">
+      <button class="page-btn" id="adPrevBtn" onclick="changePage(-1)" disabled>
+        <i class="ti ti-chevron-left" style="font-size:12px"></i>
+        <span data-i18n="adm_page_prev">Prev</span>
+      </button>
+      <span id="adPageInfo"
+            style="font-size:12px; color:var(--color-muted); min-width:80px; text-align:center">—</span>
+      <button class="page-btn" id="adNextBtn" onclick="changePage(1)" disabled>
+        <span data-i18n="adm_page_next">Next</span>
+        <i class="ti ti-chevron-right" style="font-size:12px"></i>
+      </button>
+    </div>
+
+    <span style="font-size:12px; color:var(--color-hint)" id="adLastUpdated"></span>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CREATE / EDIT MODAL
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="adModalOverlay" class="ad-modal-overlay"
+     onclick="if(event.target===this) closeAdModal()">
+  <div class="ad-modal-box">
+
+    <!-- Close -->
+    <button class="ad-modal-close" onclick="closeAdModal()">
+      <i class="ti ti-x"></i>
+    </button>
+
+    <!-- Header -->
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:22px">
+      <div style="width:42px; height:42px; border-radius:12px;
+                  background:var(--color-indigo-light); color:var(--color-indigo);
+                  display:flex; align-items:center; justify-content:center; flex-shrink:0">
+        <i class="ti ti-speakerphone" style="font-size:20px"></i>
+      </div>
+      <div>
+        <div id="adModalTitle" style="font-weight:700; font-size:15px; color:var(--color-navy)">
+          New Ad
+        </div>
+        <div style="font-size:12px; color:var(--color-muted); margin-top:1px"
+             data-i18n="adm_modal_sub">Fill in the ad details below</div>
+      </div>
+    </div>
+
+    <input type="hidden" id="adModalId">
+
+    <!-- Row 1: Title + Advertiser -->
+    <div class="ad-grid-2" style="margin-bottom:14px">
+      <div>
+        <label class="ad-field-label">
+          <span data-i18n="adm_field_title">Title</span><span class="req">*</span>
+        </label>
+        <input type="text" class="ad-input" id="ad-title"
+               data-i18n-placeholder="adm_field_title_ph"
+               placeholder="e.g. Calmette Hospital Banner">
+      </div>
+      <div>
+        <label class="ad-field-label" data-i18n="adm_field_advertiser">Advertiser</label>
+        <input type="text" class="ad-input" id="ad-advertiser"
+               data-i18n-placeholder="adm_field_adv_ph"
+               placeholder="Company name">
+      </div>
+    </div>
+
+    <!-- Row 2: Body text -->
+    <div style="margin-bottom:14px">
+      <label class="ad-field-label">
+        <span data-i18n="adm_field_body">Body Text</span><span class="req">*</span>
+      </label>
+      <textarea class="ad-textarea" id="ad-body"
+                data-i18n-placeholder="adm_field_body_ph"
+                placeholder="Short description shown under the banner…"></textarea>
+    </div>
+
+    <!-- Row 3: Banner Image Upload + Preview -->
+    <div style="margin-bottom:14px">
+      <label class="ad-field-label" data-i18n="adm_upload_banner">Banner Image</label>
+
+      <!-- Upload zone (hidden when preview is shown) -->
+      <div id="adImgUploadZone" class="img-upload-zone"
+           ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)"
+           ondrop="handleDrop(event)" onclick="document.getElementById('adImageFile').click()">
+        <i class="ti ti-photo-up upload-icon"></i>
+        <div style="font-size:13px; color:var(--color-muted)">
+          <span data-i18n="adm_upload_drag">Drag &amp; drop banner here, or</span>
+          <span class="upload-browse-btn" data-i18n="adm_upload_browse">browse file</span>
+        </div>
+        <div class="upload-hint" data-i18n="adm_upload_hint">PNG, JPG, WEBP · max 5 MB</div>
+        <input type="file" id="adImageFile" accept="image/png,image/jpeg,image/webp,image/gif"
+               style="display:none" onchange="handleFileSelect(event)">
+      </div>
+
+      <!-- Live preview (shown after file chosen or URL typed) -->
+      <div id="adImgPreview" style="display:none; margin-top:8px">
+        <div class="ad-field-label" data-i18n="adm_preview_label">Live Preview</div>
+        <div class="img-preview-wrap">
+          <img id="adImgPreviewEl" src="" alt="Banner preview">
+          <button class="img-preview-clear" onclick="clearAdImagePreview()"
+                  title="Remove image">
+            <i class="ti ti-x" style="font-size:10px"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- URL input (manual or auto-filled after upload) -->
+      <div style="margin-top:8px">
+        <label class="ad-field-label" data-i18n="adm_upload_or_url">Or enter image URL</label>
+        <input type="url" class="ad-input" id="ad-image-url"
+               placeholder="https://…/banner.jpg"
+               oninput="onImageUrlInput(this.value)">
+      </div>
+    </div>
+
+    <!-- Row 4: Target URL -->
+    <div style="margin-bottom:14px">
+      <label class="ad-field-label">
+        <span data-i18n="adm_field_target_url">Target URL</span><span class="req">*</span>
+      </label>
+      <input type="url" class="ad-input" id="ad-target-url"
+             placeholder="https://…">
+    </div>
+
+    <!-- Row 5: Display Position + Priority + Status -->
+    <div class="ad-grid-3" style="margin-bottom:24px">
+      <div>
+        <label class="ad-field-label" data-i18n="adm_display_position">Display Position</label>
+        <select class="ad-select" id="ad-placement">
+          <option value="banner"       data-i18n="adm_pos_top_banner">Top Header Banner</option>
+          <option value="sidebar"      data-i18n="adm_pos_sidebar">Dashboard Sidebar</option>
+          <option value="result_page"  data-i18n="adm_pos_result">Result Page Insert</option>
+          <option value="interstitial" data-i18n="adm_pos_interstitial">Fullscreen Interstitial</option>
+          <option value="footer"       data-i18n="adm_pos_footer">Footer Display</option>
+        </select>
+      </div>
+      <div>
+        <label class="ad-field-label" data-i18n="adm_col_priority">Priority</label>
+        <input type="number" class="ad-input" id="ad-priority"
+               value="0" min="0" max="100">
+      </div>
+      <div>
+        <label class="ad-field-label" data-i18n="adm_col_status">Status</label>
+        <select class="ad-select" id="ad-is-active">
+          <option value="true"  data-i18n="adm_active">Active</option>
+          <option value="false" data-i18n="adm_inactive_chip">Inactive</option>
+        </select>
+      </div>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--color-border); margin:0 0 18px">
+
+    <!-- Footer buttons -->
+    <div style="display:flex; justify-content:flex-end; gap:10px">
+      <button onclick="closeAdModal()" class="btn btn-sm btn-ghost"
+              style="font-size:13px; padding:7px 18px" data-i18n="adm_cancel">
+        Cancel
+      </button>
+      <button id="adModalSaveBtn" onclick="saveAd()"
+              class="btn btn-sm btn-primary"
+              style="font-size:13px; padding:7px 22px; gap:6px">
+        <i class="ti ti-device-floppy" style="font-size:14px" id="adSaveIcon"></i>
+        <span id="adSaveLabel" data-i18n="adm_save">Save</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}
+
 
 {% block scripts %}
 <script>
-// ── i18n keys — Ads page ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+//  i18n — Ads page translations
+// ══════════════════════════════════════════════════════════════════════════════
 Object.assign(TRANSLATIONS, {
-  adm_ad_title:    { en: 'Ad Manager',                              km: 'គ្រប់គ្រងផ្សាយ' },
-  adm_ad_sub:      { en: 'Upload banners, track CTR, toggle active/inactive', km: 'ផ្សាយផ្ទាំង, តាមដាន CTR, បើក/បិទ' },
-  adm_new_ad:      { en: 'New Ad',                                  km: 'ផ្សាយថ្មី' },
-  adm_create_ad:   { en: 'Create Ad',                               km: 'បង្កើតផ្សាយ' },
+  // ── Page header
+  adm_ad_title:         { en: 'Ad Manager',
+                          km: 'គ្រប់គ្រងការផ្សាយ' },
+  adm_ad_sub:           { en: 'Create, monitor, and optimise advertising campaigns',
+                          km: 'បង្កើត, តាមដាន, និងបង្កើនប្រសិទ្ធភាពការផ្សាយ' },
+  adm_new_ad:           { en: 'New Ad',          km: 'ផ្សាយថ្មី' },
+
+  // ── Export
+  adm_export:           { en: 'Export',           km: 'នាំចេញ' },
+  adm_export_pdf:       { en: 'Export PDF',       km: 'នាំចេញ PDF' },
+  adm_export_docx:      { en: 'Export DOCX',      km: 'នាំចេញ DOCX' },
+  adm_exporting:        { en: 'Exporting…',       km: 'កំពុងនាំចេញ…' },
+
+  // ── Filter bar
+  adm_search_ads:       { en: 'Search',           km: 'ស្វែងរក' },
+  adm_search_ads_ph:    { en: 'Title or advertiser…', km: 'ចំណងជើង ឬ អ្នកផ្សាយ…' },
+  adm_clear_filters:    { en: 'Clear',            km: 'សម្អាត' },
+  adm_all_placements:   { en: 'All Placements',   km: 'គ្រប់ទីតាំង' },
+
+  // ── Sort options
+  adm_sort_default:     { en: 'Default Order',    km: 'លំដាប់លំនាំ' },
+  adm_sort_impr_asc:    { en: 'Small → Big',      km: 'តូច → ធំ' },
+  adm_sort_impr_desc:   { en: 'Big → Small',      km: 'ធំ → តូច' },
+  adm_sort_ctr_asc:     { en: 'Small → Big',      km: 'តូច → ធំ' },
+  adm_sort_ctr_desc:    { en: 'Big → Small',      km: 'ធំ → តូច' },
+
+  // ── Placement position labels
+  adm_display_position: { en: 'Display Position',        km: 'ទីតាំងបង្ហាញ' },
+  adm_pos_top_banner:   { en: 'Top Header Banner',       km: 'បដាផ្នែកខាងលើ' },
+  adm_pos_sidebar:      { en: 'Dashboard Sidebar',       km: 'ផ្ទាំងចំហៀង' },
+  adm_pos_result:       { en: 'Result Page Insert',      km: 'ទំព័រលទ្ធផល' },
+  adm_pos_interstitial: { en: 'Fullscreen Interstitial', km: 'Fullscreen Interstitial' },
+  adm_pos_footer:       { en: 'Footer Display',          km: 'បង្ហាញជើងទំព័រ' },
+
+  // ── Modal fields
+  adm_modal_sub:        { en: 'Fill in the ad details below',        km: 'បំពេញព័ត៌មានការផ្សាយខាងក្រោម' },
+  adm_field_title:      { en: 'Title',                               km: 'ចំណងជើង' },
+  adm_field_title_ph:   { en: 'e.g. Calmette Hospital Banner',       km: 'ឧ. បដាពេទ្យ Calmette' },
+  adm_field_advertiser: { en: 'Advertiser',                          km: 'អ្នកផ្សាយ' },
+  adm_field_adv_ph:     { en: 'Company name',                        km: 'ឈ្មោះក្រុមហ៊ុន' },
+  adm_field_body:       { en: 'Body Text',                           km: 'អត្ថបទ' },
+  adm_field_body_ph:    { en: 'Short description shown under the banner…', km: 'ការពណ៌នាខ្លីបង្ហាញក្រោមបដា…' },
+  adm_field_target_url: { en: 'Target URL',                          km: 'URL គោលដៅ' },
+
+  // ── Image upload
+  adm_upload_banner:    { en: 'Banner Image',                        km: 'រូបភាពបដា' },
+  adm_upload_drag:      { en: 'Drag & drop banner here, or',         km: 'ទាញ & ទម្លាក់បដានៅទីនេះ ឬ' },
+  adm_upload_browse:    { en: 'browse file',                         km: 'ជ្រើសរូបភាព' },
+  adm_upload_hint:      { en: 'PNG, JPG, WEBP · max 5 MB',           km: 'PNG, JPG, WEBP · ទំហំអតិបរមា ៥ MB' },
+  adm_upload_or_url:    { en: 'Or enter image URL',                  km: 'ឬបញ្ចូល URL រូបភាព' },
+  adm_preview_label:    { en: 'Live Preview',                        km: 'មើលជាមុន' },
+
+  // ── Stat chips
+  adm_total_ads_chip:   { en: 'Total',         km: 'សរុប' },
+  adm_inactive_chip:    { en: 'Inactive',       km: 'អសកម្ម' },
+
+  // ── Pagination
+  adm_page_prev:        { en: 'Prev',          km: 'មុន' },
+  adm_page_next:        { en: 'Next',          km: 'បន្ទាប់' },
+
+  // ── Toast / feedback
+  adm_save:             { en: 'Save',          km: 'រក្សាទុក' },
+  adm_saving:           { en: 'Saving…',       km: 'កំពុងរក្សាទុក…' },
+  adm_no_ads:           { en: 'No ads found.', km: 'រកមិនឃើញការផ្សាយ។' },
+  adm_ad_created:       { en: 'Ad created successfully!',   km: 'ការផ្សាយត្រូវបានបង្កើតដោយជោគជ័យ!' },
+  adm_ad_updated:       { en: 'Ad updated.',                km: 'ការផ្សាយត្រូវបានធ្វើបច្ចុប្បន្នភាព។' },
+  adm_ad_deleted:       { en: 'Ad deleted.',                km: 'ការផ្សាយត្រូវបានលុប។' },
+  adm_ad_activated:     { en: 'Ad activated.',              km: 'ការផ្សាយត្រូវបានបើក។' },
+  adm_ad_deactivated:   { en: 'Ad deactivated.',            km: 'ការផ្សាយត្រូវបានបិទ។' },
+  adm_required_fields:  { en: 'Please fill in all required fields.',
+                          km: 'សូមបំពេញប្រអប់ទាំងអស់ដែលត្រូវការ។' },
+  adm_upload_failed:    { en: 'Image upload failed — enter URL manually.',
+                          km: 'ការបញ្ចូលរូបភាពបរាជ័យ — សូមបញ្ចូល URL ដោយខ្លួនឯង។' },
+  adm_img_too_large:    { en: 'Image must be under 5 MB.',  km: 'រូបភាពត្រូវតែក្រោម ៥ MB។' },
+  adm_img_invalid:      { en: 'Please select an image file.', km: 'សូមជ្រើសរើសឯកសាររូបភាព។' },
+
+  // ── Delete modal (i18n-aware)
+  adm_delete_ad_title:  { en: 'Delete Ad',     km: 'លុបការផ្សាយ' },
+  adm_delete_ad_body:   { en: 'Delete',        km: 'លុប' },
+  adm_cannot_undo:      { en: 'This cannot be undone.',
+                          km: 'ការនេះមិនអាចត្រឡប់វិញបាន។' },
+  adm_confirm_delete:   { en: 'Yes, delete',   km: 'បាទ/ចាស, លុប' },
 });
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  State
+// ══════════════════════════════════════════════════════════════════════════════
+let _allAds      = [];
+let _currentPage = 1;
+const _perPage   = 20;
+let _imageFile   = null;   // currently-selected File object for upload
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Helpers
+// ══════════════════════════════════════════════════════════════════════════════
+function escHtml(s) {
+  return String(s || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+const PLACEMENT_ICONS = {
+  banner:       'ti-layout-navbar',
+  sidebar:      'ti-layout-sidebar-right',
+  result_page:  'ti-file-analytics',
+  interstitial: 'ti-device-mobile',
+  footer:       'ti-layout-navbar-collapse',
+};
+
+function placementLabel(p) {
+  const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+  const MAP = {
+    banner:       { en: 'Top Header Banner',       km: 'បដាផ្នែកខាងលើ' },
+    sidebar:      { en: 'Dashboard Sidebar',        km: 'ផ្ទាំងចំហៀង' },
+    result_page:  { en: 'Result Page Insert',       km: 'ទំព័រលទ្ធផល' },
+    interstitial: { en: 'Fullscreen Interstitial',  km: 'Fullscreen Interstitial' },
+    footer:       { en: 'Footer Display',           km: 'បង្ហាញជើងទំព័រ' },
+  };
+  const entry = MAP[p];
+  return entry ? (entry[lang] || entry.en) : (p || '—');
+}
+
+function resetPage() { _currentPage = 1; }
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Load + Chips
+// ══════════════════════════════════════════════════════════════════════════════
 async function loadAds() {
   const r = await apiFetch('/api/admin/ads');
   if (!r) return;
-  const ads = await r.json();
+  _allAds = await r.json();
+  renderAds();
+  updateChips();
+  const el = document.getElementById('adLastUpdated');
+  if (el) el.textContent = I18n.t('adm_last_updated') + ': ' + new Date().toLocaleTimeString();
+}
 
+function updateChips() {
+  const totalImpressions = _allAds.reduce((s, a) => s + a.impressions, 0);
+  const totalClicks      = _allAds.reduce((s, a) => s + a.clicks, 0);
+  const overallCtr       = totalImpressions
+    ? ((totalClicks / totalImpressions) * 100).toFixed(2) + '%'
+    : '0.00%';
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('chip-total',       _allAds.length);
+  set('chip-active',      _allAds.filter(a =>  a.is_active).length);
+  set('chip-inactive',    _allAds.filter(a => !a.is_active).length);
+  set('chip-impressions', fmtNum(totalImpressions));
+  set('chip-clicks',      fmtNum(totalClicks));
+  set('chip-ctr',         overallCtr);
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Render (filter → sort → paginate → paint)
+// ══════════════════════════════════════════════════════════════════════════════
+function renderAds() {
+  const search        = document.getElementById('adSearch').value.trim().toLowerCase();
+  const placement     = document.getElementById('adFilterPlacement').value;
+  const status        = document.getElementById('adFilterStatus').value;
+  const sortImpr      = document.getElementById('adSortImpressions').value;   // '' | 'asc' | 'desc'
+  const sortCTR       = document.getElementById('adSortCTR').value;
+  const lang          = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+
+  // 1. Filter
+  let ads = _allAds;
+  if (search)    ads = ads.filter(a =>
+    (a.title     || '').toLowerCase().includes(search) ||
+    (a.advertiser || '').toLowerCase().includes(search));
+  if (placement) ads = ads.filter(a => a.placement === placement);
+  if (status === 'active')   ads = ads.filter(a =>  a.is_active);
+  if (status === 'inactive') ads = ads.filter(a => !a.is_active);
+
+  // 2. Sort — CTR takes precedence if both are set
+  if (sortCTR) {
+    ads = [...ads].sort((a, b) => sortCTR === 'asc' ? a.ctr - b.ctr : b.ctr - a.ctr);
+  } else if (sortImpr) {
+    ads = [...ads].sort((a, b) => sortImpr === 'asc'
+      ? a.impressions - b.impressions : b.impressions - a.impressions);
+  }
+
+  // 3. Paginate
+  const total      = ads.length;
+  const totalPages = Math.max(1, Math.ceil(total / _perPage));
+  _currentPage     = Math.min(_currentPage, totalPages);
+  const start      = (_currentPage - 1) * _perPage;
+  const pageAds    = ads.slice(start, start + _perPage);
+
+  // 4. Update result info
+  const from = total === 0 ? 0 : start + 1;
+  const to   = Math.min(start + _perPage, total);
+  const info = document.getElementById('adResultInfo');
+  if (info) {
+    info.textContent = lang === 'km'
+      ? `បង្ហាញ ${from}–${to} នៃ ${total} ការផ្សាយ`
+      : `Showing ${from}–${to} of ${total} ad${total !== 1 ? 's' : ''}`;
+  }
+
+  // 5. Update pagination controls
+  const pageInfo = document.getElementById('adPageInfo');
+  if (pageInfo) {
+    pageInfo.textContent = lang === 'km'
+      ? `ទំព័រ ${_currentPage} / ${totalPages}`
+      : `Page ${_currentPage} of ${totalPages}`;
+  }
+  const prevBtn = document.getElementById('adPrevBtn');
+  const nextBtn = document.getElementById('adNextBtn');
+  if (prevBtn) prevBtn.disabled = _currentPage <= 1;
+  if (nextBtn) nextBtn.disabled = _currentPage >= totalPages;
+
+  // 6. Render rows
   const tbody = document.getElementById('adsTable');
-  if (!ads.length) {
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-muted">No ads found.</td></tr>';
+  if (!tbody) return;
+
+  if (!pageAds.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="8">
+        <div class="empty-state" style="padding:56px 0">
+          <i class="ti ti-speakerphone empty-icon" style="font-size:36px"></i>
+          <p data-i18n="adm_no_ads">No ads found.</p>
+        </div>
+      </td></tr>`;
+    if (typeof I18n !== 'undefined') I18n.applyAll();
     return;
   }
 
-  tbody.innerHTML = ads.map(a => `
-    <tr>
-      <td class="text-muted small">#${a.id}</td>
+  tbody.innerHTML = pageAds.map(a => {
+    const ctrClass  = a.ctr >= 2 ? 'good' : a.ctr >= 0.5 ? 'mid' : 'low';
+    const ctrPct    = Math.min(a.ctr * 20, 100);
+    const ppClass   = a.placement || 'banner';
+
+    const prioBadge = a.priority >= 8
+      ? `<span class="prio-badge high">${a.priority}</span>`
+      : a.priority >= 4
+        ? `<span class="prio-badge mid">${a.priority}</span>`
+        : `<span class="prio-badge">${a.priority}</span>`;
+
+    const thumb = a.image_url
+      ? `<img src="${escHtml(a.image_url)}" alt="" class="ad-thumb"
+             onerror="this.outerHTML='<div class=\\'ad-thumb-placeholder\\'><i class=\\'ti ti-photo\\'></i></div>'">`
+      : `<div class="ad-thumb-placeholder"><i class="ti ti-photo"></i></div>`;
+
+    const statusLbl = a.is_active ? I18n.t('adm_active') : I18n.t('adm_inactive_chip');
+    const titleTip  = a.is_active ? I18n.t('adm_inactive_chip') : I18n.t('adm_active');
+
+    return `
+    <tr id="adrow-${a.id}">
+      <td style="padding-left:18px; color:var(--color-muted); font-size:12px">${a.id}</td>
       <td>
-        <div class="fw-medium">${a.title}</div>
-        <div class="text-muted small">${a.advertiser || '—'}</div>
+        <div style="display:flex; align-items:center; gap:10px">
+          ${thumb}
+          <div style="min-width:0">
+            <div style="font-size:13px; font-weight:600; color:var(--color-text);
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:200px">
+              ${escHtml(a.title)}
+            </div>
+            <div style="font-size:11px; color:var(--color-muted); margin-top:1px">
+              ${escHtml(a.advertiser || '—')}
+            </div>
+          </div>
+        </div>
       </td>
-      <td><span class="badge bg-secondary">${a.placement}</span></td>
-      <td>${a.impressions.toLocaleString()}</td>
-      <td>${a.clicks.toLocaleString()}</td>
       <td>
-        <span class="fw-medium ${a.ctr >= 2 ? 'text-success' : a.ctr >= 0.5 ? 'text-warning' : 'text-muted'}">
-          ${a.ctr}%
+        <span class="placement-pill ${ppClass}">
+          <i class="ti ${PLACEMENT_ICONS[a.placement] || 'ti-ad'}" style="font-size:10px"></i>
+          ${placementLabel(a.placement)}
         </span>
       </td>
-      <td>${a.priority}</td>
       <td>
-        ${a.is_active
-          ? '<span class="badge bg-success">Active</span>'
-          : '<span class="badge bg-secondary">Inactive</span>'}
+        <div style="font-size:13px; font-weight:600; color:var(--color-text)">${fmtNum(a.impressions)}</div>
+        <div style="font-size:11px; color:var(--color-muted)">
+          ${fmtNum(a.clicks)} ${lang === 'km' ? 'ការចុច' : 'clicks'}
+        </div>
       </td>
       <td>
-        <div class="d-flex gap-1">
-          <button class="btn btn-xs btn-outline-${a.is_active ? 'warning' : 'success'} py-0 px-2"
-                  onclick="toggleAd(${a.id}, ${!a.is_active})" title="${a.is_active ? 'Deactivate' : 'Activate'}">
-            <i class="bi bi-toggle-${a.is_active ? 'on' : 'off'}"></i>
+        <div class="ctr-wrap">
+          <span style="font-size:12px; font-weight:700;
+                       color:${a.ctr >= 2 ? 'var(--color-green-dark)' : a.ctr >= 0.5 ? 'var(--color-amber-dark,#D97706)' : 'var(--color-muted)'};
+                       min-width:38px">
+            ${a.ctr}%
+          </span>
+          <div class="ctr-bar">
+            <div class="ctr-fill ${ctrClass}" style="width:${ctrPct}%"></div>
+          </div>
+        </div>
+      </td>
+      <td style="text-align:center">${prioBadge}</td>
+      <td id="adstatus-${a.id}">
+        <span class="status-pill ${a.is_active ? 'active' : 'inactive'}"
+              onclick="toggleAd(${a.id}, ${!a.is_active})"
+              title="${escHtml(titleTip)}">
+          <i class="ti ti-circle${a.is_active ? '-filled' : ''}" style="font-size:8px"></i>
+          ${escHtml(statusLbl)}
+        </span>
+      </td>
+      <td style="text-align:center">
+        <div style="display:flex; gap:5px; justify-content:center">
+          <button class="action-btn edit" onclick="openAdModal(${a.id})" title="Edit">
+            <i class="ti ti-pencil"></i>
           </button>
-          <button class="btn btn-xs btn-outline-danger py-0 px-2"
-                  onclick="deleteAd(${a.id}, '${a.title.replace(/'/g,"\\'")}')">
-            <i class="bi bi-trash3"></i>
+          <button class="action-btn trash"
+                  onclick="deleteAd(${a.id}, '${escHtml(a.title).replace(/'/g,"\\'")}')">
+            <i class="ti ti-trash"></i>
           </button>
         </div>
       </td>
-    </tr>
-  `).join('');
+    </tr>`;
+  }).join('');
+
+  if (typeof I18n !== 'undefined') I18n.applyAll();
 }
 
-async function createAd() {
-  const body = {
+function changePage(delta) {
+  _currentPage += delta;
+  renderAds();
+  // Scroll table back to top
+  const tableEl = document.getElementById('adsTableEl');
+  if (tableEl) tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Filter event listeners
+// ══════════════════════════════════════════════════════════════════════════════
+document.getElementById('adSearch').addEventListener('input', () => { resetPage(); renderAds(); });
+
+function clearAdFilters() {
+  document.getElementById('adSearch').value            = '';
+  document.getElementById('adFilterPlacement').value   = '';
+  document.getElementById('adSortImpressions').value   = '';
+  document.getElementById('adSortCTR').value           = '';
+  document.getElementById('adFilterStatus').value      = '';
+  resetPage();
+  renderAds();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Export
+// ══════════════════════════════════════════════════════════════════════════════
+function toggleExportMenu(e) {
+  e.stopPropagation();
+  const menu    = document.getElementById('exportDropMenu');
+  const chevron = document.getElementById('exportChevron');
+  const isOpen  = menu.classList.toggle('open');
+  chevron.style.transform = isOpen ? 'rotate(180deg)' : '';
+}
+
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('exportWrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('exportDropMenu').classList.remove('open');
+    document.getElementById('exportChevron').style.transform = '';
+  }
+});
+
+async function exportAds(format) {
+  // Close the menu
+  document.getElementById('exportDropMenu').classList.remove('open');
+  document.getElementById('exportChevron').style.transform = '';
+
+  const lang = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+  toast(I18n.t('adm_exporting'), 'info', 2000);
+
+  try {
+    const r = await apiFetch(`/api/admin/ads/export/${format}?lang=${lang}`);
+    if (!r || !r.ok) {
+      toast(I18n.t('adm_export') + ' failed.', 'error');
+      return;
+    }
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const now  = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = `smartxray_ads_${now}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast(I18n.t('adm_export') + ' ready!', 'success');
+  } catch (err) {
+    toast('Export error: ' + err.message, 'error');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Image Upload + Live Preview
+// ══════════════════════════════════════════════════════════════════════════════
+function handleDragOver(e) {
+  e.preventDefault();
+  document.getElementById('adImgUploadZone').classList.add('drag-over');
+}
+function handleDragLeave(e) {
+  document.getElementById('adImgUploadZone').classList.remove('drag-over');
+}
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('adImgUploadZone').classList.remove('drag-over');
+  const files = e.dataTransfer && e.dataTransfer.files;
+  if (files && files.length) processImageFile(files[0]);
+}
+function handleFileSelect(e) {
+  const files = e.target.files;
+  if (files && files.length) processImageFile(files[0]);
+}
+
+function processImageFile(file) {
+  if (!file.type.startsWith('image/')) {
+    toast(I18n.t('adm_img_invalid'), 'warning');
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    toast(I18n.t('adm_img_too_large'), 'warning');
+    return;
+  }
+  _imageFile = file;
+  const objectUrl = URL.createObjectURL(file);
+  showAdImagePreview(objectUrl);
+}
+
+function onImageUrlInput(val) {
+  _imageFile = null;
+  if (val.trim()) {
+    showAdImagePreview(val.trim());
+  } else {
+    _hidePreview();
+  }
+}
+
+function showAdImagePreview(src) {
+  const zone    = document.getElementById('adImgUploadZone');
+  const preview = document.getElementById('adImgPreview');
+  const img     = document.getElementById('adImgPreviewEl');
+
+  img.onerror = () => _hidePreview();
+  img.src     = src;
+  preview.style.display = '';
+  zone.style.display    = 'none';
+}
+
+function _hidePreview() {
+  document.getElementById('adImgPreview').style.display    = 'none';
+  document.getElementById('adImgUploadZone').style.display = '';
+}
+
+function clearAdImagePreview() {
+  const img = document.getElementById('adImgPreviewEl');
+  // Revoke blob URL if it was one
+  if (img.src && img.src.startsWith('blob:')) URL.revokeObjectURL(img.src);
+  img.src = '';
+  _imageFile = null;
+  document.getElementById('adImageFile').value   = '';
+  document.getElementById('ad-image-url').value  = '';
+  _hidePreview();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Modal open / close
+// ══════════════════════════════════════════════════════════════════════════════
+function openAdModal(adId) {
+  const overlay   = document.getElementById('adModalOverlay');
+  const titleEl   = document.getElementById('adModalTitle');
+  const idField   = document.getElementById('adModalId');
+  const saveLabel = document.getElementById('adSaveLabel');
+  const lang      = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+
+  // Reset form fields
+  ['ad-title','ad-advertiser','ad-body','ad-target-url'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = '';
+  });
+  document.getElementById('ad-placement').value   = 'banner';
+  document.getElementById('ad-priority').value    = '0';
+  document.getElementById('ad-is-active').value   = 'true';
+  document.getElementById('ad-image-url').value   = '';
+  idField.value = '';
+  clearAdImagePreview();
+
+  if (adId) {
+    const ad = _allAds.find(a => a.id === adId);
+    if (!ad) return;
+
+    titleEl.textContent = lang === 'km' ? 'កែប្រែការផ្សាយ' : 'Edit Ad';
+    if (saveLabel) saveLabel.textContent = lang === 'km' ? 'ធ្វើបច្ចុប្បន្នភាព' : 'Update';
+    idField.value = ad.id;
+
+    document.getElementById('ad-title').value       = ad.title      || '';
+    document.getElementById('ad-advertiser').value  = ad.advertiser || '';
+    document.getElementById('ad-body').value        = ad.body       || '';
+    document.getElementById('ad-image-url').value   = ad.image_url  || '';
+    document.getElementById('ad-target-url').value  = ad.target_url || '';
+    document.getElementById('ad-placement').value   = ad.placement  || 'banner';
+    document.getElementById('ad-priority').value    = ad.priority   ?? 0;
+    document.getElementById('ad-is-active').value   = ad.is_active ? 'true' : 'false';
+
+    // Show existing image in preview
+    if (ad.image_url) showAdImagePreview(ad.image_url);
+  } else {
+    titleEl.textContent = lang === 'km' ? 'ផ្សាយថ្មី' : 'New Ad';
+    if (saveLabel) {
+      saveLabel.setAttribute('data-i18n', 'adm_save');
+      saveLabel.textContent = I18n.t('adm_save');
+    }
+  }
+
+  overlay.classList.add('open');
+  document.getElementById('ad-title').focus();
+  if (typeof I18n !== 'undefined') I18n.applyAll();
+}
+
+function closeAdModal() {
+  document.getElementById('adModalOverlay').classList.remove('open');
+  clearAdImagePreview();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeAdModal();
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Save (create or update)
+// ══════════════════════════════════════════════════════════════════════════════
+async function saveAd() {
+  const btn    = document.getElementById('adModalSaveBtn');
+  const icon   = document.getElementById('adSaveIcon');
+  const label  = document.getElementById('adSaveLabel');
+  const adId   = document.getElementById('adModalId').value;
+
+  const payload = {
     title:      document.getElementById('ad-title').value.trim(),
     body:       document.getElementById('ad-body').value.trim(),
-    image_url:  document.getElementById('ad-image-url').value.trim(),
+    image_url:  document.getElementById('ad-image-url').value.trim() || null,
     target_url: document.getElementById('ad-target-url').value.trim(),
-    advertiser: document.getElementById('ad-advertiser').value.trim(),
+    advertiser: document.getElementById('ad-advertiser').value.trim() || null,
     placement:  document.getElementById('ad-placement').value,
     priority:   parseInt(document.getElementById('ad-priority').value) || 0,
     is_active:  document.getElementById('ad-is-active').value === 'true',
   };
 
-  if (!body.title || !body.body || !body.target_url) {
-    toast('Please fill in all required fields.', 'warning'); return;
+  if (!payload.title || !payload.body || !payload.target_url) {
+    toast(I18n.t('adm_required_fields'), 'warning');
+    return;
   }
 
-  const r = await apiFetch('/api/admin/ads', { method: 'POST', body: JSON.stringify(body) });
+  // Show spinner
+  btn.disabled = true;
+  if (icon)  icon.className  = 'ti ti-loader-2 u-spin';
+  if (label) label.textContent = I18n.t('adm_saving');
+
+  // Upload image file if one was selected
+  if (_imageFile) {
+    try {
+      const formData = new FormData();
+      formData.append('image', _imageFile);
+      const uploadRes = await fetch('/api/admin/ads/upload-image', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${getToken()}` },
+        body: formData,
+      });
+      if (uploadRes.ok) {
+        const uploadData = await uploadRes.json();
+        payload.image_url = uploadData.url;
+        document.getElementById('ad-image-url').value = uploadData.url;
+      } else {
+        toast(I18n.t('adm_upload_failed'), 'warning');
+      }
+    } catch (_) {
+      toast(I18n.t('adm_upload_failed'), 'warning');
+    }
+  }
+
+  const isEdit = !!adId;
+  const url    = isEdit ? `/api/admin/ads/${adId}` : '/api/admin/ads';
+  const method = isEdit ? 'PATCH' : 'POST';
+
+  const r = await apiFetch(url, { method, body: JSON.stringify(payload) });
+
+  btn.disabled = false;
+  if (icon)  icon.className = 'ti ti-device-floppy';
+  if (label) {
+    label.removeAttribute('data-i18n');
+    label.textContent = isEdit
+      ? ((typeof I18n !== 'undefined' && I18n.getLang() === 'km') ? 'ធ្វើបច្ចុប្បន្នភាព' : 'Update')
+      : I18n.t('adm_save');
+  }
+
   if (!r) return;
   if (r.ok) {
-    bootstrap.Modal.getInstance(document.getElementById('createAdModal')).hide();
-    toast('Ad created successfully!');
+    closeAdModal();
+    toast(I18n.t(isEdit ? 'adm_ad_updated' : 'adm_ad_created'), 'success');
     loadAds();
   } else {
     const d = await r.json();
-    toast(d.error || 'Failed to create ad.', 'danger');
+    toast(d.error || 'Failed.', 'error');
   }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  Inline status toggle
+// ══════════════════════════════════════════════════════════════════════════════
 async function toggleAd(adId, makeActive) {
+  const cell = document.getElementById(`adstatus-${adId}`);
+  const orig = cell ? cell.innerHTML : '';
+  if (cell) cell.innerHTML = `
+    <span class="status-pill ${makeActive ? 'active' : 'inactive'}" style="opacity:.5;cursor:default">
+      <i class="ti ti-loader-2 u-spin" style="font-size:8px"></i> …
+    </span>`;
+
   const r = await apiFetch(`/api/admin/ads/${adId}`, {
     method: 'PATCH',
-    body: JSON.stringify({ is_active: makeActive }),
+    body:   JSON.stringify({ is_active: makeActive }),
   });
-  if (!r) return;
-  if (r.ok) { toast(makeActive ? 'Ad activated.' : 'Ad deactivated.'); loadAds(); }
-  else { const d = await r.json(); toast(d.error || 'Failed.', 'danger'); }
+
+  if (!r) { if (cell) cell.innerHTML = orig; return; }
+
+  if (r.ok) {
+    const idx = _allAds.findIndex(a => a.id === adId);
+    if (idx >= 0) _allAds[idx].is_active = makeActive;
+
+    const statusLbl = makeActive ? I18n.t('adm_active') : I18n.t('adm_inactive_chip');
+    const titleTip  = makeActive ? I18n.t('adm_inactive_chip') : I18n.t('adm_active');
+
+    toast(I18n.t(makeActive ? 'adm_ad_activated' : 'adm_ad_deactivated'),
+          makeActive ? 'success' : 'warning');
+    updateChips();
+
+    if (cell) cell.innerHTML = `
+      <span class="status-pill ${makeActive ? 'active' : 'inactive'}"
+            onclick="toggleAd(${adId}, ${!makeActive})"
+            title="${escHtml(titleTip)}">
+        <i class="ti ti-circle${makeActive ? '-filled' : ''}" style="font-size:8px"></i>
+        ${escHtml(statusLbl)}
+      </span>`;
+  } else {
+    if (cell) cell.innerHTML = orig;
+    const d = await r.json();
+    toast(d.error || 'Failed.', 'error');
+  }
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  Delete — i18n-aware ConfirmModal
+// ══════════════════════════════════════════════════════════════════════════════
 function deleteAd(adId, title) {
+  const lang   = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+  const delLbl = I18n.t('adm_delete_ad_body');
+  const undoLbl= I18n.t('adm_cannot_undo');
+
   ConfirmModal.show({
-    title:       'Delete Ad',
-    body:        `Delete <strong>${title}</strong>? This cannot be undone.`,
-    confirmText: 'Yes, delete',
+    title:       I18n.t('adm_delete_ad_title'),
+    body:        `${delLbl} <strong>${title}</strong>? ${undoLbl}`,
+    confirmText: I18n.t('adm_confirm_delete'),
+    cancelText:  I18n.t('adm_cancel'),
     variant:     'danger',
     icon:        'ti ti-trash',
     onConfirm:   async () => {
       const r = await apiFetch(`/api/admin/ads/${adId}`, { method: 'DELETE' });
       if (!r) return;
-      if (r.ok) { toast('Ad deleted.'); loadAds(); }
-      else { const d = await r.json(); toast(d.error || 'Failed.', 'danger'); }
+      if (r.ok) {
+        toast(I18n.t('adm_ad_deleted'), 'success');
+        loadAds();
+      } else {
+        const d = await r.json();
+        toast(d.error || 'Failed.', 'error');
+      }
     },
   });
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+//  Language toggle hook — re-render table on lang switch so labels update
+// ══════════════════════════════════════════════════════════════════════════════
+const _origToggle = window.adminToggleLang;
+window.adminToggleLang = function () {
+  if (typeof _origToggle === 'function') _origToggle();
+  renderAds();
+  updateChips();
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  Init
+// ══════════════════════════════════════════════════════════════════════════════
 loadAds();
 </script>
 {% endblock %}

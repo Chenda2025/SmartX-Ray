@@ -5,151 +5,276 @@
 
 {% block extra_head %}
 <style>
-  /* ── Tier toggle icon ─────────────────────────────────────── */
-  .tier-toggle {
-    cursor: pointer;
-    font-size: 1.1rem;
-    transition: transform .15s, opacity .15s;
-    border: none; background: none; padding: 2px 6px;
-    border-radius: 6px;
-  }
-  .tier-toggle:hover { transform: scale(1.25); opacity: .8; }
-  .tier-toggle.pro   { color: #7c3aed; }
-  .tier-toggle.free  { color: #94a3b8; }
+/* ── Avatar palette ──────────────────────────────────────────────────────── */
+.ua { width:36px; height:36px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; letter-spacing:-.3px; }
+.ua-0 { background:#EDE9FE; color:#6D28D9; }
+.ua-1 { background:#DBEAFE; color:#1D4ED8; }
+.ua-2 { background:#DCFCE7; color:#15803D; }
+.ua-3 { background:#FEF9C3; color:#A16207; }
+.ua-4 { background:#FFE4E6; color:#BE123C; }
+.ua-5 { background:#E0F2FE; color:#0369A1; }
+.ua-6 { background:#FEF3C7; color:#B45309; }
+.ua-7 { background:#F0FDF4; color:#166534; }
 
-  /* ── Status toggle icon ───────────────────────────────────── */
-  .status-toggle {
-    cursor: pointer;
-    font-size: 1rem;
-    transition: transform .15s;
-    border: none; background: none; padding: 2px 6px;
-    border-radius: 6px;
-  }
-  .status-toggle:hover { transform: scale(1.2); }
-  .status-toggle.active   { color: #10b981; }
-  .status-toggle.suspended { color: #ef4444; }
+/* ── Tier pill (clickable) ───────────────────────────────────────────────── */
+.tier-pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;
+  cursor:pointer; border:1.5px solid; transition:transform .12s, box-shadow .12s;
+  white-space:nowrap;
+}
+.tier-pill:hover { transform:scale(1.05); box-shadow:0 2px 8px rgba(0,0,0,.1); }
+.tier-pill.pro  { background:#F5F3FF; border-color:#C4B5FD; color:#6D28D9; }
+.tier-pill.free { background:#F8FAFC; border-color:#CBD5E1; color:#64748B; }
 
-  /* ── Filter bar ───────────────────────────────────────────── */
-  .filter-bar .form-select,
-  .filter-bar .form-control {
-    font-size: .85rem;
-    border-radius: 8px;
-  }
-  .filter-bar .form-control:focus,
-  .filter-bar .form-select:focus {
-    border-color: #2563eb;
-    box-shadow: 0 0 0 .18rem rgba(37,99,235,.15);
-  }
+/* ── Status pill (clickable) ─────────────────────────────────────────────── */
+.status-pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600;
+  cursor:pointer; border:1.5px solid; transition:transform .12s;
+  white-space:nowrap;
+}
+.status-pill:hover { transform:scale(1.05); }
+.status-pill.active    { background:#ECFDF5; border-color:#A7F3D0; color:#065F46; }
+.status-pill.suspended { background:#FEF2F2; border-color:#FECACA; color:#991B1B; }
 
-  /* ── Table tweaks ─────────────────────────────────────────── */
-  .table td { vertical-align: middle; }
-  .user-avatar {
-    width: 34px; height: 34px;
-    border-radius: 50%;
-    background: #e2e8f0;
-    display: flex; align-items: center; justify-content: center;
-    font-size: .85rem; font-weight: 700; color: #475569;
-    flex-shrink: 0;
-  }
+/* ── Stat chips row ──────────────────────────────────────────────────────── */
+.stat-chips { display:flex; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.stat-chip {
+  display:flex; align-items:center; gap:7px;
+  padding:6px 14px; border-radius:10px; border:1px solid var(--color-border);
+  background:#fff; font-size:12px; color:var(--color-muted);
+}
+.stat-chip strong { font-size:14px; font-weight:700; color:var(--color-text); }
+.stat-chip .dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
 
-  /* ── Spinning loader on cell update ──────────────────────── */
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spin { animation: spin .6s linear infinite; display:inline-block; }
+/* ── Search / filter inputs ──────────────────────────────────────────────── */
+.filter-input {
+  height:36px; border:1px solid var(--color-border); border-radius:8px;
+  padding:0 12px; font-size:13px; color:var(--color-text); width:100%;
+  background:#fff; outline:none; transition:border-color .15s, box-shadow .15s;
+  font-family:'Inter',sans-serif;
+}
+.filter-input:focus {
+  border-color:var(--color-border-focus);
+  box-shadow:0 0 0 3px rgba(99,102,241,.1);
+}
+.filter-input-wrap {
+  position:relative; display:flex; align-items:center;
+}
+.filter-input-wrap .fi-icon {
+  position:absolute; left:10px; color:var(--color-muted); font-size:14px; pointer-events:none;
+}
+.filter-input-wrap .fi-clear {
+  position:absolute; right:8px; background:none; border:none; cursor:pointer;
+  color:var(--color-muted); font-size:12px; padding:2px 4px; border-radius:4px;
+}
+.filter-input-wrap .fi-clear:hover { color:var(--color-text); }
+.filter-input-wrap input { padding-left:32px; }
+
+/* ── Scans bar ───────────────────────────────────────────────────────────── */
+.scans-bar-wrap { display:flex; align-items:center; gap:7px; }
+.scans-bar { flex:1; height:4px; background:#F1F5F9; border-radius:4px; min-width:40px; }
+.scans-bar-fill { height:100%; border-radius:4px; background:var(--color-indigo);
+                  transition:width .3s; }
+
+/* ── Loading spinner ─────────────────────────────────────────────────────── */
+@keyframes _spin { to { transform:rotate(360deg); } }
+.u-spin { animation:_spin .7s linear infinite; display:inline-block; }
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.pag-btn {
+  width:32px; height:32px; border-radius:8px; border:1px solid var(--color-border);
+  background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  font-size:13px; color:var(--color-muted); transition:background .12s;
+}
+.pag-btn:hover:not(:disabled) { background:var(--color-indigo-light); color:var(--color-indigo); }
+.pag-btn:disabled { opacity:.4; cursor:not-allowed; }
 </style>
 {% endblock %}
 
 {% block content %}
 
-<!-- Page header -->
-<div class="d-flex align-items-center justify-content-between mb-3">
-  <div>
-    <h4 class="fw-bold mb-0" data-i18n="adm_user_title">User Management</h4>
-    <p class="text-muted small mb-0">
-      <span id="resultCount" class="fw-semibold text-primary">—</span>
-      <span data-i18n="adm_users_found"> users found</span>
-    </p>
+<!-- ══════════════════════════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════════════════════════ -->
+<div class="page-header" style="align-items:flex-start; flex-direction:column; gap:12px">
+  <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+    <div>
+      <h4 class="page-title" data-i18n="adm_user_title">User Management</h4>
+      <p class="page-sub">
+        <span id="resultCount" style="font-weight:700; color:var(--color-indigo)">—</span>
+        <span data-i18n="adm_users_found"> users found</span>
+      </p>
+    </div>
+    <!-- Export split button -->
+    <div style="position:relative; display:inline-flex">
+      <button onclick="exportUsers('csv')" id="exportBtn" class="btn btn-sm btn-outline"
+              style="font-size:12px; padding:6px 12px; gap:6px;
+                     border-radius:8px 0 0 8px; border-right:none">
+        <i class="ti ti-download" style="font-size:14px" id="exportIcon"></i>
+        <span id="exportLabel" data-i18n="adm_export">Export</span>
+      </button>
+      <button onclick="toggleExportMenu()" id="exportChevron"
+              class="btn btn-sm btn-outline"
+              style="font-size:12px; padding:6px 8px;
+                     border-radius:0 8px 8px 0; border-left:1px solid var(--color-border)">
+        <i class="ti ti-chevron-down" style="font-size:13px"></i>
+      </button>
+      <!-- Dropdown -->
+      <div id="exportMenu"
+           style="display:none; position:absolute; top:calc(100% + 4px); right:0;
+                  background:#fff; border:1px solid var(--color-border);
+                  border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.1);
+                  min-width:150px; z-index:200; overflow:hidden">
+        <button onclick="exportUsers('csv')"
+                style="display:flex; align-items:center; gap:9px; width:100%;
+                       padding:9px 14px; border:none; background:none; cursor:pointer;
+                       font-size:12px; color:var(--color-text); text-align:left"
+                onmouseover="this.style.background='#F8FAFC'"
+                onmouseout="this.style.background='none'">
+          <i class="ti ti-table-export" style="font-size:15px; color:var(--color-green)"></i>
+          <span data-i18n="adm_export_csv">Export CSV</span>
+        </button>
+        <button onclick="exportUsers('pdf')"
+                style="display:flex; align-items:center; gap:9px; width:100%;
+                       padding:9px 14px; border:none; background:none; cursor:pointer;
+                       font-size:12px; color:var(--color-text); text-align:left"
+                onmouseover="this.style.background='#F8FAFC'"
+                onmouseout="this.style.background='none'">
+          <i class="ti ti-file-type-pdf" style="font-size:15px; color:var(--color-red)"></i>
+          <span data-i18n="adm_export_pdf">Export PDF</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stat chips -->
+  <div class="stat-chips">
+    <div class="stat-chip">
+      <div class="dot" style="background:var(--color-indigo)"></div>
+      <span data-i18n="adm_total_users">Total</span>
+      <strong id="sc-total">—</strong>
+    </div>
+    <div class="stat-chip">
+      <div class="dot" style="background:#6D28D9"></div>
+      <span>Pro</span>
+      <strong id="sc-pro">—</strong>
+    </div>
+    <div class="stat-chip">
+      <div class="dot" style="background:var(--color-muted)"></div>
+      <span>Free</span>
+      <strong id="sc-free">—</strong>
+    </div>
+    <div class="stat-chip">
+      <div class="dot" style="background:var(--color-green)"></div>
+      <span data-i18n="adm_active">Active</span>
+      <strong id="sc-active">—</strong>
+    </div>
+    <div class="stat-chip">
+      <div class="dot" style="background:var(--color-red)"></div>
+      <span data-i18n="adm_suspended">Suspended</span>
+      <strong id="sc-suspended">—</strong>
+    </div>
   </div>
 </div>
 
-<!-- ── Filter bar ──────────────────────────────────────────────────────── -->
-<div class="card table-card p-3 mb-3 filter-bar">
-  <div class="row g-2 align-items-end">
 
-    <!-- Live search -->
-    <div class="col-md-4">
-      <label class="form-label small fw-medium mb-1" data-i18n="adm_search_label">Search name or email</label>
-      <div class="input-group input-group-sm">
-        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-        <input type="text" class="form-control border-start-0 ps-0"
-               id="searchInput"
+<!-- ══════════════════════════════════════════════════════════════
+     FILTER BAR
+     ══════════════════════════════════════════════════════════════ -->
+<div class="panel-card" style="margin-bottom:16px">
+  <div style="padding:14px 18px; display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end">
+
+    <!-- Search -->
+    <div style="flex:2; min-width:200px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em"
+           data-i18n="adm_search_label">Search</div>
+      <div class="filter-input-wrap">
+        <i class="ti ti-search fi-icon"></i>
+        <input type="text" class="filter-input" id="searchInput"
                data-i18n-placeholder="adm_search_ph"
-               placeholder="Type 1 letter to search…"
+               placeholder="Name or email…"
                autocomplete="off">
-        <button class="btn btn-outline-secondary" id="clearSearch"
-                onclick="clearSearchInput()" style="display:none" title="Clear">
-          <i class="bi bi-x-lg"></i>
+        <button class="fi-clear" id="clearSearch" onclick="clearSearchInput()"
+                style="display:none" title="Clear">
+          <i class="ti ti-x"></i>
         </button>
       </div>
     </div>
 
-    <!-- Tier filter -->
-    <div class="col-md-2">
-      <label class="form-label small fw-medium mb-1" data-i18n="adm_col_tier">Tier</label>
-      <select class="form-select form-select-sm" id="filterTier">
+    <!-- Tier -->
+    <div style="flex:1; min-width:120px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em"
+           data-i18n="adm_col_tier">Tier</div>
+      <select class="filter-input" id="filterTier" style="cursor:pointer">
         <option value="" data-i18n="adm_all_tiers">All Tiers</option>
-        <option value="free" data-i18n="adm_free">Free</option>
-        <option value="pro" data-i18n="adm_pro">Pro</option>
+        <option value="free">Free</option>
+        <option value="pro">Pro</option>
       </select>
     </div>
 
-    <!-- Status filter -->
-    <div class="col-md-2">
-      <label class="form-label small fw-medium mb-1" data-i18n="adm_col_status">Status</label>
-      <select class="form-select form-select-sm" id="filterStatus">
+    <!-- Status -->
+    <div style="flex:1; min-width:120px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em"
+           data-i18n="adm_col_status">Status</div>
+      <select class="filter-input" id="filterStatus" style="cursor:pointer">
         <option value="" data-i18n="adm_all_status">All Status</option>
         <option value="active" data-i18n="adm_active">Active</option>
         <option value="suspended" data-i18n="adm_suspended">Suspended</option>
       </select>
     </div>
 
-    <!-- Sort order -->
-    <div class="col-md-2">
-      <label class="form-label small fw-medium mb-1" data-i18n="adm_sort_label">Sort</label>
-      <select class="form-select form-select-sm" id="filterOrder">
+    <!-- Sort -->
+    <div style="flex:1; min-width:120px">
+      <div style="font-size:11px; font-weight:600; color:var(--color-muted);
+                  margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em"
+           data-i18n="adm_sort_label">Sort</div>
+      <select class="filter-input" id="filterOrder" style="cursor:pointer">
         <option value="desc" data-i18n="adm_sort_new_old">New → Old</option>
         <option value="asc"  data-i18n="adm_sort_old_new">Old → New</option>
       </select>
     </div>
 
-    <!-- Clear all -->
-    <div class="col-md-2">
-      <label class="form-label small fw-medium mb-1 d-block">&nbsp;</label>
-      <button class="btn btn-outline-secondary btn-sm w-100" onclick="clearAllFilters()">
-        <i class="bi bi-x-circle me-1"></i><span data-i18n="adm_clear_filters">Clear</span>
+    <!-- Clear -->
+    <div style="flex:0 0 auto; padding-bottom:1px">
+      <button class="btn btn-sm btn-ghost" onclick="clearAllFilters()"
+              style="height:36px; padding:0 14px; font-size:12px; gap:5px">
+        <i class="ti ti-filter-off" style="font-size:14px"></i>
+        <span data-i18n="adm_clear_filters">Clear</span>
       </button>
     </div>
 
   </div>
 </div>
 
-<!-- ── Users Table ─────────────────────────────────────────────────────── -->
-<div class="card table-card">
+
+<!-- ══════════════════════════════════════════════════════════════
+     USERS TABLE
+     ══════════════════════════════════════════════════════════════ -->
+<div class="panel-card">
+
   <div class="table-responsive">
-    <table class="table table-hover mb-0" style="font-size:.875rem">
+    <table class="admin-table" id="usersTableEl">
       <thead>
         <tr>
-          <th style="width:44px">ID</th>
+          <th style="width:48px; padding-left:18px">#</th>
           <th data-i18n="adm_col_user">User</th>
-          <th data-i18n="adm_col_tier" style="width:100px">Tier</th>
-          <th data-i18n="adm_col_status" style="width:100px">Status</th>
-          <th data-i18n="adm_col_scans" style="width:90px">Scans Today</th>
-          <th data-i18n="adm_col_joined" style="width:120px">Joined</th>
+          <th data-i18n="adm_col_tier"  style="width:110px">Tier</th>
+          <th data-i18n="adm_col_status" style="width:120px">Status</th>
+          <th data-i18n="adm_col_scans"  style="width:130px">Scans Today</th>
+          <th data-i18n="adm_col_joined" style="width:130px">Joined</th>
         </tr>
       </thead>
       <tbody id="usersTable">
         <tr>
-          <td colspan="6" class="text-center py-5 text-muted">
-            <div class="spin d-inline-block me-2"><i class="bi bi-arrow-clockwise"></i></div>
+          <td colspan="6" style="text-align:center; padding:48px 0; color:var(--color-muted)">
+            <i class="ti ti-loader-2 u-spin" style="font-size:22px; display:block; margin-bottom:8px"></i>
             <span data-i18n="adm_loading">Loading…</span>
           </td>
         </tr>
@@ -158,54 +283,73 @@
   </div>
 
   <!-- Pagination footer -->
-  <div class="d-flex align-items-center justify-content-between px-3 py-2 border-top bg-light"
-       style="font-size:.82rem">
-    <span class="text-muted" id="paginationInfo">—</span>
-    <div class="d-flex gap-2">
-      <button class="btn btn-sm btn-outline-secondary" id="btnPrev"
-              onclick="changePage(-1)" disabled>
-        <i class="bi bi-chevron-left"></i>
+  <div style="display:flex; align-items:center; justify-content:space-between;
+              padding:10px 18px; border-top:1px solid var(--color-border);
+              background:var(--color-bg-soft, #F8FAFC);">
+    <span style="font-size:12px; color:var(--color-muted)" id="paginationInfo">—</span>
+    <div style="display:flex; align-items:center; gap:8px">
+      <button class="pag-btn" id="btnPrev" onclick="changePage(-1)" disabled>
+        <i class="ti ti-chevron-left"></i>
       </button>
-      <span class="align-self-center text-muted" id="pageLabel">—</span>
-      <button class="btn btn-sm btn-outline-secondary" id="btnNext"
-              onclick="changePage(1)" disabled>
-        <i class="bi bi-chevron-right"></i>
+      <span style="font-size:12px; color:var(--color-muted); min-width:60px; text-align:center"
+            id="pageLabel">—</span>
+      <button class="pag-btn" id="btnNext" onclick="changePage(1)" disabled>
+        <i class="ti ti-chevron-right"></i>
       </button>
     </div>
   </div>
+
 </div>
 
 {% endblock %}
 
+
 {% block scripts %}
 <script>
-// ── i18n keys — Users page ───────────────────────────────────────────────
+// ── i18n ─────────────────────────────────────────────────────────────────
 Object.assign(TRANSLATIONS, {
-  adm_user_title:   { en: 'User Management',          km: 'ការគ្រប់គ្រងអ្នកប្រើ' },
-  adm_users_found:  { en: ' users found',             km: ' នាក់ត្រូវបានរកឃើញ' },
-  adm_search_label: { en: 'Search name or email',     km: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល' },
-  adm_search_ph:    { en: 'Type 1 letter to search…', km: 'វាយ ១ អក្សរ ដើម្បីស្វែងរក…' },
-  adm_sort_label:   { en: 'Sort',                     km: 'តម្រៀប' },
-  adm_sort_new_old: { en: 'New → Old',                km: 'ថ្មី → ចាស់' },
-  adm_sort_old_new: { en: 'Old → New',                km: 'ចាស់ → ថ្មី' },
-  adm_clear_filters:{ en: 'Clear',                    km: 'លុបចោល' },
-  adm_no_users:     { en: 'No users found.',          km: 'រកមិនឃើញអ្នកប្រើ។' },
-  adm_page_of:      { en: 'of',                       km: 'នៃ' },
-  adm_tier_pro:     { en: 'Pro',                      km: 'Pro' },
-  adm_tier_free:    { en: 'Free',                     km: 'ឥតគិតថ្លៃ' },
-  adm_tip_make_pro: { en: 'Click to upgrade to Pro',  km: 'ចុចដើម្បីលើកកម្ពស់ទៅ Pro' },
-  adm_tip_make_free:{ en: 'Click to downgrade to Free', km: 'ចុចដើម្បីបន្ថយទៅ Free' },
-  adm_tip_activate: { en: 'Click to activate',        km: 'ចុចដើម្បីធ្វើឱ្យសកម្ម' },
-  adm_tip_suspend:  { en: 'Click to suspend',         km: 'ចុចដើម្បីព្យួរ' },
+  adm_user_title:   { en: 'User Management',           km: 'ការគ្រប់គ្រងអ្នកប្រើ' },
+  adm_users_found:  { en: ' users found',              km: ' នាក់ត្រូវបានរកឃើញ' },
+  adm_search_label: { en: 'Search',                    km: 'ស្វែងរក' },
+  adm_search_ph:    { en: 'Name or email…',            km: 'ឈ្មោះ ឬ អ៊ីមែល…' },
+  adm_sort_label:   { en: 'Sort',                      km: 'តម្រៀប' },
+  adm_sort_new_old: { en: 'New → Old',                 km: 'ថ្មី → ចាស់' },
+  adm_sort_old_new: { en: 'Old → New',                 km: 'ចាស់ → ថ្មី' },
+  adm_clear_filters:{ en: 'Clear',                     km: 'លុបចោល' },
+  adm_no_users:     { en: 'No users found.',           km: 'រកមិនឃើញអ្នកប្រើ។' },
+  adm_page_of:      { en: 'of',                        km: 'នៃ' },
+  adm_tier_pro:     { en: 'Pro',                       km: 'Pro' },
+  adm_tier_free:    { en: 'Free',                      km: 'ឥតគិតថ្លៃ' },
+  adm_tip_make_pro: { en: 'Upgrade to Pro',            km: 'លើកកម្ពស់ទៅ Pro' },
+  adm_tip_make_free:{ en: 'Downgrade to Free',         km: 'បន្ថយទៅ Free' },
+  adm_tip_activate: { en: 'Click to activate',         km: 'ចុចដើម្បីធ្វើឱ្យសកម្ម' },
+  adm_tip_suspend:  { en: 'Click to suspend',          km: 'ចុចដើម្បីព្យួរ' },
+  adm_export:         { en: 'Export',             km: 'នាំចេញ' },
+  adm_export_csv:     { en: 'Export CSV',         km: 'នាំចេញ CSV' },
+  adm_export_pdf:     { en: 'Export PDF',         km: 'នាំចេញ PDF' },
+  adm_exporting:      { en: 'Exporting…',         km: 'កំពុងនាំចេញ…' },
+  adm_generating:     { en: 'Generating…',        km: 'កំពុងបង្កើត…' },
+  adm_exported_csv:   { en: 'CSV exported!',      km: 'នាំចេញ CSV បានជោគជ័យ!' },
+  adm_exported_pdf:   { en: 'PDF exported!',      km: 'នាំចេញ PDF បានជោគជ័យ!' },
+  adm_export_failed:  { en: 'Export failed.',     km: 'នាំចេញបរាជ័យ។' },
+  adm_all_tiers:    { en: 'All Tiers',                 km: 'គ្រប់កម្រិត' },
+  adm_all_status:   { en: 'All Status',                km: 'គ្រប់ស្ថានភាព' },
 });
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────
 let currentPage = 1;
 let totalPages  = 1;
 let searchTimer = null;
+const SCAN_CAP  = 20; // bar normalisation
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Avatar colour ─────────────────────────────────────────────────────────
+function avatarClass(name) {
+  const code = (name || 'U').charCodeAt(0);
+  return 'ua-' + (code % 8);
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
 function getFilters() {
   return {
     search: document.getElementById('searchInput').value.trim(),
@@ -235,98 +379,137 @@ function changePage(delta) {
   if (next >= 1 && next <= totalPages) loadUsers(next);
 }
 
-// ── Load users ────────────────────────────────────────────────────────────────
+// ── Load stat chips from /api/admin/stats ─────────────────────────────────
+async function loadUserStats() {
+  const r = await apiFetch('/api/admin/stats');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+  const u = d.users || {};
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = fmtNum(val ?? '—'); };
+  set('sc-total',     u.total);
+  set('sc-pro',       u.pro);
+  set('sc-free',      u.free);
+  set('sc-active',    u.active ?? (u.total - (u.suspended || 0)));
+  set('sc-suspended', u.suspended ?? '—');
+}
+
+// ── Load users ────────────────────────────────────────────────────────────
 async function loadUsers(page = 1) {
   currentPage = page;
   const { search, tier, status, order } = getFilters();
   const params = new URLSearchParams({ page, limit: 20, order });
   if (search) params.set('search', search);
-  if (tier)   params.set('tier', tier);
+  if (tier)   params.set('tier',   tier);
   if (status) params.set('status', status);
 
-  // Show skeleton
+  // Skeleton
   document.getElementById('usersTable').innerHTML = `
-    <tr><td colspan="6" class="text-center py-4 text-muted">
-      <span class="spin d-inline-block me-2"><i class="bi bi-arrow-clockwise"></i></span>
-      <span data-i18n="adm_loading">Loading…</span>
+    <tr><td colspan="6" style="text-align:center; padding:48px 0; color:var(--color-muted)">
+      <i class="ti ti-loader-2 u-spin" style="font-size:22px; display:block; margin-bottom:8px"></i>
     </td></tr>`;
 
   const r = await apiFetch(`/api/admin/users?${params}`);
   if (!r) return;
   const d = await r.json();
 
-  // Update counters
-  document.getElementById('resultCount').textContent   = d.total.toLocaleString();
+  // Counters
+  document.getElementById('resultCount').textContent = (d.total || 0).toLocaleString();
   totalPages = d.pages || 1;
-  const lang = localStorage.getItem('smartxray_lang') || 'en';
+  const lang  = localStorage.getItem('smartxray_lang') || 'en';
   const ofWord = lang === 'km' ? 'នៃ' : 'of';
-  document.getElementById('pageLabel').textContent     = `${d.page} ${ofWord} ${d.pages}`;
+  document.getElementById('pageLabel').textContent =
+    `${d.page} ${ofWord} ${d.pages}`;
+  const from = (page - 1) * 20 + 1;
+  const to   = (page - 1) * 20 + (d.users || []).length;
   document.getElementById('paginationInfo').textContent =
-    `${(page-1)*20+1}–${(page-1)*20 + d.users.length} / ${d.total}`;
+    d.total ? `${from}–${to} / ${d.total}` : '—';
   document.getElementById('btnPrev').disabled = d.page <= 1;
   document.getElementById('btnNext').disabled = !d.has_next;
 
   const tbody = document.getElementById('usersTable');
-  if (!d.users.length) {
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">
-      <i class="bi bi-inbox fs-2 d-block mb-2"></i>
-      <span data-i18n="adm_no_users">No users found.</span>
-    </td></tr>`;
-    I18n.applyAll();
+  if (!d.users || !d.users.length) {
+    tbody.innerHTML = `
+      <tr><td colspan="6">
+        <div class="empty-state" style="padding:48px 0">
+          <i class="ti ti-users empty-icon" style="font-size:36px"></i>
+          <p data-i18n="adm_no_users">No users found.</p>
+        </div>
+      </td></tr>`;
+    if (typeof I18n !== 'undefined') I18n.applyAll();
     return;
   }
 
   tbody.innerHTML = d.users.map(u => {
-    const initials = (u.full_name || '?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-    const tierIcon = u.tier === 'pro'
-      ? `<button class="tier-toggle pro" onclick="toggleTier(${u.id},'free',this)"
-                 title="${I18n.t('adm_tip_make_free')}">
-           <i class="bi bi-patch-check-fill"></i>
-         </button>
-         <span class="badge badge-pro ms-1" style="font-size:.72rem">Pro</span>`
-      : `<button class="tier-toggle free" onclick="toggleTier(${u.id},'pro',this)"
-                 title="${I18n.t('adm_tip_make_pro')}">
-           <i class="bi bi-patch-check"></i>
-         </button>
-         <span class="badge badge-free ms-1" style="font-size:.72rem">${I18n.t('adm_tier_free')}</span>`;
+    const initials = (u.full_name || '?')
+      .split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
 
-    const statusIcon = u.is_active
-      ? `<button class="status-toggle active" onclick="toggleStatus(${u.id},false,this)"
-                 title="${I18n.t('adm_tip_suspend')}">
-           <i class="bi bi-toggle-on fs-5"></i>
-         </button>`
-      : `<button class="status-toggle suspended" onclick="toggleStatus(${u.id},true,this)"
-                 title="${I18n.t('adm_tip_activate')}">
-           <i class="bi bi-toggle-off fs-5"></i>
-         </button>`;
+    const tierHtml = u.tier === 'pro'
+      ? `<span class="tier-pill pro" onclick="toggleTier(${u.id},'free',this)"
+              title="${I18n.t('adm_tip_make_free')}">
+           <i class="ti ti-crown" style="font-size:11px"></i> Pro
+         </span>`
+      : `<span class="tier-pill free" onclick="toggleTier(${u.id},'pro',this)"
+              title="${I18n.t('adm_tip_make_pro')}">
+           <i class="ti ti-user" style="font-size:11px"></i> Free
+         </span>`;
+
+    const statusHtml = u.is_active
+      ? `<span class="status-pill active" onclick="toggleStatus(${u.id},false)"
+              title="${I18n.t('adm_tip_suspend')}">
+           <i class="ti ti-circle-filled" style="font-size:8px"></i> Active
+         </span>`
+      : `<span class="status-pill suspended" onclick="toggleStatus(${u.id},true)"
+              title="${I18n.t('adm_tip_activate')}">
+           <i class="ti ti-circle" style="font-size:8px"></i> Suspended
+         </span>`;
+
+    const scanPct = Math.min(Math.round((u.scans_today / SCAN_CAP) * 100), 100);
+    const scanColor = scanPct >= 80 ? 'var(--color-red)' : scanPct >= 50 ? 'var(--color-amber)' : 'var(--color-indigo)';
 
     return `
     <tr id="row-${u.id}">
-      <td class="text-muted small">${u.id}</td>
+      <td style="padding-left:18px; color:var(--color-muted); font-size:12px">${u.id}</td>
       <td>
-        <div class="d-flex align-items-center gap-2">
-          <div class="user-avatar">${initials}</div>
-          <div>
-            <div class="fw-medium lh-sm">${u.full_name}</div>
-            <div class="text-muted small">${u.email}</div>
+        <div style="display:flex; align-items:center; gap:10px">
+          <div class="ua ${avatarClass(u.full_name)}">${initials}</div>
+          <div style="min-width:0">
+            <div style="font-size:13px; font-weight:600; color:var(--color-text);
+                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+              ${escHtml(u.full_name || '—')}
+            </div>
+            <div style="font-size:11px; color:var(--color-muted); white-space:nowrap;
+                        overflow:hidden; text-overflow:ellipsis">
+              ${escHtml(u.email)}
+            </div>
           </div>
         </div>
       </td>
-      <td id="tier-${u.id}">${tierIcon}</td>
-      <td id="status-${u.id}">${statusIcon}</td>
-      <td class="text-center fw-medium">${u.scans_today}</td>
-      <td class="text-muted small">${fmtDate(u.created_at)}</td>
+      <td id="tier-${u.id}">${tierHtml}</td>
+      <td id="status-${u.id}">${statusHtml}</td>
+      <td>
+        <div class="scans-bar-wrap">
+          <span style="font-size:12px; font-weight:600; color:var(--color-text);
+                       min-width:18px; text-align:right">${u.scans_today}</span>
+          <div class="scans-bar">
+            <div class="scans-bar-fill" style="width:${scanPct}%; background:${scanColor}"></div>
+          </div>
+        </div>
+      </td>
+      <td style="font-size:12px; color:var(--color-muted); white-space:nowrap">
+        <span title="${u.created_at || ''}">${fmtDate(u.created_at)}</span>
+      </td>
     </tr>`;
   }).join('');
 
-  I18n.applyAll();
+  if (typeof I18n !== 'undefined') I18n.applyAll();
 }
 
-// ── Inline tier toggle ────────────────────────────────────────────────────────
-async function toggleTier(userId, newTier, btn) {
+// ── Inline tier toggle ────────────────────────────────────────────────────
+async function toggleTier(userId, newTier, el) {
   const cell = document.getElementById(`tier-${userId}`);
   const orig = cell.innerHTML;
-  cell.innerHTML = `<span class="spin text-muted"><i class="bi bi-arrow-clockwise"></i></span>`;
+  cell.innerHTML = `<span class="tier-pill free" style="opacity:.5; cursor:default">
+    <i class="ti ti-loader-2 u-spin" style="font-size:11px"></i> …</span>`;
 
   const r = await apiFetch(`/api/admin/users/${userId}/tier`, {
     method: 'PATCH',
@@ -335,34 +518,31 @@ async function toggleTier(userId, newTier, btn) {
   if (!r) { cell.innerHTML = orig; return; }
 
   if (r.ok) {
-    const d = await r.json();
-    const u = d.user;
-    const lang = localStorage.getItem('smartxray_lang') || 'en';
-    const freeLabel = lang === 'km' ? 'ឥតគិតថ្លៃ' : 'Free';
+    const { user: u } = await r.json();
     cell.innerHTML = u.tier === 'pro'
-      ? `<button class="tier-toggle pro" onclick="toggleTier(${u.id},'free',this)"
-                 title="${I18n.t('adm_tip_make_free')}">
-           <i class="bi bi-patch-check-fill"></i>
-         </button>
-         <span class="badge badge-pro ms-1" style="font-size:.72rem">Pro</span>`
-      : `<button class="tier-toggle free" onclick="toggleTier(${u.id},'pro',this)"
-                 title="${I18n.t('adm_tip_make_pro')}">
-           <i class="bi bi-patch-check"></i>
-         </button>
-         <span class="badge badge-free ms-1" style="font-size:.72rem">${freeLabel}</span>`;
-    toast(`${u.email} → ${u.tier}`);
+      ? `<span class="tier-pill pro" onclick="toggleTier(${u.id},'free',this)"
+              title="${I18n.t('adm_tip_make_free')}">
+           <i class="ti ti-crown" style="font-size:11px"></i> Pro
+         </span>`
+      : `<span class="tier-pill free" onclick="toggleTier(${u.id},'pro',this)"
+              title="${I18n.t('adm_tip_make_pro')}">
+           <i class="ti ti-user" style="font-size:11px"></i> Free
+         </span>`;
+    toast(`${u.email} → ${u.tier}`, 'success');
+    loadUserStats(); // refresh chips
   } else {
     cell.innerHTML = orig;
     const d = await r.json();
-    toast(d.error || 'Failed.', 'danger');
+    toast(d.error || 'Failed.', 'error');
   }
 }
 
-// ── Inline status toggle ──────────────────────────────────────────────────────
-async function toggleStatus(userId, makeActive, btn) {
+// ── Inline status toggle ──────────────────────────────────────────────────
+async function toggleStatus(userId, makeActive) {
   const cell = document.getElementById(`status-${userId}`);
   const orig = cell.innerHTML;
-  cell.innerHTML = `<span class="spin text-muted"><i class="bi bi-arrow-clockwise"></i></span>`;
+  cell.innerHTML = `<span class="status-pill active" style="opacity:.5; cursor:default">
+    <i class="ti ti-loader-2 u-spin" style="font-size:8px"></i> …</span>`;
 
   const r = await apiFetch(`/api/admin/users/${userId}/status`, {
     method: 'PATCH',
@@ -371,43 +551,111 @@ async function toggleStatus(userId, makeActive, btn) {
   if (!r) { cell.innerHTML = orig; return; }
 
   if (r.ok) {
-    const d = await r.json();
-    const u = d.user;
+    const { user: u } = await r.json();
     cell.innerHTML = u.is_active
-      ? `<button class="status-toggle active" onclick="toggleStatus(${u.id},false,this)"
-                 title="${I18n.t('adm_tip_suspend')}">
-           <i class="bi bi-toggle-on fs-5"></i>
-         </button>`
-      : `<button class="status-toggle suspended" onclick="toggleStatus(${u.id},true,this)"
-                 title="${I18n.t('adm_tip_activate')}">
-           <i class="bi bi-toggle-off fs-5"></i>
-         </button>`;
-    toast(u.is_active
-      ? `${I18n.t('adm_active')}: ${u.email}`
-      : `${I18n.t('adm_suspended')}: ${u.email}`, u.is_active ? 'success' : 'warning');
+      ? `<span class="status-pill active" onclick="toggleStatus(${u.id},false)"
+              title="${I18n.t('adm_tip_suspend')}">
+           <i class="ti ti-circle-filled" style="font-size:8px"></i> Active
+         </span>`
+      : `<span class="status-pill suspended" onclick="toggleStatus(${u.id},true)"
+              title="${I18n.t('adm_tip_activate')}">
+           <i class="ti ti-circle" style="font-size:8px"></i> Suspended
+         </span>`;
+    toast(u.is_active ? `Activated: ${u.email}` : `Suspended: ${u.email}`,
+          u.is_active ? 'success' : 'warning');
+    loadUserStats();
   } else {
     cell.innerHTML = orig;
     const d = await r.json();
-    toast(d.error || 'Failed.', 'danger');
+    toast(d.error || 'Failed.', 'error');
   }
 }
 
-// ── Auto-filter wiring ────────────────────────────────────────────────────────
+// ── Export dropdown toggle ────────────────────────────────────────────────
+function toggleExportMenu() {
+  const menu = document.getElementById('exportMenu');
+  if (!menu) return;
+  const open = menu.style.display !== 'none';
+  menu.style.display = open ? 'none' : 'block';
+}
+// Close menu when clicking outside
+document.addEventListener('click', e => {
+  if (!e.target.closest('#exportChevron') && !e.target.closest('#exportMenu')) {
+    const m = document.getElementById('exportMenu');
+    if (m) m.style.display = 'none';
+  }
+});
 
-// Live search: fires from 1st character typed, debounced 300 ms
+// ── Export CSV / PDF ──────────────────────────────────────────────────────
+async function exportUsers(format = 'csv') {
+  // Close dropdown
+  const menu = document.getElementById('exportMenu');
+  if (menu) menu.style.display = 'none';
+
+  const btn   = document.getElementById('exportBtn');
+  const icon  = document.getElementById('exportIcon');
+  const label = document.getElementById('exportLabel');
+  if (btn)   btn.disabled  = true;
+  if (icon)  icon.className = 'ti ti-loader-2 u-spin';
+  if (label) label.textContent = format === 'pdf'
+    ? I18n.t('adm_generating')
+    : I18n.t('adm_exporting');
+
+  const { search, tier, status, order } = getFilters();
+  const params = new URLSearchParams({ order });
+  if (search) params.set('search', search);
+  if (tier)   params.set('tier',   tier);
+  if (status) params.set('status', status);
+
+  const endpoint = format === 'pdf'
+    ? `/api/admin/users/export/pdf?${params}`
+    : `/api/admin/users/export?${params}`;
+
+  try {
+    const r = await apiFetch(endpoint);
+    if (!r || !r.ok) { toast(I18n.t('adm_export_failed'), 'error'); return; }
+
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `smartxray_users_${new Date().toISOString().slice(0,10)}.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast(I18n.t(format === 'pdf' ? 'adm_exported_pdf' : 'adm_exported_csv'), 'success');
+  } catch (e) {
+    toast(I18n.t('adm_export_failed'), 'error');
+  } finally {
+    if (btn)   btn.disabled  = false;
+    if (icon)  icon.className = 'ti ti-download';
+    if (label) {
+      label.textContent = I18n.t('adm_export');
+      label.removeAttribute('data-i18n'); // avoid double-translate flicker
+    }
+  }
+}
+
+// ── HTML escape ───────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+                         .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Wiring ────────────────────────────────────────────────────────────────
 document.getElementById('searchInput').addEventListener('input', function () {
-  const val = this.value;
-  document.getElementById('clearSearch').style.display = val ? '' : 'none';
+  document.getElementById('clearSearch').style.display = this.value ? '' : 'none';
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => loadUsers(1), 300);
 });
 
-// Dropdowns: auto-fire on change — no button needed
 ['filterTier', 'filterStatus', 'filterOrder'].forEach(id => {
   document.getElementById(id).addEventListener('change', () => loadUsers(1));
 });
 
-// ── Initial load ──────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────
+loadUserStats();
 loadUsers();
 </script>
 {% endblock %}

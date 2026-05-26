@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" id="dr-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Registration — SmartX-Ray</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+  *, *::before, *::after { box-sizing:border-box;margin:0;padding:0; }
+  :root {
+    --indigo: #6366F1; --indigo-dk: #4F46E5; --indigo-lt: #EEF2FF;
+    --green:  #10B981; --green-lt: #ECFDF5;
+    --red:    #EF4444; --red-lt:   #FEF2F2;
+    --text:   #0F172A; --text2: #475569; --muted: #94A3B8;
+    --bg:     #F0F4F8; --surface:#FFFFFF; --border:#E2E8F0;
+    --shadow: 0 1px 4px rgba(15,23,42,.07); --r:12px;
+  }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  html[lang="km"] * { font-family:'Hanuman','DM Sans',sans-serif !important; }
+
+  /* Nav */
+  .dr-nav { position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.5rem;background:#fff;border-bottom:1.5px solid var(--border); }
+  .dr-brand { font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:1.2rem;color:var(--indigo);text-decoration:none; }
+  .dr-nav-right { display:flex;align-items:center;gap:.75rem; }
+  .dr-lang-btn { padding:.3rem .7rem;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:.8rem;font-weight:600;cursor:pointer;color:var(--text2); }
+  .dr-login-link { font-size:.85rem;font-weight:600;color:var(--indigo);text-decoration:none; }
+  .dr-login-link:hover { text-decoration:underline; }
+
+  /* Hero */
+  .dr-hero { background:linear-gradient(135deg,#4F46E5 0%,#6366F1 60%,#818CF8 100%);padding:2.5rem 1.5rem;text-align:center;color:#fff; }
+  .dr-hero h1 { font-family:'Space Grotesk',sans-serif;font-size:1.8rem;font-weight:700;margin-bottom:.35rem; }
+  .dr-hero p  { font-size:.95rem;opacity:.88; }
+
+  /* Form page */
+  .dr-page { max-width:760px;margin:0 auto;padding:2rem 1.5rem; }
+
+  /* Card */
+  .dr-card { background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);padding:1.75rem;box-shadow:var(--shadow); }
+
+  /* Steps indicator */
+  .dr-steps { display:flex;align-items:center;gap:.4rem;margin-bottom:1.75rem;flex-wrap:wrap; }
+  .dr-step { display:flex;align-items:center;gap:.4rem;font-size:.82rem;font-weight:600;color:var(--muted); }
+  .dr-step-num { width:24px;height:24px;border-radius:50%;background:var(--border);color:var(--muted);display:flex;align-items:center;justify-content:center;font-size:.73rem;font-weight:700;flex-shrink:0; }
+  .dr-step.active .dr-step-num { background:var(--indigo);color:#fff; }
+  .dr-step.active { color:var(--indigo); }
+  .dr-step.done .dr-step-num { background:var(--green);color:#fff; }
+  .dr-step-line { flex:1;height:2px;background:var(--border);min-width:20px; }
+  .dr-step-line.done { background:var(--green); }
+
+  /* Form grid */
+  .dr-form-grid { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+  @media (max-width:560px) { .dr-form-grid { grid-template-columns:1fr; } }
+  .dr-full { grid-column:1/-1; }
+
+  /* Form group */
+  .dr-form-group { display:flex;flex-direction:column;gap:.32rem; }
+  .dr-label { font-size:.8rem;font-weight:600;color:var(--text2); }
+  .dr-label span { color:var(--red);margin-left:.15rem; }
+  .dr-input, .dr-select, .dr-textarea {
+    padding:.6rem .85rem;border-radius:9px;border:1.5px solid var(--border);
+    font-family:inherit;font-size:.9rem;color:var(--text);outline:none;background:#fff;
+    transition:border-color .14s;
+  }
+  .dr-input:focus, .dr-select:focus, .dr-textarea:focus { border-color:var(--indigo); }
+  .dr-input.error, .dr-textarea.error { border-color:var(--red); }
+  .dr-textarea { resize:vertical;min-height:90px; }
+  .dr-input-hint { font-size:.75rem;color:var(--muted); }
+
+  /* Password strength */
+  .dr-pw-bar { height:4px;border-radius:2px;margin-top:.3rem;background:var(--border);overflow:hidden; }
+  .dr-pw-fill { height:100%;border-radius:2px;width:0;transition:width .3s,background .3s; }
+
+  /* Error banner */
+  .dr-err-banner { background:var(--red-lt);border:1px solid #FECACA;border-radius:9px;padding:.7rem 1rem;font-size:.85rem;color:var(--red);display:none;margin-top:1rem;align-items:center;gap:.5rem; }
+  .dr-err-banner.show { display:flex; }
+
+  /* Submit button */
+  .dr-submit-btn {
+    width:100%;padding:.9rem;border-radius:11px;border:none;
+    background:var(--indigo);color:#fff;font-size:1rem;font-weight:700;
+    cursor:pointer;margin-top:1.4rem;display:flex;align-items:center;justify-content:center;gap:.5rem;
+    transition:background .14s;
+  }
+  .dr-submit-btn:hover { background:var(--indigo-dk); }
+  .dr-submit-btn:disabled { background:var(--border);color:var(--muted);cursor:not-allowed; }
+
+  .dr-login-footer { text-align:center;margin-top:1.2rem;font-size:.86rem;color:var(--text2); }
+  .dr-login-footer a { color:var(--indigo);font-weight:600;text-decoration:none; }
+  .dr-login-footer a:hover { text-decoration:underline; }
+
+  /* Success */
+  .dr-success { text-align:center;padding:3rem 1.5rem;display:none; }
+  .dr-success.show { display:block; }
+  .dr-success-icon { font-size:3.5rem;color:var(--indigo);margin-bottom:.85rem; }
+  .dr-success-title { font-family:'Space Grotesk',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:.5rem; }
+  .dr-success-sub { color:var(--text2);font-size:.92rem;margin-bottom:1.5rem; }
+  .dr-success-link { display:inline-flex;align-items:center;gap:.4rem;padding:.6rem 1.3rem;border-radius:9px;background:var(--indigo);color:#fff;text-decoration:none;font-weight:600; }
+
+  /* Spinner */
+  .dr-spinner { display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite; }
+  @keyframes spin { to{transform:rotate(360deg);} }
+
+  /* Toast */
+  .dr-toast-wrap { position:fixed;bottom:1.5rem;right:1.5rem;z-index:999;display:flex;flex-direction:column-reverse;gap:.5rem; }
+  .dr-toast { display:flex;align-items:center;gap:.65rem;padding:.7rem 1rem;border-radius:10px;background:#1E293B;color:#fff;font-size:.84rem;box-shadow:0 4px 20px rgba(0,0,0,.25);animation:fadeUp .25s; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px);} }
+  .dr-toast.success { border-left:3px solid var(--green); }
+  .dr-toast.error   { border-left:3px solid var(--red); }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<header class="dr-nav">
+  <a href="/" class="dr-brand">SmartX-Ray</a>
+  <div class="dr-nav-right">
+    <button class="dr-lang-btn" id="drLangBtn" onclick="drToggleLang()">ខ្មែរ</button>
+    <a href="/doctor/login" class="dr-login-link" data-i18n="dr_have_account">Already registered? Log in</a>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="dr-hero">
+  <h1 data-i18n="dr_hero_title">Join SmartX-Ray as a Doctor</h1>
+  <p data-i18n="dr_hero_sub">Apply free · Admin approval within 24 hours · Start accepting patients</p>
+</div>
+
+<!-- Page -->
+<div class="dr-page">
+  <div class="dr-card">
+
+    <!-- Progress steps -->
+    <div class="dr-steps">
+      <div class="dr-step active" id="drStep1">
+        <div class="dr-step-num">1</div>
+        <span data-i18n="dr_step1">Account</span>
+      </div>
+      <div class="dr-step-line" id="drLine1"></div>
+      <div class="dr-step" id="drStep2">
+        <div class="dr-step-num">2</div>
+        <span data-i18n="dr_step2">Profile</span>
+      </div>
+      <div class="dr-step-line" id="drLine2"></div>
+      <div class="dr-step" id="drStep3">
+        <div class="dr-step-num">3</div>
+        <span data-i18n="dr_step3">Submit</span>
+      </div>
+    </div>
+
+    <!-- Success view -->
+    <div class="dr-success" id="drSuccess">
+      <div class="dr-success-icon"><i class="ti ti-clock-check"></i></div>
+      <h2 class="dr-success-title" data-i18n="dr_success_title">Application Submitted!</h2>
+      <p class="dr-success-sub" data-i18n="dr_success_sub">Our admin team will review your license within 24 hours. You will receive a confirmation email once approved.</p>
+      <a href="/doctor/login" class="dr-success-link"><i class="ti ti-login"></i> <span data-i18n="dr_go_login">Go to Doctor Login</span></a>
+    </div>
+
+    <!-- Registration form -->
+    <form id="drForm" onsubmit="event.preventDefault(); drSubmit();">
+
+      <div class="dr-form-grid">
+
+        <!-- Account info -->
+        <div class="dr-form-group dr-full">
+          <label class="dr-label" data-i18n="dr_email">Email Address <span>*</span></label>
+          <input type="email" class="dr-input" id="drEmail" placeholder="doctor@example.com" required />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_password">Password <span>*</span></label>
+          <input type="password" class="dr-input" id="drPassword" placeholder="Min 8 characters"
+                 oninput="drPwStrength()" required minlength="8" />
+          <div class="dr-pw-bar"><div class="dr-pw-fill" id="drPwFill"></div></div>
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_confirm_pw">Confirm Password <span>*</span></label>
+          <input type="password" class="dr-input" id="drConfirmPw" placeholder="Repeat password" required />
+        </div>
+
+        <!-- Divider -->
+        <div class="dr-full" style="border-top:1.5px solid var(--border);padding-top:.5rem;margin-top:.25rem;">
+          <p style="font-size:.8rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;" data-i18n="dr_prof_info">Professional Information</p>
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_full_name">Full Name <span>*</span></label>
+          <input type="text" class="dr-input" id="drFullName" placeholder="Dr. Your Name" required />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_specialty">Specialty <span>*</span></label>
+          <select class="dr-select" id="drSpecialty" required>
+            <option value="">— Select —</option>
+            <option value="Radiology">Radiology</option>
+            <option value="Pulmonology">Pulmonology</option>
+            <option value="Cardiology">Cardiology</option>
+            <option value="General Medicine">General Medicine</option>
+            <option value="Surgery">Surgery</option>
+            <option value="Pediatrics">Pediatrics</option>
+            <option value="Neurology">Neurology</option>
+            <option value="Orthopedics">Orthopedics</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_license_no">License Number <span>*</span></label>
+          <input type="text" class="dr-input" id="drLicenseNo" placeholder="e.g. KH-MED-0001" required />
+          <span class="dr-input-hint" data-i18n="dr_license_hint">Issued by Ministry of Health Cambodia</span>
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_qualifications">Qualifications</label>
+          <input type="text" class="dr-input" id="drQualifications" placeholder="e.g. MBBS, MD" />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_hospital">Hospital / Clinic</label>
+          <input type="text" class="dr-input" id="drHospital" placeholder="e.g. RUPP Medical Centre" />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_university">University / Institution</label>
+          <input type="text" class="dr-input" id="drUniversity" placeholder="e.g. RUPP, NUM, IU" />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_rate">Consultation Rate ($) <span>*</span></label>
+          <input type="number" class="dr-input" id="drRate" placeholder="15" min="0" step="0.01" required />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_availability">Availability</label>
+          <input type="text" class="dr-input" id="drAvailability" placeholder="e.g. Mon–Fri 9:00–17:00" />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_experience">Experience (years)</label>
+          <input type="number" class="dr-input" id="drExperience" placeholder="10" min="0" />
+        </div>
+
+        <div class="dr-form-group">
+          <label class="dr-label" data-i18n="dr_phone">Phone Number</label>
+          <input type="tel" class="dr-input" id="drPhone" placeholder="+855 12 345 678" />
+        </div>
+
+        <div class="dr-form-group dr-full">
+          <label class="dr-label" data-i18n="dr_bio">Professional Bio <span>*</span></label>
+          <textarea class="dr-textarea" id="drBio" placeholder="Briefly describe your clinical experience and expertise…" required></textarea>
+        </div>
+
+      </div>
+
+      <!-- Error -->
+      <div class="dr-err-banner" id="drErrBanner"><i class="ti ti-alert-circle"></i><span id="drErrMsg">Error</span></div>
+
+      <!-- Submit -->
+      <button type="submit" class="dr-submit-btn" id="drSubmitBtn">
+        <i class="ti ti-send"></i>
+        <span data-i18n="dr_submit">Submit Application</span>
+      </button>
+
+    </form>
+
+    <p class="dr-login-footer">
+      <span data-i18n="dr_have_account_q">Already registered?</span>
+      <a href="/doctor/login" data-i18n="dr_login_link"> Log in →</a>
+    </p>
+
+  </div>
+</div>
+
+<div class="dr-toast-wrap" id="drToasts"></div>
+
+<script src="/static/js/i18n.js"></script>
+<script>
+Object.assign(TRANSLATIONS, {
+  dr_hero_title:      { en:'Join SmartX-Ray as a Doctor',           km:'ចូលរួម SmartX-Ray ជាវេជ្ជបណ្ឌិត' },
+  dr_hero_sub:        { en:'Apply free · Admin approval within 24 hours · Start accepting patients', km:'ដាក់ពាក្យដោយឥតគិតថ្លៃ · Admin អនុម័តក្នុង 24 ម៉ោង' },
+  dr_have_account:    { en:'Already registered? Log in',            km:'មានគណនីហើយ? ចូល' },
+  dr_step1:           { en:'Account',                               km:'គណនី' },
+  dr_step2:           { en:'Profile',                               km:'ប្រវត្តិ' },
+  dr_step3:           { en:'Submit',                                km:'ដាក់ស្នើ' },
+  dr_prof_info:       { en:'Professional Information',              km:'ព័ត៌មានវិជ្ជាជីវៈ' },
+  dr_email:           { en:'Email Address',                         km:'អ៊ីមែល' },
+  dr_password:        { en:'Password',                              km:'ពាក្យសម្ងាត់' },
+  dr_confirm_pw:      { en:'Confirm Password',                      km:'បញ្ជាក់ពាក្យសម្ងាត់' },
+  dr_full_name:       { en:'Full Name',                             km:'ឈ្មោះពេញ' },
+  dr_specialty:       { en:'Specialty',                             km:'ឯកទេស' },
+  dr_license_no:      { en:'License Number',                        km:'អាជ្ញាបណ្ណ' },
+  dr_license_hint:    { en:'Issued by Ministry of Health Cambodia', km:'ចេញដោយក្រសួងសុខាភិបាល' },
+  dr_qualifications:  { en:'Qualifications',                        km:'គុណវុឌ្ឍិ' },
+  dr_hospital:        { en:'Hospital / Clinic',                     km:'មន្ទីរពេទ្យ / គ្លីនិក' },
+  dr_university:      { en:'University / Institution',              km:'សាកលវិទ្យាល័យ' },
+  dr_rate:            { en:'Consultation Rate ($)',                  km:'ថ្លៃពិគ្រោះ ($)' },
+  dr_availability:    { en:'Availability',                          km:'ម៉ោងទំនេរ' },
+  dr_experience:      { en:'Experience (years)',                     km:'បទពិសោធន៍ (ឆ្នាំ)' },
+  dr_phone:           { en:'Phone Number',                          km:'លេខទូរស័ព្ទ' },
+  dr_bio:             { en:'Professional Bio',                      km:'ជីវប្រវត្តិ' },
+  dr_submit:          { en:'Submit Application',                    km:'ដាក់ពាក្យ' },
+  dr_have_account_q:  { en:'Already registered?',                   km:'មានគណនីហើយ?' },
+  dr_login_link:      { en:' Log in →',                             km:' ចូល →' },
+  dr_success_title:   { en:'Application Submitted!',                km:'ពាក្យសុំបានដាក់!' },
+  dr_success_sub:     { en:'Our admin team will review your license within 24 hours. You will receive a confirmation email once approved.', km:'ក្រុមការងាររបស់យើងនឹងពិនិត្យអាជ្ञាបណ្ណក្នុង 24 ម៉ោង។' },
+  dr_go_login:        { en:'Go to Doctor Login',                    km:'ចូលទំព័រវេជ្ជបណ្ឌិត' },
+});
+</script>
+<script>
+'use strict';
+
+let LANG = localStorage.getItem('lang')||'en';
+window.LANG = LANG;
+
+function drPwStrength() {
+  const pw  = document.getElementById('drPassword').value;
+  const bar = document.getElementById('drPwFill');
+  let strength = 0;
+  if (pw.length >= 8)  strength += 25;
+  if (/[A-Z]/.test(pw)) strength += 25;
+  if (/[0-9]/.test(pw)) strength += 25;
+  if (/[^A-Za-z0-9]/.test(pw)) strength += 25;
+  bar.style.width = strength + '%';
+  bar.style.background = strength < 50 ? '#EF4444' : strength < 75 ? '#F59E0B' : '#10B981';
+}
+
+function drUpdateSteps(step) {
+  [1,2,3].forEach(n => {
+    const el   = document.getElementById(`drStep${n}`);
+    const line = document.getElementById(`drLine${n}`);
+    el.classList.toggle('active', n === step);
+    el.classList.toggle('done',   n < step);
+    if (line) line.classList.toggle('done', n < step);
+  });
+}
+
+async function drSubmit() {
+  const email    = document.getElementById('drEmail').value.trim();
+  const pw       = document.getElementById('drPassword').value;
+  const cpw      = document.getElementById('drConfirmPw').value;
+  const fullName = document.getElementById('drFullName').value.trim();
+  const specialty= document.getElementById('drSpecialty').value;
+  const license  = document.getElementById('drLicenseNo').value.trim();
+  const bio      = document.getElementById('drBio').value.trim();
+  const rate     = document.getElementById('drRate').value;
+  const hosp     = document.getElementById('drHospital').value.trim();
+  const quals    = document.getElementById('drQualifications').value.trim();
+  const avail    = document.getElementById('drAvailability').value.trim();
+  const exp      = document.getElementById('drExperience').value;
+  const phone    = document.getElementById('drPhone').value.trim();
+  const univ     = document.getElementById('drUniversity').value.trim();
+
+  const errEl  = document.getElementById('drErrBanner');
+  const errMsg = document.getElementById('drErrMsg');
+
+  function showErr(msg) { errMsg.textContent = msg; errEl.classList.add('show'); }
+  errEl.classList.remove('show');
+
+  // Client-side validation
+  if (!email || !pw || !fullName || !specialty || !license || !bio || !rate) {
+    showErr('Please fill all required fields.'); return;
+  }
+  if (pw.length < 8) { showErr('Password must be at least 8 characters.'); return; }
+  if (pw !== cpw)    { showErr('Passwords do not match.'); return; }
+
+  const btn = document.getElementById('drSubmitBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<div class="dr-spinner"></div>`;
+  drUpdateSteps(2);
+
+  try {
+    const body = {
+      email,
+      password: pw,
+      full_name: fullName,
+      specialty,
+      license_no: license,
+      license_number: license,
+      bio,
+      rate_per_session: parseFloat(rate) || 0,
+    };
+    if (hosp)  body.hospital       = hosp;
+    if (quals) body.qualifications  = quals;
+    if (avail) body.availability    = avail;
+    if (exp)   body.experience_years = parseInt(exp)||0;
+    if (phone) body.phone            = phone;
+    if (univ)  body.university       = univ;
+
+    const res  = await fetch('/api/doctor/register', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showErr(data.error || 'Registration failed. Please try again.');
+      btn.disabled = false;
+      btn.innerHTML = `<i class="ti ti-send"></i> <span data-i18n="dr_submit">Submit Application</span>`;
+      drUpdateSteps(1);
+      return;
+    }
+
+    // Success
+    drUpdateSteps(3);
+    document.getElementById('drForm').style.display = 'none';
+    document.getElementById('drSuccess').classList.add('show');
+    drToast('Application submitted!','success');
+
+  } catch(e) {
+    showErr(e.message);
+    btn.disabled = false;
+    btn.innerHTML = `<i class="ti ti-send"></i> Submit Application`;
+    drUpdateSteps(1);
+  }
+}
+
+function drToast(msg, type='info') {
+  const wrap=document.getElementById('drToasts');
+  const el=document.createElement('div');
+  el.className=`dr-toast ${type}`;
+  const icon=type==='success'?'circle-check':'alert-circle';
+  el.innerHTML=`<i class="ti ti-${icon}"></i>${msg}`;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),4000);
+}
+
+function drToggleLang() {
+  LANG=LANG==='en'?'km':'en'; window.LANG=LANG;
+  localStorage.setItem('lang',LANG);
+  document.getElementById('dr-html').setAttribute('lang',LANG==='km'?'km':'en');
+  document.getElementById('drLangBtn').textContent=LANG==='km'?'English':'ខ្មែរ';
+  if(typeof applyLang==='function') applyLang(LANG);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  if(LANG==='km'){document.getElementById('dr-html').setAttribute('lang','km');document.getElementById('drLangBtn').textContent='English';if(typeof applyLang==='function')applyLang('km');}
+});
+</script>
+</body>
+</html>

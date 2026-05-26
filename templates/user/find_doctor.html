@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html lang="en" id="fd-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Find a Doctor — SmartX-Ray</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+  /* ─── Reset ─── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --indigo:    #6366F1; --indigo-dk: #4F46E5; --indigo-lt: #EEF2FF;
+    --green:     #10B981; --green-dk:  #059669;  --green-lt:  #ECFDF5;
+    --amber:     #F59E0B; --amber-lt:  #FEF3C7;
+    --red:       #EF4444; --red-lt:    #FEF2F2;
+    --text:      #0F172A; --text2:     #475569;  --muted:     #94A3B8;
+    --bg:        #F0F4F8; --surface:   #FFFFFF;  --border:    #E2E8F0;
+    --shadow-sm: 0 1px 4px rgba(15,23,42,.07);
+    --shadow-lg: 0 20px 60px rgba(15,23,42,.18);
+    --r:         12px;
+  }
+
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  html[lang="km"] * { font-family:'Hanuman','DM Sans',sans-serif !important; }
+
+  /* ─── Nav ─── */
+  .fd-nav {
+    position:sticky; top:0; z-index:200;
+    display:flex; align-items:center; gap:1rem; padding:.75rem 1.5rem;
+    background:#fff; border-bottom:1.5px solid var(--border);
+  }
+  .fd-back-btn {
+    display:inline-flex; align-items:center; gap:.4rem; text-decoration:none;
+    font-size:.84rem; font-weight:600; color:var(--text2);
+    padding:.35rem .75rem; border:1.5px solid var(--border); border-radius:8px;
+    background:#fff; transition:border-color .14s,color .14s;
+  }
+  .fd-back-btn:hover { border-color:var(--indigo); color:var(--indigo); }
+  .fd-brand-name { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; color:var(--indigo); text-decoration:none; }
+  .fd-nav-links { display:flex; gap:1.25rem; list-style:none; margin-left:auto; }
+  .fd-nav-links a { text-decoration:none; font-size:.87rem; font-weight:500; color:var(--text2); transition:color .14s; }
+  .fd-nav-links a:hover, .fd-nav-links a.active { color:var(--indigo); }
+  .fd-nav-right { display:flex; align-items:center; gap:.75rem; margin-left:1rem; }
+  .fd-lang-btn { padding:.3rem .7rem; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:.8rem; font-weight:600; cursor:pointer; color:var(--text2); }
+  .fd-avatar { width:34px; height:34px; border-radius:50%; background:var(--indigo-lt); color:var(--indigo); font-weight:700; font-size:.85rem; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+
+  /* ─── Hero ─── */
+  .fd-hero { background:linear-gradient(135deg,#4F46E5 0%,#6366F1 60%,#818CF8 100%); padding:3rem 2rem 2.5rem; text-align:center; color:#fff; }
+  .fd-hero h1 { font-family:'Space Grotesk',sans-serif; font-size:2rem; font-weight:700; margin-bottom:.4rem; }
+  .fd-hero p  { font-size:1rem; opacity:.88; margin-bottom:1.5rem; }
+  .fd-search-wrap { display:flex; gap:.5rem; max-width:560px; margin:0 auto; }
+  .fd-search-input { flex:1; padding:.75rem 1rem; border-radius:10px; border:none; font-size:.95rem; outline:none; box-shadow:0 2px 12px rgba(0,0,0,.15); font-family:inherit; }
+  .fd-search-btn { padding:.75rem 1.4rem; border-radius:10px; border:none; background:#fff; color:var(--indigo); font-weight:700; cursor:pointer; font-size:.9rem; box-shadow:0 2px 12px rgba(0,0,0,.15); display:flex; align-items:center; gap:.35rem; transition:background .14s; }
+  .fd-search-btn:hover { background:var(--indigo-lt); }
+
+  /* ─── Page ─── */
+  .fd-page { max-width:1280px; margin:0 auto; padding:2rem 1.5rem; }
+
+  /* ─── Filters ─── */
+  .fd-filters { display:flex; flex-wrap:wrap; gap:.75rem; align-items:flex-end; background:#fff; border:1.5px solid var(--border); border-radius:var(--r); padding:1rem 1.25rem; margin-bottom:1.5rem; box-shadow:var(--shadow-sm); }
+  .fd-filter-group { display:flex; flex-direction:column; gap:.3rem; }
+  .fd-filter-label { font-size:.73rem; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.04em; }
+  .fd-filter-select { padding:.42rem .7rem; border-radius:8px; border:1.5px solid var(--border); font-size:.85rem; color:var(--text); outline:none; background:#fff; cursor:pointer; transition:border-color .14s; font-family:inherit; }
+  .fd-filter-select:focus { border-color:var(--indigo); }
+  .fd-filter-btn { padding:.42rem 1rem; border-radius:8px; border:none; background:var(--indigo); color:#fff; font-size:.85rem; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:.35rem; margin-top:auto; transition:background .14s; font-family:inherit; }
+  .fd-filter-btn:hover { background:var(--indigo-dk); }
+  .fd-filter-clear { padding:.42rem .85rem; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:.82rem; font-weight:600; cursor:pointer; color:var(--text2); margin-top:auto; transition:border-color .14s; font-family:inherit; }
+  .fd-filter-clear:hover { border-color:var(--indigo); color:var(--indigo); }
+
+  /* ─── Results row ─── */
+  .fd-results-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem; flex-wrap:wrap; gap:.5rem; }
+  .fd-results-count { font-size:.88rem; color:var(--text2); }
+  .fd-results-count strong { color:var(--text); }
+
+  /* ─── Doctor Grid ─── */
+  .fd-grid { display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); }
+
+  /* ─── Doctor Card ─── */
+  .fd-doc-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r); padding:1.25rem; cursor:pointer; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:.6rem; box-shadow:var(--shadow-sm); transition:box-shadow .18s,border-color .18s,transform .15s; }
+  .fd-doc-card:hover { box-shadow:0 8px 28px rgba(99,102,241,.14); border-color:#C7D2FE; transform:translateY(-2px); }
+
+  .fd-card-top { display:flex; align-items:flex-start; gap:.85rem; }
+  .fd-doc-avatar { width:52px; height:52px; border-radius:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.1rem; font-weight:700; color:#fff; letter-spacing:-.5px; }
+  .fd-doc-identity { flex:1; min-width:0; }
+  .fd-doc-name { font-weight:700; font-size:.95rem; line-height:1.25; }
+  .fd-doc-spec { font-size:.78rem; color:var(--indigo); font-weight:600; margin-top:.12rem; }
+  .fd-doc-univ { font-size:.75rem; color:var(--text2); margin-top:.1rem; display:flex; align-items:center; gap:.2rem; }
+
+  .fd-doc-meta { display:flex; flex-direction:column; gap:.3rem; }
+  .fd-meta-row { display:flex; align-items:center; gap:.35rem; font-size:.8rem; color:var(--text2); }
+  .fd-meta-row i { color:var(--muted); font-size:.85rem; }
+  .fd-stars { display:flex; align-items:center; gap:.12rem; }
+  .fd-star  { font-size:.72rem; color:var(--border); }
+  .fd-star.on { color:var(--amber); }
+  .fd-rating-val { font-size:.76rem; color:var(--text2); margin-left:.25rem; font-weight:600; }
+  .fd-review-cnt { font-size:.72rem; color:var(--muted); margin-left:.1rem; }
+
+  .fd-card-footer { display:flex; align-items:center; justify-content:space-between; margin-top:auto; padding-top:.6rem; border-top:1px solid var(--border); }
+  .fd-rate-tag { font-size:.78rem; font-weight:700; color:var(--green); background:var(--green-lt); padding:.2rem .55rem; border-radius:999px; }
+  .fd-book-btn { padding:.38rem .9rem; border-radius:8px; border:none; background:var(--indigo); color:#fff; font-size:.8rem; font-weight:600; cursor:pointer; transition:background .14s; font-family:inherit; }
+  .fd-book-btn:hover { background:var(--indigo-dk); }
+  .fd-view-link { font-size:.78rem; color:var(--text2); text-decoration:none; padding:.38rem .5rem; transition:color .14s; }
+  .fd-view-link:hover { color:var(--indigo); }
+  .fd-verified-badge { display:inline-flex; align-items:center; gap:.2rem; font-size:.7rem; font-weight:700; color:var(--green); background:var(--green-lt); padding:.15rem .45rem; border-radius:999px; flex-shrink:0; }
+
+  /* ─── Empty / Loading ─── */
+  .fd-empty { grid-column:1/-1; text-align:center; padding:4rem 1rem; color:var(--muted); }
+  .fd-empty i { font-size:3rem; display:block; margin-bottom:.75rem; }
+  .fd-empty p { font-size:.95rem; }
+  .fd-loading { grid-column:1/-1; text-align:center; padding:3rem; }
+  .fd-spinner { display:inline-block; width:32px; height:32px; border:3px solid var(--border); border-top-color:var(--indigo); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ─── Pagination ─── */
+  .fd-pagination { display:flex; justify-content:center; align-items:center; gap:.5rem; margin-top:2rem; flex-wrap:wrap; }
+  .fd-page-btn { min-width:36px; height:36px; padding:0 .65rem; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:.85rem; font-weight:600; cursor:pointer; color:var(--text2); display:flex; align-items:center; justify-content:center; transition:all .14s; font-family:inherit; }
+  .fd-page-btn:hover:not(:disabled) { border-color:var(--indigo); color:var(--indigo); }
+  .fd-page-btn.active { background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .fd-page-btn:disabled { opacity:.4; cursor:not-allowed; }
+  .fd-page-ellipsis { font-size:.83rem; color:var(--muted); padding:0 .25rem; }
+
+
+  /* ══════════════════════════════════════════════════════════════
+     BOOKING MODAL
+     ══════════════════════════════════════════════════════════════ */
+
+  /* Backdrop */
+  .bm-backdrop {
+    position:fixed; inset:0; z-index:500;
+    background:rgba(15,23,42,.55);
+    display:flex; align-items:center; justify-content:center;
+    padding:1rem;
+    opacity:0; pointer-events:none;
+    transition:opacity .2s;
+  }
+  .bm-backdrop.open { opacity:1; pointer-events:all; }
+
+  /* Modal shell */
+  .bm-modal {
+    background:#fff; border-radius:18px; width:100%; max-width:520px;
+    max-height:92vh; overflow-y:auto; box-shadow:var(--shadow-lg);
+    display:flex; flex-direction:column;
+    transform:translateY(24px) scale(.97);
+    transition:transform .22s cubic-bezier(.34,1.56,.64,1);
+    scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+  }
+  .bm-backdrop.open .bm-modal { transform:translateY(0) scale(1); }
+
+  /* Modal header */
+  .bm-header {
+    display:flex; align-items:center; gap:1rem; padding:1.25rem 1.4rem;
+    border-bottom:1.5px solid var(--border); position:sticky; top:0;
+    background:#fff; z-index:2; border-radius:18px 18px 0 0;
+  }
+  .bm-doc-ava { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; color:#fff; flex-shrink:0; }
+  .bm-doc-info { flex:1; min-width:0; }
+  .bm-doc-name { font-weight:700; font-size:.97rem; line-height:1.25; }
+  .bm-doc-spec { font-size:.78rem; color:var(--indigo); font-weight:600; }
+  .bm-doc-rate { font-size:.8rem; color:var(--green); font-weight:700; margin-top:.1rem; }
+  .bm-close { width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border); background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1rem; color:var(--text2); transition:border-color .14s,color .14s; flex-shrink:0; font-family:inherit; }
+  .bm-close:hover { border-color:var(--red); color:var(--red); }
+
+  /* Modal body */
+  .bm-body { padding:1.4rem; flex:1; }
+
+  /* Progress steps */
+  .bm-steps { display:flex; align-items:center; margin-bottom:1.4rem; }
+  .bm-step { display:flex; align-items:center; gap:.35rem; font-size:.78rem; font-weight:600; color:var(--muted); flex-shrink:0; }
+  .bm-step-dot { width:22px; height:22px; border-radius:50%; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:.67rem; font-weight:700; transition:all .18s; }
+  .bm-step.active .bm-step-dot { background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .bm-step.done   .bm-step-dot { background:var(--green);  border-color:var(--green);  color:#fff; }
+  .bm-step.active { color:var(--indigo); }
+  .bm-step.done   { color:var(--green); }
+  .bm-step-line { flex:1; height:2px; background:var(--border); margin:0 .4rem; transition:background .18s; }
+  .bm-step-line.done { background:var(--green); }
+
+  /* Section label */
+  .bm-section-lbl { font-size:.75rem; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:.05em; margin-bottom:.6rem; display:flex; align-items:center; gap:.35rem; }
+  .bm-section-lbl i { color:var(--indigo); font-size:.85rem; }
+
+  /* Date picker */
+  .bm-date-input { width:100%; padding:.65rem .9rem; border-radius:9px; border:1.5px solid var(--border); font-size:.92rem; outline:none; font-family:inherit; cursor:pointer; transition:border-color .14s; }
+  .bm-date-input:focus { border-color:var(--indigo); }
+
+  /* Time slots */
+  .bm-slot-grid { display:flex; flex-wrap:wrap; gap:.45rem; margin-top:.3rem; min-height:40px; }
+  .bm-slot { padding:.42rem .85rem; border-radius:8px; font-size:.82rem; font-weight:600; cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text); transition:all .14s; font-family:inherit; }
+  .bm-slot:hover:not(.booked) { border-color:var(--indigo); color:var(--indigo); background:var(--indigo-lt); }
+  .bm-slot.selected { background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .bm-slot.booked   { background:var(--bg); color:var(--muted); cursor:not-allowed; text-decoration:line-through; border-color:var(--border); }
+  .bm-slot-msg { font-size:.82rem; color:var(--muted); padding:.3rem 0; }
+  .bm-slot-spinner { display:inline-block; width:20px; height:20px; border:2px solid var(--border); border-top-color:var(--indigo); border-radius:50%; animation:spin .6s linear infinite; }
+
+  /* Note */
+  .bm-note { width:100%; padding:.65rem .9rem; border-radius:9px; border:1.5px solid var(--border); font-family:inherit; font-size:.88rem; resize:vertical; min-height:72px; outline:none; transition:border-color .14s; }
+  .bm-note:focus { border-color:var(--indigo); }
+
+  /* Divider */
+  .bm-divider { border:none; border-top:1.5px solid var(--border); margin:1.1rem 0; }
+
+  /* Summary box */
+  .bm-summary { background:var(--indigo-lt); border:1.5px solid #C7D2FE; border-radius:10px; padding:1rem; margin-bottom:1rem; }
+  .bm-summary-row { display:flex; justify-content:space-between; font-size:.85rem; margin-bottom:.3rem; }
+  .bm-summary-row:last-child { margin-bottom:0; padding-top:.3rem; border-top:1px solid #C7D2FE; }
+  .bm-summary-lbl { color:var(--text2); }
+  .bm-summary-val { font-weight:600; }
+  .bm-summary-total { font-size:1rem; font-weight:700; color:var(--indigo-dk); }
+
+  /* ABA block */
+  .bm-aba { display:flex; align-items:center; gap:.75rem; background:#fff; border:1.5px solid var(--border); border-radius:9px; padding:.75rem; margin-bottom:1rem; }
+  .bm-aba-qr { width:52px; height:52px; background:var(--bg); border:1px solid var(--border); border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--muted); }
+  .bm-aba-text strong { display:block; font-size:.87rem; color:var(--text); }
+  .bm-aba-text span   { font-size:.78rem; color:var(--muted); }
+
+  /* Error */
+  .bm-error { background:var(--red-lt); border:1px solid #FECACA; border-radius:9px; padding:.65rem .9rem; font-size:.84rem; color:var(--red); margin-bottom:.85rem; display:none; align-items:center; gap:.45rem; }
+  .bm-error.show { display:flex; }
+
+  /* Confirm button */
+  .bm-confirm-btn { width:100%; padding:.9rem; border-radius:11px; border:none; background:var(--indigo); color:#fff; font-size:1rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.5rem; transition:background .14s; font-family:inherit; }
+  .bm-confirm-btn:hover { background:var(--indigo-dk); }
+  .bm-confirm-btn:disabled { background:var(--border); color:var(--muted); cursor:not-allowed; }
+  .bm-cancel-policy { text-align:center; font-size:.73rem; color:var(--muted); margin-top:.55rem; }
+  .bm-btn-spinner { display:inline-block; width:16px; height:16px; border:2px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .6s linear infinite; }
+
+  /* Success state */
+  .bm-success { text-align:center; padding:1.5rem .5rem 2rem; display:none; }
+  .bm-success.show { display:block; }
+  .bm-success-icon { font-size:3.2rem; color:var(--green); margin-bottom:.75rem; }
+  .bm-success-title { font-family:'Space Grotesk',sans-serif; font-size:1.25rem; font-weight:700; margin-bottom:.4rem; }
+  .bm-success-sub { font-size:.88rem; color:var(--text2); margin-bottom:1.2rem; line-height:1.6; }
+  .bm-success-meet { display:inline-flex; align-items:center; gap:.4rem; padding:.5rem 1.1rem; border-radius:9px; background:var(--indigo-lt); color:var(--indigo); font-size:.84rem; font-weight:600; text-decoration:none; margin-bottom:.75rem; word-break:break-all; }
+  .bm-success-actions { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; }
+  .bm-success-actions a { padding:.5rem 1.1rem; border-radius:9px; font-size:.85rem; font-weight:600; text-decoration:none; transition:all .14s; }
+  .bm-btn-primary  { background:var(--indigo); color:#fff; }
+  .bm-btn-primary:hover  { background:var(--indigo-dk); }
+  .bm-btn-outline  { border:1.5px solid var(--border); color:var(--text2); }
+  .bm-btn-outline:hover  { border-color:var(--indigo); color:var(--indigo); }
+
+  /* ─── Toast ─── */
+  .fd-toast-wrap { position:fixed; bottom:1.5rem; right:1.5rem; z-index:600; display:flex; flex-direction:column-reverse; gap:.5rem; }
+  .fd-toast { display:flex; align-items:center; gap:.65rem; padding:.7rem 1rem; border-radius:10px; background:#1E293B; color:#fff; font-size:.84rem; box-shadow:0 4px 20px rgba(0,0,0,.25); animation:fadeUp .25s; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } }
+  .fd-toast.info    { border-left:3px solid var(--indigo); }
+  .fd-toast.success { border-left:3px solid var(--green); }
+  .fd-toast.error   { border-left:3px solid var(--red); }
+
+  /* ─── Responsive ─── */
+  @media (max-width:700px) {
+    .fd-hero h1 { font-size:1.5rem; }
+    .fd-page    { padding:1.25rem 1rem; }
+    .fd-filters { padding:.75rem; }
+    .fd-nav-links { display:none; }
+    .bm-modal { max-height:100vh; border-radius:18px 18px 0 0; }
+    .bm-backdrop { align-items:flex-end; padding:0; }
+  }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════
+     NAV
+     ══════════════════════════════════════════════════════ -->
+<header class="fd-nav">
+  <a href="/dashboard" class="fd-back-btn">
+    <i class="ti ti-arrow-left"></i>
+    <span data-i18n="fd_back">Back to Dashboard</span>
+  </a>
+  <a href="/" class="fd-brand-name" style="text-decoration:none;">SmartX-Ray</a>
+  <nav style="margin-left:auto;">
+    <ul class="fd-nav-links">
+      <li><a href="/dashboard"      data-i18n="nav_home">Home</a></li>
+      <li><a href="/find-doctor" class="active" data-i18n="fd_nav_find">Find Doctor</a></li>
+      <li><a href="/my-appointments" data-i18n="fd_nav_my_appt">My Appointments</a></li>
+    </ul>
+  </nav>
+  <div class="fd-nav-right">
+    <button class="fd-lang-btn" id="fdLangBtn" onclick="fdToggleLang()">ខ្មែរ</button>
+    <div class="fd-avatar" id="fdAvatar">?</div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════
+     HERO
+     ══════════════════════════════════════════════════════ -->
+<div class="fd-hero">
+  <h1 data-i18n="fd_hero_title">Find a Specialist Doctor</h1>
+  <p  data-i18n="fd_hero_sub">Book a consultation with Cambodia's top verified doctors</p>
+  <div class="fd-search-wrap">
+    <input type="text" class="fd-search-input" id="fdSearchInput"
+           data-i18n-placeholder="fd_search_ph"
+           placeholder="Search by name or specialty…"
+           onkeydown="if(event.key==='Enter') fdApplyFilters()" />
+    <button class="fd-search-btn" onclick="fdApplyFilters()">
+      <i class="ti ti-search"></i>
+      <span data-i18n="fd_search">Search</span>
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     PAGE
+     ══════════════════════════════════════════════════════ -->
+<main class="fd-page">
+
+  <!-- Filters -->
+  <div class="fd-filters">
+    <div class="fd-filter-group">
+      <span class="fd-filter-label" data-i18n="fd_filter_specialty">Specialty</span>
+      <select class="fd-filter-select" id="fdSpecialty" onchange="fdApplyFilters()">
+        <option value=""             data-i18n="fd_all">All</option>
+        <option value="Radiology"   data-i18n="fd_spec_radio">Radiology</option>
+        <option value="Pulmonology" data-i18n="fd_spec_pulm">Pulmonology</option>
+        <option value="Cardiology"  data-i18n="fd_spec_card">Cardiology</option>
+        <option value="General"     data-i18n="fd_spec_gen">General Medicine</option>
+        <option value="Surgery"     data-i18n="fd_spec_surg">Surgery</option>
+        <option value="Pediatrics"  data-i18n="fd_spec_ped">Pediatrics</option>
+      </select>
+    </div>
+    <div class="fd-filter-group">
+      <span class="fd-filter-label" data-i18n="fd_filter_rating">Min Rating</span>
+      <select class="fd-filter-select" id="fdMinRating" onchange="fdApplyFilters()">
+        <option value="0"   data-i18n="fd_all">Any</option>
+        <option value="4.5">4.5+</option>
+        <option value="4">4.0+</option>
+        <option value="3.5">3.5+</option>
+      </select>
+    </div>
+    <div class="fd-filter-group">
+      <span class="fd-filter-label" data-i18n="fd_filter_sort">Sort By</span>
+      <select class="fd-filter-select" id="fdSort" onchange="fdApplyFilters()">
+        <option value="rating_desc" data-i18n="fd_sort_top">Highest Rated</option>
+        <option value="rating_asc"  data-i18n="fd_sort_low">Lowest Rated</option>
+        <option value="rate_asc"    data-i18n="fd_sort_cheap">Lowest Price</option>
+        <option value="rate_desc"   data-i18n="fd_sort_price">Highest Price</option>
+      </select>
+    </div>
+    <button class="fd-filter-btn" onclick="fdApplyFilters()">
+      <i class="ti ti-filter"></i>
+      <span data-i18n="fd_apply">Apply</span>
+    </button>
+    <button class="fd-filter-clear" onclick="fdClearFilters()" data-i18n="fd_clear">Clear</button>
+  </div>
+
+  <!-- Results header -->
+  <div class="fd-results-row">
+    <p class="fd-results-count">
+      <strong id="fdResultCount">—</strong>
+      <span data-i18n="fd_doctors_found"> doctors found</span>
+    </p>
+  </div>
+
+  <!-- Doctor grid -->
+  <div class="fd-grid" id="fdGrid">
+    <div class="fd-loading"><div class="fd-spinner"></div></div>
+  </div>
+
+  <!-- Pagination -->
+  <div class="fd-pagination" id="fdPagination" style="display:none;"></div>
+
+</main>
+
+<!-- ══════════════════════════════════════════════════════
+     BOOKING MODAL
+     ══════════════════════════════════════════════════════ -->
+<div class="bm-backdrop" id="bmBackdrop" onclick="bmOutsideClick(event)">
+  <div class="bm-modal" id="bmModal" role="dialog" aria-modal="true" aria-label="Book appointment">
+
+    <!-- ── Header ── -->
+    <div class="bm-header">
+      <div class="bm-doc-ava" id="bmDocAva"></div>
+      <div class="bm-doc-info">
+        <div class="bm-doc-name" id="bmDocName">—</div>
+        <div class="bm-doc-spec" id="bmDocSpec">—</div>
+        <div class="bm-doc-rate" id="bmDocRate">—</div>
+      </div>
+      <button class="bm-close" onclick="bmClose()" aria-label="Close">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <!-- ── Body ── -->
+    <div class="bm-body">
+
+      <!-- Progress steps -->
+      <div class="bm-steps" id="bmSteps">
+        <div class="bm-step active" id="bmStep1">
+          <div class="bm-step-dot">1</div>
+          <span data-i18n="bm_step_date">Date</span>
+        </div>
+        <div class="bm-step-line" id="bmLine12"></div>
+        <div class="bm-step" id="bmStep2">
+          <div class="bm-step-dot">2</div>
+          <span data-i18n="bm_step_time">Time</span>
+        </div>
+        <div class="bm-step-line" id="bmLine23"></div>
+        <div class="bm-step" id="bmStep3">
+          <div class="bm-step-dot">3</div>
+          <span data-i18n="bm_step_confirm">Confirm</span>
+        </div>
+      </div>
+
+      <!-- ── Step 1: Date ── -->
+      <div id="bmPanelDate">
+        <div class="bm-section-lbl">
+          <i class="ti ti-calendar"></i>
+          <span data-i18n="bm_choose_date">1. Choose a Date</span>
+        </div>
+        <input type="date" class="bm-date-input" id="bmDate" onchange="bmOnDateChange()" />
+
+        <div class="bm-section-lbl" style="margin-top:1.1rem;">
+          <i class="ti ti-clock"></i>
+          <span data-i18n="bm_choose_time">2. Select a Time Slot</span>
+        </div>
+        <div class="bm-slot-grid" id="bmSlots">
+          <span class="bm-slot-msg" data-i18n="bm_pick_date_first">Pick a date first</span>
+        </div>
+      </div>
+
+      <!-- ── Step 2: Note ── -->
+      <div id="bmPanelNote" style="display:none;">
+        <div class="bm-section-lbl">
+          <i class="ti ti-notes"></i>
+          <span data-i18n="bm_add_note">3. Add a Note (optional)</span>
+        </div>
+        <textarea class="bm-note" id="bmNote" rows="3"
+          data-i18n-placeholder="bm_note_ph"
+          placeholder="Describe your symptoms or reason for consultation…"></textarea>
+      </div>
+
+      <!-- ── Step 3: Payment + Confirm ── -->
+      <div id="bmPanelPay" style="display:none;">
+
+        <!-- Summary -->
+        <div class="bm-summary" id="bmSummary">
+          <div class="bm-summary-row">
+            <span class="bm-summary-lbl" data-i18n="bm_doctor">Doctor</span>
+            <span class="bm-summary-val" id="bmSumDoctor">—</span>
+          </div>
+          <div class="bm-summary-row">
+            <span class="bm-summary-lbl" data-i18n="bm_date_time">Date &amp; Time</span>
+            <span class="bm-summary-val" id="bmSumDateTime">—</span>
+          </div>
+          <div class="bm-summary-row">
+            <span class="bm-summary-lbl" data-i18n="bm_fee">Consultation Fee</span>
+            <span class="bm-summary-total" id="bmSumFee">$0</span>
+          </div>
+        </div>
+
+        <!-- ABA KHQR -->
+        <div class="bm-aba">
+          <div class="bm-aba-qr"><i class="ti ti-qrcode" style="font-size:1.6rem;"></i></div>
+          <div class="bm-aba-text">
+            <strong>ABA KHQR</strong>
+            <span data-i18n="bm_aba_note">Scan to pay · Instant confirmation</span><br/>
+            <span data-i18n="bm_aba_sub" style="color:var(--muted);font-size:.73rem;">Secure · ABA Bank Cambodia</span>
+          </div>
+        </div>
+
+        <!-- Error -->
+        <div class="bm-error" id="bmError">
+          <i class="ti ti-alert-circle"></i>
+          <span id="bmErrMsg">Error</span>
+        </div>
+
+        <!-- Confirm button -->
+        <button class="bm-confirm-btn" id="bmConfirmBtn" onclick="bmConfirm()">
+          <i class="ti ti-lock"></i>
+          <span data-i18n="bm_confirm_pay">Confirm &amp; Pay</span>
+        </button>
+        <p class="bm-cancel-policy" data-i18n="bm_cancel_policy">Free cancellation before the appointment</p>
+
+      </div>
+
+      <!-- ── Success state ── -->
+      <div class="bm-success" id="bmSuccess">
+        <div class="bm-success-icon"><i class="ti ti-circle-check"></i></div>
+        <div class="bm-success-title" data-i18n="bm_booked_title">Appointment Confirmed!</div>
+        <p class="bm-success-sub" data-i18n="bm_booked_sub">Your booking is confirmed and the meeting link is ready. See you soon!</p>
+        <a href="#" class="bm-success-meet" id="bmMeetLink" target="_blank">
+          <i class="ti ti-video"></i>
+          <span id="bmMeetLinkText">—</span>
+        </a>
+        <div class="bm-success-actions">
+          <a href="/my-appointments" class="bm-btn-primary" data-i18n="bm_view_apts">My Appointments</a>
+          <a href="#" class="bm-btn-outline" onclick="bmClose();return false;" data-i18n="bm_close">Close</a>
+        </div>
+      </div>
+
+      <!-- ── Navigation buttons (back / next) ── -->
+      <div id="bmNav" style="display:flex;justify-content:space-between;margin-top:1.1rem;gap:.65rem;">
+        <button id="bmBackBtn" class="fd-filter-clear" style="margin-top:0;display:none;" onclick="bmStepBack()">
+          <i class="ti ti-arrow-left"></i>
+          <span data-i18n="bm_back">Back</span>
+        </button>
+        <button id="bmNextBtn" class="fd-filter-btn" style="margin-top:0;margin-left:auto;" onclick="bmStepNext()" disabled>
+          <span data-i18n="bm_next">Next</span>
+          <i class="ti ti-arrow-right"></i>
+        </button>
+      </div>
+
+    </div><!-- /bm-body -->
+  </div><!-- /bm-modal -->
+</div><!-- /bm-backdrop -->
+
+<!-- Toast container -->
+<div class="fd-toast-wrap" id="fdToasts"></div>
+
+<!-- i18n -->
+<script src="/static/js/i18n.js"></script>
+<script>
+Object.assign(TRANSLATIONS, {
+  /* Nav */
+  fd_back:         { en:'Back to Dashboard',                 km:'ត្រឡប់ទៅផ្ទាំង' },
+  fd_nav_find:     { en:'Find Doctor',                      km:'រកវេជ្ជបណ្ឌិត' },
+  fd_nav_my_appt:  { en:'My Appointments',                  km:'ការណាត់ជួបខ្ញុំ' },
+  /* Hero */
+  fd_hero_title:   { en:'Find a Specialist Doctor',         km:'រកវេជ្ជបណ្ឌិតឯកទេស' },
+  fd_hero_sub:     { en:"Book a consultation with Cambodia's top verified doctors", km:'ណាត់ជួបជាមួយវេជ្ជបណ្ឌិតកំពូលនៅកម្ពុជា' },
+  fd_search_ph:    { en:'Search by name or specialty…',    km:'ស្វែងរកតាមឈ្មោះ ឬឯកទេស…' },
+  fd_search:       { en:'Search',                           km:'ស្វែងរក' },
+  /* Filters */
+  fd_filter_specialty: { en:'Specialty',   km:'ឯកទេស' },
+  fd_filter_rating:    { en:'Min Rating',  km:'ការវាយតម្លៃអប្បបរមា' },
+  fd_filter_sort:      { en:'Sort By',     km:'តម្រៀបតាម' },
+  fd_all:          { en:'All',             km:'ទាំងអស់' },
+  fd_spec_radio:   { en:'Radiology',       km:'វិទ្យុសាស្ត្រ' },
+  fd_spec_pulm:    { en:'Pulmonology',     km:'វេជ្ជសាស្ត្រប្រព័ន្ធដង្ហើម' },
+  fd_spec_card:    { en:'Cardiology',      km:'បេះដូងវិទ្យា' },
+  fd_spec_gen:     { en:'General Medicine',km:'វេជ្ជសាស្ត្រទូទៅ' },
+  fd_spec_surg:    { en:'Surgery',         km:'វះកាត់' },
+  fd_spec_ped:     { en:'Pediatrics',      km:'វេជ្ជបាលកុមារ' },
+  fd_sort_top:     { en:'Highest Rated',   km:'ការវាយតម្លៃខ្ពស់' },
+  fd_sort_low:     { en:'Lowest Rated',    km:'ការវាយតម្លៃទាប' },
+  fd_sort_cheap:   { en:'Lowest Price',    km:'តម្លៃទាបបំផុត' },
+  fd_sort_price:   { en:'Highest Price',   km:'តម្លៃខ្ពស់បំផុត' },
+  fd_apply:        { en:'Apply',           km:'អនុវត្ត' },
+  fd_clear:        { en:'Clear',           km:'សម្អាត' },
+  fd_doctors_found:{ en:' doctors found',  km:' វេជ្ជបណ្ឌិតត្រូវបានរក' },
+  /* Card */
+  fd_per_session:  { en:'/session',        km:'/វគ្គ' },
+  fd_book_now:     { en:'Book Now',        km:'ណាត់ឥឡូវ' },
+  fd_view_profile: { en:'View Profile',    km:'មើលប្រវត្តិ' },
+  fd_verified:     { en:'Verified',        km:'បានផ្ទៀង' },
+  fd_reviews:      { en:'reviews',         km:'មតិ' },
+  fd_no_doctors:   { en:'No doctors found. Try different filters.', km:'មិនរកឃើញ។ សាកល្បងតម្រងផ្សេង។' },
+  /* Modal */
+  bm_step_date:    { en:'Date',            km:'កាលបរិច្ឆេទ' },
+  bm_step_time:    { en:'Time',            km:'ម៉ោង' },
+  bm_step_confirm: { en:'Confirm',         km:'បញ្ជាក់' },
+  bm_choose_date:  { en:'1. Choose a Date',km:'១. ជ្រើសរើសកាលបរិច្ឆេទ' },
+  bm_choose_time:  { en:'2. Select a Time Slot', km:'២. ជ្រើសរើសម៉ោង' },
+  bm_pick_date_first: { en:'Pick a date first', km:'ជ្រើសកាលបរិច្ឆេទជាមុន' },
+  bm_no_slots:     { en:'No slots available this day', km:'គ្មានម៉ោងទំនេរ' },
+  bm_add_note:     { en:'3. Add a Note (optional)', km:'៣. បន្ថែមមតិ (ស្រេចចិត្ត)' },
+  bm_note_ph:      { en:'Describe your symptoms…', km:'ពិពណ៌នាអំពីរោគសញ្ញា…' },
+  bm_doctor:       { en:'Doctor',          km:'វេជ្ជបណ្ឌិត' },
+  bm_date_time:    { en:'Date & Time',     km:'កាលបរិច្ឆេទ & ម៉ោង' },
+  bm_fee:          { en:'Consultation Fee',km:'ថ្លៃពិគ្រោះ' },
+  bm_aba_note:     { en:'Scan to pay · Instant confirmation', km:'ស្កែនទូទាត់ · បញ្ជាក់ភ្លាម' },
+  bm_aba_sub:      { en:'Secure · ABA Bank Cambodia', km:'ការទូទាត់安全 · ABA Bank' },
+  bm_confirm_pay:  { en:'Confirm & Pay',   km:'បញ្ជាក់ & ទូទាត់' },
+  bm_cancel_policy:{ en:'Free cancellation before the appointment', km:'បោះបង់ដោយឥតគិតថ្លៃ' },
+  bm_booked_title: { en:'Appointment Confirmed!', km:'ការណាត់ជួបបានបញ្ជាក់!' },
+  bm_booked_sub:   { en:'Your booking is confirmed and the meeting link is ready. See you soon!', km:'ការកក់ត្រូវបានបញ្ជាក់ហើយ!' },
+  bm_view_apts:    { en:'My Appointments', km:'ការណាត់ជួបខ្ញុំ' },
+  bm_close:        { en:'Close',           km:'បិទ' },
+  bm_next:         { en:'Next',            km:'បន្ទាប់' },
+  bm_back:         { en:'Back',            km:'ថយក្រោយ' },
+  bm_per_session:  { en:'/session',        km:'/វគ្គ' },
+});
+</script>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════════════════════════
+   DOCTOR LISTING
+   ══════════════════════════════════════════════════════════ */
+const FD = { page:1, total:0, pages:0, loading:false };
+let LANG = localStorage.getItem('lang') || 'en';
+window.LANG = LANG;
+
+const COLORS = [
+  ['#4F46E5','#EEF2FF'],['#059669','#ECFDF5'],['#D97706','#FEF3C7'],
+  ['#DC2626','#FEF2F2'],['#0891B2','#ECFEFF'],['#7C3AED','#F5F3FF'],
+];
+function _colorFor(n){ let h=0; for(let i=0;i<(n||'').length;i++) h=(h*31+n.charCodeAt(i))>>>0; return COLORS[h%COLORS.length]; }
+function _initials(n){ if(!n)return'?'; const p=n.replace(/^Dr\.?\s*/i,'').split(' '); return(p[0][0]+(p[1]?.[0]||'')).toUpperCase(); }
+function _stars(r){ let s=''; for(let i=1;i<=5;i++) s+=`<span class="fd-star ${i<=Math.round(r)?'on':''}"><i class="ti ti-star-filled"></i></span>`; return s; }
+function _t(k){ return(LANG==='km'?TRANSLATIONS[k]?.km:TRANSLATIONS[k]?.en)||''; }
+
+async function fdLoad(page=1){
+  if(FD.loading) return;
+  FD.loading=true; FD.page=page;
+  const search    = document.getElementById('fdSearchInput').value.trim();
+  const specialty = document.getElementById('fdSpecialty').value;
+  const minRating = document.getElementById('fdMinRating').value;
+  const sort      = document.getElementById('fdSort').value;
+  const p = new URLSearchParams({page,limit:12,sort});
+  if(search)                    p.set('search',search);
+  if(specialty)                 p.set('specialty',specialty);
+  if(parseFloat(minRating)>0)   p.set('min_rating',minRating);
+  document.getElementById('fdGrid').innerHTML='<div class="fd-loading"><div class="fd-spinner"></div></div>';
+  try{
+    const res=await fetch(`/api/doctors?${p}`);
+    const data=await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed to load');
+    FD.total=data.total||0; FD.pages=data.pages||1;
+    document.getElementById('fdResultCount').textContent=FD.total;
+    fdRenderGrid(data.doctors||[]);
+    fdRenderPagination();
+  }catch(e){
+    document.getElementById('fdGrid').innerHTML=`<div class="fd-empty"><i class="ti ti-alert-circle"></i><p>${e.message}</p></div>`;
+    fdToast(e.message,'error');
+  }finally{ FD.loading=false; }
+}
+
+function fdRenderGrid(docs){
+  const g=document.getElementById('fdGrid');
+  if(!docs.length){ g.innerHTML=`<div class="fd-empty"><i class="ti ti-user-x"></i><p>${_t('fd_no_doctors')||'No doctors found.'}</p></div>`; return; }
+  g.innerHTML=docs.map(d=>fdCard(d)).join('');
+}
+
+function fdCard(d){
+  const [fg]=_colorFor(d.full_name);
+  const rating=parseFloat(d.avg_rating||0).toFixed(1);
+  const rate  =parseFloat(d.rate_per_session||0).toFixed(0);
+  const univ  =d.university||'';
+  const avail =d.availability||'';
+  return `
+  <div class="fd-doc-card" onclick="fdGoProfile(event,${d.id})" data-doc-id="${d.id}">
+    <div class="fd-card-top">
+      <div class="fd-doc-avatar" style="background:${fg};">${_initials(d.full_name)}</div>
+      <div class="fd-doc-identity">
+        <div class="fd-doc-name">${d.full_name}</div>
+        <div class="fd-doc-spec">${d.specialty||'—'}</div>
+        ${univ?`<div class="fd-doc-univ"><i class="ti ti-building-community" style="font-size:.78rem;color:var(--muted);"></i>${univ}</div>`:''}
+      </div>
+      ${d.is_verified?`<span class="fd-verified-badge"><i class="ti ti-shield-check"></i>${_t('fd_verified')||'Verified'}</span>`:''}
+    </div>
+    <div class="fd-doc-meta">
+      <div class="fd-meta-row">${_stars(rating)}<span class="fd-rating-val">${rating}</span><span class="fd-review-cnt">(${d.total_reviews||0} ${_t('fd_reviews')||'reviews'})</span></div>
+      ${avail?`<div class="fd-meta-row"><i class="ti ti-clock"></i>${avail}</div>`:''}
+      <div class="fd-meta-row"><i class="ti ti-currency-dollar"></i>$${rate}${_t('fd_per_session')||'/session'}</div>
+    </div>
+    <div class="fd-card-footer">
+      <span class="fd-rate-tag">$${rate}${_t('fd_per_session')||'/session'}</span>
+      <div style="display:flex;gap:.45rem;align-items:center;">
+        <a class="fd-view-link" href="/doctor/${d.id}" onclick="event.stopPropagation();" data-i18n="fd_view_profile">${_t('fd_view_profile')||'Profile'}</a>
+        <button class="fd-book-btn" onclick="event.stopPropagation();fdOpenBooking(${d.id},${JSON.stringify(d).replace(/"/g,'&quot;')})">${_t('fd_book_now')||'Book Now'}</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function fdGoProfile(e,id){
+  /* Only navigate if user clicked the card body (not a button/link inside) */
+  if(e.target.closest('button,a')) return;
+  window.location=`/doctor/${id}`;
+}
+
+function fdRenderPagination(){
+  const pag=document.getElementById('fdPagination');
+  if(FD.pages<=1){pag.style.display='none';return;}
+  pag.style.display='flex';
+  let h=`<button class="fd-page-btn" onclick="fdLoad(${FD.page-1})" ${FD.page<=1?'disabled':''}><i class="ti ti-chevron-left"></i></button>`;
+  for(let i=1;i<=FD.pages;i++){
+    if(Math.abs(i-FD.page)>2&&i!==1&&i!==FD.pages){ if(i===FD.page-3||i===FD.page+3) h+=`<span class="fd-page-ellipsis">…</span>`; continue; }
+    h+=`<button class="fd-page-btn ${i===FD.page?'active':''}" onclick="fdLoad(${i})">${i}</button>`;
+  }
+  h+=`<button class="fd-page-btn" onclick="fdLoad(${FD.page+1})" ${FD.page>=FD.pages?'disabled':''}><i class="ti ti-chevron-right"></i></button>`;
+  pag.innerHTML=h;
+}
+
+function fdApplyFilters(){ fdLoad(1); }
+function fdClearFilters(){
+  document.getElementById('fdSearchInput').value='';
+  document.getElementById('fdSpecialty').value='';
+  document.getElementById('fdMinRating').value='0';
+  document.getElementById('fdSort').value='rating_desc';
+  fdLoad(1);
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   BOOKING MODAL
+   ══════════════════════════════════════════════════════════ */
+const BM = {
+  step:    1,       // 1=date+time  2=note  3=pay
+  docId:   null,
+  doc:     null,
+  date:    null,
+  time:    null,
+  rate:    0,
+};
+
+/* Open modal and pre-populate doctor info */
+function fdOpenBooking(docId, docData){
+  const d = (typeof docData==='string') ? JSON.parse(docData.replace(/&quot;/g,'"')) : docData;
+  BM.docId = docId;
+  BM.doc   = d;
+  BM.date  = null;
+  BM.time  = null;
+  BM.rate  = parseFloat(d.rate_per_session||0);
+  BM.step  = 1;
+
+  const [fg] = _colorFor(d.full_name);
+
+  // Header
+  document.getElementById('bmDocAva').style.background = fg;
+  document.getElementById('bmDocAva').textContent = _initials(d.full_name);
+  document.getElementById('bmDocName').textContent = d.full_name;
+  document.getElementById('bmDocSpec').textContent = d.specialty||'';
+  document.getElementById('bmDocRate').textContent = `$${BM.rate.toFixed(0)}${_t('bm_per_session')||'/session'}`;
+
+  // Reset form
+  const dateEl = document.getElementById('bmDate');
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate()+1);
+  dateEl.min   = tomorrow.toISOString().split('T')[0];
+  dateEl.value = '';
+  document.getElementById('bmSlots').innerHTML  = `<span class="bm-slot-msg">${_t('bm_pick_date_first')||'Pick a date first'}</span>`;
+  document.getElementById('bmNote').value       = '';
+  document.getElementById('bmError').classList.remove('show');
+  document.getElementById('bmSuccess').classList.remove('show');
+  document.getElementById('bmPanelDate').style.display  = 'block';
+  document.getElementById('bmPanelNote').style.display  = 'none';
+  document.getElementById('bmPanelPay').style.display   = 'none';
+  document.getElementById('bmNav').style.display        = 'flex';
+  document.getElementById('bmSteps').style.display      = 'flex';
+  document.getElementById('bmConfirmBtn').disabled      = false;
+  document.getElementById('bmConfirmBtn').innerHTML     = `<i class="ti ti-lock"></i> <span data-i18n="bm_confirm_pay">${_t('bm_confirm_pay')||'Confirm & Pay'}</span>`;
+
+  bmUpdateSteps(1);
+  bmUpdateNextBtn();
+
+  // Open backdrop
+  document.getElementById('bmBackdrop').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function bmClose(){
+  document.getElementById('bmBackdrop').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function bmOutsideClick(e){
+  if(e.target===document.getElementById('bmBackdrop')) bmClose();
+}
+
+/* Step navigation */
+function bmStepNext(){
+  if(BM.step===1){
+    if(!BM.date||!BM.time) return;
+    BM.step=2;
+    document.getElementById('bmPanelDate').style.display='none';
+    document.getElementById('bmPanelNote').style.display='block';
+  } else if(BM.step===2){
+    BM.step=3;
+    bmFillSummary();
+    document.getElementById('bmPanelNote').style.display='none';
+    document.getElementById('bmPanelPay').style.display='block';
+    document.getElementById('bmNav').style.display='none';   // hide nav — confirm btn takes over
+  }
+  bmUpdateSteps(BM.step);
+  bmUpdateNextBtn();
+}
+
+function bmStepBack(){
+  if(BM.step===2){
+    BM.step=1;
+    document.getElementById('bmPanelNote').style.display='none';
+    document.getElementById('bmPanelDate').style.display='block';
+  } else if(BM.step===3){
+    BM.step=2;
+    document.getElementById('bmPanelPay').style.display='none';
+    document.getElementById('bmPanelNote').style.display='block';
+    document.getElementById('bmNav').style.display='flex';
+  }
+  bmUpdateSteps(BM.step);
+  bmUpdateNextBtn();
+}
+
+function bmUpdateSteps(step){
+  [1,2,3].forEach(n=>{
+    const el=document.getElementById(`bmStep${n}`);
+    el.classList.toggle('active', n===step);
+    el.classList.toggle('done',   n<step);
+    const dot=el.querySelector('.bm-step-dot');
+    if(n<step) dot.innerHTML='<i class="ti ti-check" style="font-size:.75rem;"></i>';
+    else        dot.textContent=n;
+  });
+  ['bmLine12','bmLine23'].forEach((id,i)=>{
+    document.getElementById(id)?.classList.toggle('done', step>i+1);
+  });
+  // Back button
+  const backBtn=document.getElementById('bmBackBtn');
+  backBtn.style.display = step>1 ? 'flex' : 'none';
+}
+
+function bmUpdateNextBtn(){
+  const btn=document.getElementById('bmNextBtn');
+  if(BM.step===3){ btn.style.display='none'; return; }
+  btn.style.display='flex';
+  btn.disabled = !(BM.step===1 ? (BM.date&&BM.time) : true);
+}
+
+/* Date change — load slots */
+async function bmOnDateChange(){
+  const dateVal = document.getElementById('bmDate').value;
+  if(!dateVal) return;
+  BM.date = dateVal;
+  BM.time = null;
+  bmUpdateNextBtn();
+
+  const slotWrap = document.getElementById('bmSlots');
+  slotWrap.innerHTML = '<div class="bm-slot-spinner"></div>';
+
+  try{
+    const res  = await fetch(`/api/doctors/${BM.docId}/slots?date=${dateVal}`);
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error||'Failed');
+
+    if(!data.slots||!data.slots.length){
+      slotWrap.innerHTML=`<span class="bm-slot-msg">${_t('bm_no_slots')||'No slots available'}</span>`;
+      return;
+    }
+    slotWrap.innerHTML = data.slots.map(s=>`
+      <button class="bm-slot ${s.available?'':'booked'}" data-time="${s.time}"
+        onclick="${s.available?`bmSelectSlot(this,'${s.time}')`:''}">${s.time}</button>
+    `).join('');
+  }catch(e){
+    slotWrap.innerHTML=`<span class="bm-slot-msg" style="color:var(--red);">${e.message}</span>`;
+  }
+}
+
+function bmSelectSlot(el, time){
+  document.querySelectorAll('.bm-slot').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  BM.time = time;
+  bmUpdateNextBtn();
+}
+
+/* Fill payment summary */
+function bmFillSummary(){
+  let displayDate=BM.date||'';
+  try{
+    const d=new Date(BM.date+'T00:00:00');
+    displayDate=d.toLocaleDateString(LANG==='km'?'km-KH':'en-US',{weekday:'long',day:'numeric',month:'long'});
+  }catch{}
+  document.getElementById('bmSumDoctor').textContent  = BM.doc?.full_name||'—';
+  document.getElementById('bmSumDateTime').textContent = `${displayDate}  ${BM.time}`;
+  document.getElementById('bmSumFee').textContent      = `$${BM.rate.toFixed(0)}`;
+}
+
+/* Confirm + book */
+async function bmConfirm(){
+  const tok = localStorage.getItem('access_token');
+  if(!tok){ fdToast('Please log in first.','error'); window.location='/login'; return; }
+
+  const note    = document.getElementById('bmNote').value.trim();
+  const errEl   = document.getElementById('bmError');
+  errEl.classList.remove('show');
+
+  const btn = document.getElementById('bmConfirmBtn');
+  btn.disabled=true;
+  btn.innerHTML=`<div class="bm-btn-spinner"></div>`;
+
+  try{
+    const res=await fetch('/api/appointments/book',{
+      method:'POST',
+      headers:{'Authorization':`Bearer ${tok}`,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        doctor_id:        BM.docId,
+        appointment_date: BM.date,
+        appointment_time: BM.time,
+        patient_note:     note||undefined,
+      }),
+    });
+    const data=await res.json();
+
+    if(res.status===401){ window.location='/login'; return; }
+    if(!res.ok){
+      document.getElementById('bmErrMsg').textContent=data.error||'Booking failed.';
+      errEl.classList.add('show');
+      btn.disabled=false;
+      btn.innerHTML=`<i class="ti ti-lock"></i> ${_t('bm_confirm_pay')||'Confirm & Pay'}`;
+      return;
+    }
+
+    /* ── Success ── */
+    document.getElementById('bmPanelPay').style.display='none';
+    document.getElementById('bmSteps').style.display='none';
+    const sv=document.getElementById('bmSuccess');
+    sv.classList.add('show');
+
+    const ml=data.meeting_link||'';
+    document.getElementById('bmMeetLink').href=ml||'#';
+    document.getElementById('bmMeetLinkText').textContent=ml||'Link not available';
+    if(!ml) document.getElementById('bmMeetLink').style.display='none';
+
+    fdToast(_t('bm_booked_title')||'Appointment Confirmed!','success');
+
+  }catch(e){
+    document.getElementById('bmErrMsg').textContent=e.message;
+    errEl.classList.add('show');
+    btn.disabled=false;
+    btn.innerHTML=`<i class="ti ti-lock"></i> ${_t('bm_confirm_pay')||'Confirm & Pay'}`;
+  }
+}
+
+
+/* ══════════════════════════════════════════════════════════
+   UTILITIES
+   ══════════════════════════════════════════════════════════ */
+function fdToast(msg,type='info'){
+  const w=document.getElementById('fdToasts');
+  const el=document.createElement('div');
+  el.className=`fd-toast ${type}`;
+  const ic=type==='success'?'circle-check':type==='error'?'alert-circle':'info-circle';
+  el.innerHTML=`<i class="ti ti-${ic}"></i>${msg}`;
+  w.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+function fdToggleLang(){
+  LANG=LANG==='en'?'km':'en'; window.LANG=LANG;
+  localStorage.setItem('lang',LANG);
+  document.getElementById('fd-html').setAttribute('lang',LANG==='km'?'km':'en');
+  document.getElementById('fdLangBtn').textContent=LANG==='km'?'English':'ខ្មែរ';
+  if(typeof applyLang==='function') applyLang(LANG);
+  fdLoad(FD.page);
+}
+
+/* Keyboard: Esc closes modal */
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') bmClose(); });
+
+/* Init */
+document.addEventListener('DOMContentLoaded',()=>{
+  const tok=localStorage.getItem('access_token');
+  if(tok){
+    try{
+      const pay=JSON.parse(atob(tok.split('.')[1]));
+      const name=pay.full_name||pay.sub||'?';
+      document.getElementById('fdAvatar').textContent=name.charAt(0).toUpperCase();
+    }catch{}
+  }
+  if(LANG==='km'){
+    document.getElementById('fd-html').setAttribute('lang','km');
+    document.getElementById('fdLangBtn').textContent='English';
+    if(typeof applyLang==='function') applyLang('km');
+  }
+  fdLoad(1);
+});
+</script>
+</body>
+</html>

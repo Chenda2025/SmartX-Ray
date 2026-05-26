@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="en" id="dl-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Login — SmartX-Ray</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+/* ═══════════════════════════════════════════════
+   RESET & TOKENS
+   ═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --indigo:      #6366F1;
+  --indigo-dk:   #4338CA;
+  --indigo-lt:   #EEF2FF;
+  --indigo-mid:  #818CF8;
+  --green:       #10B981;
+  --green-lt:    #ECFDF5;
+  --red:         #EF4444;
+  --red-lt:      #FEF2F2;
+  --text:        #0F172A;
+  --text-2:      #475569;
+  --text-3:      #94A3B8;
+  --border:      #E2E8F0;
+  --surface:     #FFFFFF;
+  --radius:      14px;
+  --radius-sm:   10px;
+  --radius-xs:   7px;
+}
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  background: #F0F4F8;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body.kh, body.kh * { font-family: 'Hanuman', 'DM Sans', system-ui, sans-serif; }
+
+/* ═══════════════════════════════════════════════
+   SPLIT LAYOUT
+   ═══════════════════════════════════════════════ */
+.dl-wrap {
+  display: flex;
+  width: 100%;
+  max-width: 900px;
+  min-height: 580px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(15,23,42,.18), 0 4px 12px rgba(15,23,42,.08);
+  margin: 24px 16px;
+  animation: dlWrapIn .55s cubic-bezier(.22,.68,0,1.2) both;
+}
+@keyframes dlWrapIn {
+  from { opacity: 0; transform: translateY(24px) scale(.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ─── LEFT PANEL ─────────────────────────────── */
+.dl-left {
+  flex: 0 0 380px;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #3730A3 0%, #4F46E5 40%, #6366F1 70%, #818CF8 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 44px 36px 40px;
+  color: #fff;
+}
+
+/* Animated blobs */
+.dl-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: .25;
+  pointer-events: none;
+}
+.dl-blob-1 {
+  width: 260px; height: 260px;
+  background: #A5B4FC;
+  top: -60px; left: -80px;
+  animation: dlBlob1 9s ease-in-out infinite alternate;
+}
+.dl-blob-2 {
+  width: 200px; height: 200px;
+  background: #C7D2FE;
+  bottom: 20px; right: -60px;
+  animation: dlBlob2 11s ease-in-out infinite alternate;
+}
+.dl-blob-3 {
+  width: 140px; height: 140px;
+  background: #E0E7FF;
+  top: 50%; left: 40%;
+  animation: dlBlob3 7s ease-in-out infinite alternate;
+}
+@keyframes dlBlob1 { to { transform: translate(40px, 50px) scale(1.15); } }
+@keyframes dlBlob2 { to { transform: translate(-30px,-40px) scale(1.2);  } }
+@keyframes dlBlob3 { to { transform: translate(-20px, 30px) scale(.85);  } }
+
+/* Floating icons grid */
+.dl-float-icons {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.dl-fi {
+  position: absolute;
+  font-size: 22px;
+  color: rgba(255,255,255,.18);
+  animation: dlFloat var(--dur) ease-in-out infinite alternate;
+}
+.dl-fi:nth-child(1)  { top:12%;  left:8%;  --dur:6s;  font-size:18px; }
+.dl-fi:nth-child(2)  { top:22%;  right:12%;--dur:8s;  font-size:26px; animation-delay:.5s; }
+.dl-fi:nth-child(3)  { top:55%;  left:6%;  --dur:7s;  font-size:20px; animation-delay:1s; }
+.dl-fi:nth-child(4)  { top:70%;  right:8%; --dur:9s;  font-size:16px; animation-delay:2s; }
+.dl-fi:nth-child(5)  { top:38%;  left:50%; --dur:5s;  font-size:30px; animation-delay:1.5s; opacity:.12; }
+.dl-fi:nth-child(6)  { bottom:18%;left:30%;--dur:10s; font-size:14px; animation-delay:3s; }
+@keyframes dlFloat {
+  from { transform: translateY(0)   rotate(0deg);   }
+  to   { transform: translateY(-18px) rotate(8deg); }
+}
+
+/* Left content */
+.dl-left-top { position: relative; z-index: 1; }
+.dl-left-logo {
+  width: 52px; height: 52px;
+  background: rgba(255,255,255,.18);
+  border: 1.5px solid rgba(255,255,255,.3);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px;
+  margin-bottom: 18px;
+  backdrop-filter: blur(8px);
+  animation: dlLogoPulse 3s ease-in-out infinite;
+}
+@keyframes dlLogoPulse {
+  0%,100% { box-shadow: 0 0 0 0   rgba(255,255,255,.3); }
+  50%      { box-shadow: 0 0 0 10px rgba(255,255,255,.0); }
+}
+.dl-left-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 26px; font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -.3px;
+}
+.dl-left-sub {
+  font-size: 14px;
+  color: rgba(255,255,255,.7);
+  margin-top: 6px;
+}
+
+.dl-left-bottom { position: relative; z-index: 1; }
+
+/* Feature pills */
+.dl-features { display: flex; flex-direction: column; gap: 10px; }
+.dl-feature {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  backdrop-filter: blur(4px);
+  animation: dlFeatureIn .5s cubic-bezier(.22,.68,0,1.2) both;
+}
+.dl-feature:nth-child(1) { animation-delay:.1s; }
+.dl-feature:nth-child(2) { animation-delay:.2s; }
+.dl-feature:nth-child(3) { animation-delay:.3s; }
+@keyframes dlFeatureIn {
+  from { opacity:0; transform:translateX(-16px); }
+  to   { opacity:1; transform:none; }
+}
+.dl-feature i { font-size: 18px; color: rgba(255,255,255,.85); flex-shrink:0; }
+.dl-feature-text { color: rgba(255,255,255,.85); }
+
+/* ─── RIGHT PANEL ────────────────────────────── */
+.dl-right {
+  flex: 1;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 44px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Lang button */
+.dl-lang {
+  position: absolute; top: 18px; right: 18px;
+  background: var(--indigo-lt); border: 1.5px solid #C7D2FE;
+  border-radius: 20px; padding: 4px 14px;
+  font-size: 12px; font-weight: 600; color: var(--indigo);
+  cursor: pointer; transition: background .15s, box-shadow .15s;
+  letter-spacing: .2px;
+}
+.dl-lang:hover { background: #E0E7FF; box-shadow: 0 2px 8px rgba(99,102,241,.2); }
+
+/* Step progress dots */
+.dl-progress {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 28px;
+}
+.dl-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  transition: background .3s, width .3s;
+}
+.dl-dot.active {
+  background: var(--indigo);
+  width: 24px;
+  border-radius: 4px;
+}
+.dl-dot.done { background: var(--green); }
+
+/* ─── Steps wrapper (overflow hidden for slide anim) ── */
+.dl-steps-outer {
+  overflow: hidden;
+  position: relative;
+}
+.dl-steps-inner {
+  display: flex;
+  transition: transform .38s cubic-bezier(.4,0,.2,1);
+}
+.dl-step {
+  min-width: 100%;
+  flex-shrink: 0;
+}
+
+/* ─── Titles ─────────────────────────────────── */
+.dl-card-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 20px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: -.3px;
+  margin-bottom: 4px;
+}
+.dl-card-sub {
+  font-size: 13px; color: var(--text-2);
+  margin-bottom: 24px;
+  line-height: 1.55;
+}
+
+/* ─── Doctor chip ────────────────────────────── */
+.dl-doctor-chip {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--indigo-lt);
+  border: 1.5px solid #C7D2FE;
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  margin-bottom: 22px;
+  animation: dlChipIn .35s cubic-bezier(.22,.68,0,1.3) both;
+}
+@keyframes dlChipIn {
+  from { opacity:0; transform:scale(.9) translateY(-6px); }
+  to   { opacity:1; transform:none; }
+}
+.dl-doctor-avatar {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, var(--indigo) 0%, var(--indigo-mid) 100%);
+  color: #fff;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(99,102,241,.35);
+}
+.dl-doctor-name  { font-weight: 600; color: var(--indigo); font-size: 14px; }
+.dl-doctor-email { font-size: 12px; color: var(--text-3); margin-top: 1px; }
+
+/* ─── Floating-label inputs ──────────────────── */
+.dl-field {
+  position: relative;
+  margin-bottom: 18px;
+}
+.dl-field input,
+.dl-field input:is([type="password"],[type="email"],[type="text"]) {
+  width: 100%; height: 52px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 18px 14px 6px;
+  font-size: 14px; color: var(--text);
+  background: #fff;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+  font-family: inherit;
+}
+.dl-field label {
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px; color: var(--text-3);
+  pointer-events: none;
+  transition: top .18s, font-size .18s, color .18s, transform .18s;
+  background: transparent;
+  padding: 0 2px;
+}
+/* Floated state: input focused OR has value */
+.dl-field input:focus            { border-color: var(--indigo); box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+.dl-field input:focus ~ label,
+.dl-field input:not(:placeholder-shown) ~ label {
+  top: 10px; transform: none;
+  font-size: 11px; font-weight: 600;
+  color: var(--indigo);
+}
+.dl-field input.error            { border-color: var(--red); box-shadow: 0 0 0 3px rgba(239,68,68,.1); }
+.dl-field input.success          { border-color: var(--green); }
+
+/* Eye toggle inside password field */
+.dl-field .dl-eye {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: var(--text-3); font-size: 17px;
+  display: flex; align-items: center;
+  transition: color .15s; padding: 4px;
+}
+.dl-field .dl-eye:hover { color: var(--indigo); }
+.dl-field input:has(~ .dl-eye) { padding-right: 44px; }
+
+/* Password strength */
+.dl-pw-strength { display: none; margin-top: 6px; }
+.dl-pw-track    { height: 3px; background: var(--border); border-radius: 9px; overflow:hidden; }
+.dl-pw-fill     { height:100%; border-radius:9px; transition: width .35s, background .35s; width:0; }
+.dl-pw-lbl      { font-size: 11px; margin-top: 3px; }
+
+/* ─── Primary button ─────────────────────────── */
+.dl-btn {
+  position: relative; overflow: hidden;
+  width: 100%; height: 50px;
+  background: linear-gradient(135deg, var(--indigo) 0%, #4F46E5 100%);
+  color: #fff; border: none; border-radius: var(--radius-sm);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: transform .12s, box-shadow .2s, opacity .2s;
+  font-family: inherit;
+  letter-spacing: .2px;
+}
+.dl-btn::after {          /* shimmer */
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 60%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.2), transparent);
+  transition: left .5s;
+}
+.dl-btn:hover             { box-shadow: 0 6px 20px rgba(99,102,241,.4); transform: translateY(-1px); }
+.dl-btn:hover::after      { left: 140%; }
+.dl-btn:active            { transform: scale(.98) translateY(0); box-shadow: none; }
+.dl-btn:disabled          { opacity: .6; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Spinner inside button */
+.dl-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dlSpin .65s linear infinite;
+  display: none; flex-shrink: 0;
+}
+@keyframes dlSpin { to { transform: rotate(360deg); } }
+
+/* ─── Alert ──────────────────────────────────── */
+.dl-alert {
+  display: none;
+  padding: 10px 14px;
+  border-radius: var(--radius-xs);
+  font-size: 13px; font-weight: 500;
+  margin-bottom: 16px;
+  align-items: center; gap: 8px;
+  animation: dlAlertIn .2s ease both;
+}
+@keyframes dlAlertIn { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+.dl-alert.error   { background: var(--red-lt);   color: #B91C1C; border: 1px solid #FCA5A5; }
+.dl-alert.success { background: var(--green-lt); color: #065F46; border: 1px solid #6EE7B7; }
+.dl-alert.show    { display: flex; }
+.dl-alert.shake   { animation: dlShake .4s ease; }
+@keyframes dlShake {
+  0%,100% { transform: translateX(0);   }
+  20%     { transform: translateX(-7px);}
+  40%     { transform: translateX(7px); }
+  60%     { transform: translateX(-5px);}
+  80%     { transform: translateX(4px); }
+}
+
+/* ─── Back button ────────────────────────────── */
+.dl-back {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text-3);
+  background: none; border: none; cursor: pointer; padding: 0;
+  margin-bottom: 20px;
+  transition: color .15s, gap .15s;
+  font-family: inherit;
+}
+.dl-back:hover { color: var(--indigo); gap: 4px; }
+.dl-back i     { transition: transform .15s; }
+.dl-back:hover i { transform: translateX(-3px); }
+
+/* ─── Divider ────────────────────────────────── */
+.dl-divider {
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-3); font-size: 12px;
+  margin: 18px 0;
+}
+.dl-divider::before, .dl-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+
+/* ─── Misc ───────────────────────────────────── */
+.dl-footer-link {
+  text-align: center; font-size: 12px; color: var(--text-3); margin-top: 14px;
+}
+.dl-footer-link a { color: var(--indigo); text-decoration: none; font-weight: 500; }
+.dl-footer-link a:hover { text-decoration: underline; }
+
+/* ─── Success overlay ────────────────────────── */
+.dl-success-overlay {
+  position: absolute; inset: 0;
+  background: var(--surface);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 14px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .35s;
+  z-index: 10;
+}
+.dl-success-overlay.show { opacity: 1; pointer-events: auto; }
+.dl-success-icon {
+  width: 64px; height: 64px;
+  background: var(--green-lt);
+  border: 2px solid var(--green);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; color: var(--green);
+  animation: dlSuccessIn .5s cubic-bezier(.22,.68,0,1.4) both;
+}
+@keyframes dlSuccessIn {
+  from { transform: scale(0) rotate(-30deg); opacity:0; }
+  to   { transform: scale(1) rotate(0);      opacity:1; }
+}
+.dl-success-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 18px; font-weight: 700; color: var(--text);
+}
+.dl-success-sub { font-size: 13px; color: var(--text-2); text-align: center; }
+.dl-redirect-bar {
+  width: 140px; height: 3px;
+  background: var(--border); border-radius: 9px; overflow: hidden; margin-top: 6px;
+}
+.dl-redirect-fill {
+  height: 100%; background: var(--green); width: 0;
+  transition: width 1.4s linear;
+  border-radius: 9px;
+}
+
+/* ═══════════════════════════════════════════════
+   RESPONSIVE — collapse left panel on mobile
+   ═══════════════════════════════════════════════ */
+@media (max-width: 720px) {
+  body { align-items: flex-start; padding: 0; }
+  .dl-wrap {
+    flex-direction: column; border-radius: 0;
+    min-height: 100vh; margin: 0; max-width: 100%;
+    box-shadow: none;
+  }
+  .dl-left {
+    flex: 0 0 auto;
+    padding: 28px 24px 24px;
+    flex-direction: row; align-items: center; gap: 16px;
+  }
+  .dl-left-logo { margin-bottom: 0; width: 44px; height: 44px; font-size: 20px; }
+  .dl-left-title { font-size: 18px; }
+  .dl-left-sub   { font-size: 12px; }
+  .dl-left-bottom, .dl-float-icons, .dl-blob { display: none; }
+  .dl-right { flex: 1; padding: 32px 24px 40px; }
+}
+  </style>
+</head>
+<body>
+
+<div class="dl-wrap">
+
+  <!-- ══ LEFT PANEL ════════════════════════════════════════ -->
+  <div class="dl-left">
+
+    <!-- Animated blobs -->
+    <div class="dl-blob dl-blob-1"></div>
+    <div class="dl-blob dl-blob-2"></div>
+    <div class="dl-blob dl-blob-3"></div>
+
+    <!-- Floating medical icons -->
+    <div class="dl-float-icons">
+      <i class="dl-fi ti ti-stethoscope"></i>
+      <i class="dl-fi ti ti-heart-rate-monitor"></i>
+      <i class="dl-fi ti ti-shield-check"></i>
+      <i class="dl-fi ti ti-certificate"></i>
+      <i class="dl-fi ti ti-x-ray"></i>
+      <i class="dl-fi ti ti-activity"></i>
+    </div>
+
+    <div class="dl-left-top">
+      <div class="dl-left-logo"><i class="ti ti-stethoscope"></i></div>
+      <div class="dl-left-title">SmartX-Ray<br>Doctor Portal</div>
+      <div class="dl-left-sub">AI-Powered Pneumonia Diagnostics</div>
+    </div>
+
+    <div class="dl-left-bottom">
+      <div class="dl-features">
+        <div class="dl-feature">
+          <i class="ti ti-shield-check"></i>
+          <span class="dl-feature-text">Admin-verified credentials</span>
+        </div>
+        <div class="dl-feature">
+          <i class="ti ti-brain"></i>
+          <span class="dl-feature-text">AI-assisted X-ray review</span>
+        </div>
+        <div class="dl-feature">
+          <i class="ti ti-users"></i>
+          <span class="dl-feature-text">Connect with patients</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ RIGHT PANEL ═══════════════════════════════════════ -->
+  <div class="dl-right">
+
+    <button class="dl-lang" id="dlLangBtn" onclick="dlToggleLang()">ខ្មែរ</button>
+
+    <!-- Step progress dots -->
+    <div class="dl-progress">
+      <div class="dl-dot active" id="dlDot0"></div>
+      <div class="dl-dot"       id="dlDot1"></div>
+    </div>
+
+    <!-- Steps slider -->
+    <div class="dl-steps-outer">
+      <div class="dl-steps-inner" id="dlSlider">
+
+        <!-- ─── STEP 1: Email ───────────────────────────── -->
+        <div class="dl-step" id="dlStep1">
+          <div class="dl-card-title" data-i18n="dl_step1_title">Welcome, Doctor</div>
+          <div class="dl-card-sub"   data-i18n="dl_step1_sub">Enter your registered email to continue.</div>
+
+          <div id="dlAlert1" class="dl-alert error">
+            <i class="ti ti-alert-circle"></i>
+            <span id="dlAlert1Msg"></span>
+          </div>
+
+          <div class="dl-field">
+            <input type="email" id="dlEmail" placeholder=" "
+                   autocomplete="email"
+                   onkeydown="if(event.key==='Enter') dlCheckEmail()" />
+            <label data-i18n="dl_email">Email Address</label>
+          </div>
+
+          <button class="dl-btn" id="dlStep1Btn" onclick="dlCheckEmail()">
+            <div class="dl-spinner" id="dlSpinner1"></div>
+            <span data-i18n="dl_continue">Continue</span>
+            <i class="ti ti-arrow-right" id="dlStep1Arrow"></i>
+          </button>
+
+          <div class="dl-divider" data-i18n="dl_or">or</div>
+
+          <div class="dl-footer-link">
+            <span data-i18n="dl_not_a_doctor">Not a doctor?</span>&nbsp;
+            <a href="/login" data-i18n="dl_user_login">Sign in as patient →</a>
+          </div>
+        </div><!-- /step1 -->
+
+        <!-- ─── STEP 2a: Claim ──────────────────────────── -->
+        <div class="dl-step" id="dlStep2Claim">
+          <button class="dl-back" onclick="dlGoBack()">
+            <i class="ti ti-arrow-left"></i>
+            <span data-i18n="dl_back">Back</span>
+          </button>
+
+          <div class="dl-card-title" data-i18n="dl_claim_title">Set Your Password</div>
+          <div class="dl-card-sub"   data-i18n="dl_claim_sub">Your profile was created by admin. Choose a secure password to activate your account.</div>
+
+          <div class="dl-doctor-chip" id="dlChipClaim">
+            <div class="dl-doctor-avatar" id="dlClaimAvatar">DR</div>
+            <div>
+              <div class="dl-doctor-name"  id="dlClaimName">—</div>
+              <div class="dl-doctor-email" id="dlClaimEmail">—</div>
+            </div>
+          </div>
+
+          <div id="dlAlert2C" class="dl-alert error">
+            <i class="ti ti-alert-circle"></i>
+            <span id="dlAlert2CMsg"></span>
+          </div>
+
+          <div class="dl-field">
+            <input type="password" id="dlClaimPw" placeholder=" "
+                   autocomplete="new-password"
+                   oninput="dlPwStrength(this,'dlClaimStr')"
+                   onkeydown="if(event.key==='Enter') document.getElementById('dlClaimPwC').focus()" />
+            <label data-i18n="dl_new_password">Create Password</label>
+            <button class="dl-eye" type="button" onclick="dlTogglePw('dlClaimPw',this)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+          <div class="dl-pw-strength" id="dlClaimStr">
+            <div class="dl-pw-track"><div class="dl-pw-fill" id="dlClaimFill"></div></div>
+            <div class="dl-pw-lbl"   id="dlClaimLbl"></div>
+          </div>
+
+          <div class="dl-field" style="margin-top:12px;">
+            <input type="password" id="dlClaimPwC" placeholder=" "
+                   autocomplete="new-password"
+                   onkeydown="if(event.key==='Enter') dlClaim()" />
+            <label data-i18n="dl_confirm_password">Confirm Password</label>
+            <button class="dl-eye" type="button" onclick="dlTogglePw('dlClaimPwC',this)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+
+          <button class="dl-btn" id="dlClaimBtn" onclick="dlClaim()" style="margin-top:4px;">
+            <div class="dl-spinner" id="dlSpinner2C"></div>
+            <i class="ti ti-lock-open"></i>
+            <span data-i18n="dl_activate">Activate Account</span>
+          </button>
+        </div><!-- /step2claim -->
+
+        <!-- ─── STEP 2b: Login ──────────────────────────── -->
+        <div class="dl-step" id="dlStep2Login">
+          <button class="dl-back" onclick="dlGoBack()">
+            <i class="ti ti-arrow-left"></i>
+            <span data-i18n="dl_back">Back</span>
+          </button>
+
+          <div class="dl-card-title" data-i18n="dl_login_title">Welcome Back</div>
+          <div class="dl-card-sub"   data-i18n="dl_login_sub">Enter your password to access your dashboard.</div>
+
+          <div class="dl-doctor-chip" id="dlChipLogin">
+            <div class="dl-doctor-avatar" id="dlLoginAvatar">DR</div>
+            <div>
+              <div class="dl-doctor-name"  id="dlLoginName">—</div>
+              <div class="dl-doctor-email" id="dlLoginEmail">—</div>
+            </div>
+          </div>
+
+          <div id="dlAlert2L" class="dl-alert error">
+            <i class="ti ti-alert-circle"></i>
+            <span id="dlAlert2LMsg"></span>
+          </div>
+
+          <div class="dl-field">
+            <input type="password" id="dlLoginPw" placeholder=" "
+                   autocomplete="current-password"
+                   onkeydown="if(event.key==='Enter') dlLogin()" />
+            <label data-i18n="dl_password">Password</label>
+            <button class="dl-eye" type="button" onclick="dlTogglePw('dlLoginPw',this)">
+              <i class="ti ti-eye"></i>
+            </button>
+          </div>
+
+          <button class="dl-btn" id="dlLoginBtn" onclick="dlLogin()">
+            <div class="dl-spinner" id="dlSpinner2L"></div>
+            <i class="ti ti-login"></i>
+            <span data-i18n="dl_sign_in">Sign In</span>
+          </button>
+
+          <div class="dl-footer-link">
+            <a href="/forgot-password" data-i18n="dl_forgot">Forgot your password?</a>
+          </div>
+        </div><!-- /step2login -->
+
+      </div><!-- /dl-steps-inner -->
+    </div><!-- /dl-steps-outer -->
+
+    <!-- ─── Success overlay ─────────────────────────────── -->
+    <div class="dl-success-overlay" id="dlSuccessOverlay">
+      <div class="dl-success-icon"><i class="ti ti-check"></i></div>
+      <div class="dl-success-title" id="dlSuccessTitle">Signed in!</div>
+      <div class="dl-success-sub"   id="dlSuccessSub">Redirecting to your dashboard…</div>
+      <div class="dl-redirect-bar"><div class="dl-redirect-fill" id="dlRedirectFill"></div></div>
+    </div>
+
+  </div><!-- /dl-right -->
+</div><!-- /dl-wrap -->
+
+<!-- ── i18n ──────────────────────────────────── -->
+<script src="/static/js/i18n.js"></script>
+<script>
+Object.assign(TRANSLATIONS, {
+  dl_portal:           { en:"Doctor Portal",                          km:"វិបផតផាលវេជ្ជបណ្ឌិត" },
+  dl_step1_title:      { en:"Welcome, Doctor",                        km:"សូមស្វាគមន៍, វេជ្ជបណ្ឌិត" },
+  dl_step1_sub:        { en:"Enter your registered email to continue.", km:"បញ្ចូលអ៊ីមែលដើម្បីបន្ត" },
+  dl_email:            { en:"Email Address",                          km:"អ៊ីមែល" },
+  dl_continue:         { en:"Continue",                               km:"បន្ត" },
+  dl_or:               { en:"or",                                     km:"ឬ" },
+  dl_not_a_doctor:     { en:"Not a doctor?",                          km:"មិនមែនវេជ្ជបណ្ឌិត?" },
+  dl_user_login:       { en:"Sign in as patient →",                   km:"ចូលជាអ្នកជំងឺ →" },
+  dl_back:             { en:"Back",                                   km:"ត្រឡប់" },
+  dl_claim_title:      { en:"Set Your Password",                      km:"កំណត់ពាក្យសម្ងាត់" },
+  dl_claim_sub:        { en:"Your profile was created by admin. Choose a secure password to activate your account.", km:"ប្រវត្តិត្រូវបានបង្កើតដោយAdmin។ កំណត់ពាក្យសម្ងាត់ដើម្បីធ្វើឱ្យគណនីសកម្ម" },
+  dl_new_password:     { en:"Create Password",                        km:"បង្កើតពាក្យសម្ងាត់" },
+  dl_confirm_password: { en:"Confirm Password",                       km:"បញ្ជាក់ពាក្យសម្ងាត់" },
+  dl_activate:         { en:"Activate Account",                       km:"ធ្វើឱ្យគណនីសកម្ម" },
+  dl_login_title:      { en:"Welcome Back",                           km:"សូមស្វាគមន៍ម្ដងទៀត" },
+  dl_login_sub:        { en:"Enter your password to access your dashboard.", km:"បញ្ចូលពាក្យសម្ងាត់ដើម្បីចូលប្រើ" },
+  dl_password:         { en:"Password",                               km:"ពាក្យសម្ងាត់" },
+  dl_sign_in:          { en:"Sign In",                                km:"ចូល" },
+  dl_forgot:           { en:"Forgot your password?",                  km:"ភ្លេចពាក្យសម្ងាត់?" },
+});
+(function initLang() {
+  const saved = localStorage.getItem('lang') || 'en';
+  if (saved === 'km') {
+    document.body.classList.add('kh');
+    document.getElementById('dl-html').setAttribute('lang','km');
+    document.getElementById('dlLangBtn').textContent = 'English';
+  }
+  if (typeof I18n !== 'undefined' && I18n.applyAll) I18n.applyAll();
+})();
+</script>
+
+<!-- ── Logic ─────────────────────────────────── -->
+<script>
+'use strict';
+
+/* Auto-redirect if already logged in as a doctor */
+(async () => {
+  const token = localStorage.getItem('access_token');
+  if (!token) return;
+  try {
+    const r = await fetch('/api/doctor/profile',
+      { headers: { 'Authorization': `Bearer ${token}` } });
+    if (r.ok) window.location.replace('/doctor/dashboard');
+  } catch (_) {}
+})();
+
+/* ── State ──────────────────────────── */
+const DL = {
+  email: '', name: '',
+  /* steps: 0=email, 1=claim, 2=login */
+  stepMap: { email:0, claim:1, login:2 },
+  current: 'email',
+};
+
+/* ── Slider ─────────────────────────── */
+const STEP_OFFSETS = { email: 0, claim: 1, login: 2 };
+
+function dlShowStep(key) {
+  const slider = document.getElementById('dlSlider');
+  slider.style.transform = `translateX(-${STEP_OFFSETS[key] * 100}%)`;
+  DL.current = key;
+  _dlUpdateDots(key);
+}
+
+function _dlUpdateDots(key) {
+  const dot0 = document.getElementById('dlDot0');
+  const dot1 = document.getElementById('dlDot1');
+  if (key === 'email') {
+    dot0.className = 'dl-dot active';
+    dot1.className = 'dl-dot';
+  } else {
+    dot0.className = 'dl-dot done';
+    dot1.className = 'dl-dot active';
+  }
+}
+
+function dlGoBack() {
+  dlClearAlert('dlAlert2C');
+  dlClearAlert('dlAlert2L');
+  dlShowStep('email');
+  setTimeout(() => document.getElementById('dlEmail').focus(), 80);
+}
+
+/* ── Alerts ─────────────────────────── */
+function dlShowAlert(id, msgId, msg) {
+  const el = document.getElementById(id);
+  const ms = document.getElementById(msgId);
+  if (!el || !ms) return;
+  ms.textContent = msg;
+  el.className = 'dl-alert error show';
+  /* trigger re-animation */
+  void el.offsetWidth;
+  el.classList.add('shake');
+  el.addEventListener('animationend', () => el.classList.remove('shake'), { once: true });
+}
+function dlClearAlert(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('show');
+}
+
+/* ── Loading state ──────────────────── */
+function dlSetLoading(btnId, spinnerId, arrowId, on) {
+  const btn = document.getElementById(btnId);
+  if (!btn) return;
+  btn.disabled = on;
+  const sp = document.getElementById(spinnerId);
+  if (sp) sp.style.display = on ? 'block' : 'none';
+  const ar = arrowId && document.getElementById(arrowId);
+  if (ar) ar.style.display = on ? 'none' : 'inline-block';
+}
+
+/* ── Step 1: check email ────────────── */
+async function dlCheckEmail() {
+  const emailEl = document.getElementById('dlEmail');
+  const email   = (emailEl.value || '').trim().toLowerCase();
+  dlClearAlert('dlAlert1');
+  emailEl.classList.remove('error');
+
+  if (!email) {
+    dlShowAlert('dlAlert1','dlAlert1Msg','Please enter your email address.');
+    emailEl.classList.add('error'); return;
+  }
+
+  dlSetLoading('dlStep1Btn','dlSpinner1','dlStep1Arrow', true);
+
+  try {
+    const res  = await fetch(`/api/doctor/check?email=${encodeURIComponent(email)}`);
+    const data = await res.json();
+
+    if (!data.exists) {
+      dlShowAlert('dlAlert1','dlAlert1Msg',
+        'No doctor profile found for this email. Please contact admin.');
+      emailEl.classList.add('error'); return;
+    }
+
+    DL.email = email;
+    DL.name  = data.doctor_name || email;
+    const ini = (DL.name).split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+    if (data.has_account) {
+      document.getElementById('dlLoginAvatar').textContent = ini;
+      document.getElementById('dlLoginName').textContent   = DL.name;
+      document.getElementById('dlLoginEmail').textContent  = email;
+      dlClearAlert('dlAlert2L');
+      dlShowStep('login');
+      setTimeout(() => document.getElementById('dlLoginPw').focus(), 80);
+    } else {
+      document.getElementById('dlClaimAvatar').textContent = ini;
+      document.getElementById('dlClaimName').textContent   = DL.name;
+      document.getElementById('dlClaimEmail').textContent  = email;
+      dlClearAlert('dlAlert2C');
+      dlShowStep('claim');
+      setTimeout(() => document.getElementById('dlClaimPw').focus(), 80);
+    }
+  } catch {
+    dlShowAlert('dlAlert1','dlAlert1Msg','Network error. Please try again.');
+  } finally {
+    dlSetLoading('dlStep1Btn','dlSpinner1','dlStep1Arrow', false);
+  }
+}
+
+/* ── Step 2a: Claim ─────────────────── */
+async function dlClaim() {
+  const pw  = document.getElementById('dlClaimPw').value;
+  const pwC = document.getElementById('dlClaimPwC').value;
+  dlClearAlert('dlAlert2C');
+
+  if (pw.length < 8) {
+    dlShowAlert('dlAlert2C','dlAlert2CMsg','Password must be at least 8 characters.'); return;
+  }
+  if (pw !== pwC) {
+    dlShowAlert('dlAlert2C','dlAlert2CMsg','Passwords do not match.');
+    document.getElementById('dlClaimPwC').classList.add('error'); return;
+  }
+  document.getElementById('dlClaimPwC').classList.remove('error');
+  dlSetLoading('dlClaimBtn','dlSpinner2C', null, true);
+
+  try {
+    const res  = await fetch('/api/doctor/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: DL.email, password: pw }),
+    });
+    const data = await res.json();
+
+    if (res.status === 201) {
+      localStorage.setItem('access_token',  data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      dlShowSuccess('Account activated!', 'Redirecting to your dashboard…');
+    } else {
+      dlShowAlert('dlAlert2C','dlAlert2CMsg', data.error || 'Activation failed. Try again.');
+    }
+  } catch {
+    dlShowAlert('dlAlert2C','dlAlert2CMsg','Network error. Please try again.');
+  } finally {
+    dlSetLoading('dlClaimBtn','dlSpinner2C', null, false);
+  }
+}
+
+/* ── Step 2b: Login ─────────────────── */
+async function dlLogin() {
+  const pw = document.getElementById('dlLoginPw').value;
+  dlClearAlert('dlAlert2L');
+
+  if (!pw) {
+    dlShowAlert('dlAlert2L','dlAlert2LMsg','Please enter your password.'); return;
+  }
+  dlSetLoading('dlLoginBtn','dlSpinner2L', null, true);
+
+  try {
+    const res  = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: DL.email, password: pw }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem('access_token',  data.access_token);
+      localStorage.setItem('refresh_token', data.refresh_token);
+      dlShowSuccess('Signed in!', 'Redirecting to your dashboard…');
+    } else {
+      dlShowAlert('dlAlert2L','dlAlert2LMsg', data.error || 'Invalid password.');
+      document.getElementById('dlLoginPw').classList.add('error');
+    }
+  } catch {
+    dlShowAlert('dlAlert2L','dlAlert2LMsg','Network error. Please try again.');
+  } finally {
+    dlSetLoading('dlLoginBtn','dlSpinner2L', null, false);
+  }
+}
+
+/* ── Success overlay + redirect ──────── */
+function dlShowSuccess(title, sub) {
+  document.getElementById('dlSuccessTitle').textContent = title;
+  document.getElementById('dlSuccessSub').textContent   = sub;
+  const overlay = document.getElementById('dlSuccessOverlay');
+  overlay.classList.add('show');
+  /* animate redirect bar then navigate */
+  requestAnimationFrame(() => {
+    document.getElementById('dlRedirectFill').style.width = '100%';
+  });
+  setTimeout(() => window.location.href = '/doctor/dashboard', 1600);
+}
+
+/* ── Password show/hide ─────────────── */
+function dlTogglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  const icon  = btn.querySelector('i');
+  if (input.type === 'password') {
+    input.type = 'text'; icon.className = 'ti ti-eye-off';
+  } else {
+    input.type = 'password'; icon.className = 'ti ti-eye';
+  }
+}
+
+/* ── Password strength ──────────────── */
+function dlPwStrength(input, wrapperId) {
+  const wrapper = document.getElementById(wrapperId);
+  const fill    = document.getElementById(
+    wrapperId === 'dlClaimStr' ? 'dlClaimFill' : wrapperId + 'Fill');
+  const lbl     = document.getElementById(
+    wrapperId === 'dlClaimStr' ? 'dlClaimLbl'  : wrapperId + 'Lbl');
+  if (!wrapper) return;
+
+  const pw = input.value;
+  if (!pw) { wrapper.style.display = 'none'; return; }
+  wrapper.style.display = 'block';
+
+  let score = 0;
+  if (pw.length >= 8)           score++;
+  if (/[A-Z]/.test(pw))         score++;
+  if (/[0-9]/.test(pw))         score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  const cfgs = [
+    { w:'20%', c:'#EF4444', t:'Weak'   },
+    { w:'50%', c:'#F59E0B', t:'Fair'   },
+    { w:'78%', c:'#3B82F6', t:'Good'   },
+    { w:'100%',c:'#10B981', t:'Strong' },
+  ];
+  const cfg = cfgs[score - 1] || cfgs[0];
+  if (fill) { fill.style.width = cfg.w; fill.style.background = cfg.c; }
+  if (lbl)  { lbl.textContent = cfg.t; lbl.style.color = cfg.c; }
+}
+
+/* ── Language toggle ────────────────── */
+function dlToggleLang() {
+  if (typeof I18n === 'undefined') return;
+  I18n.toggle();
+  const lang = I18n.getLang();
+  document.getElementById('dlLangBtn').textContent = lang === 'km' ? 'English' : 'ខ្មែរ';
+  document.body.classList.toggle('kh', lang === 'km');
+  document.getElementById('dl-html').setAttribute('lang', lang === 'km' ? 'km' : 'en');
+  if (I18n.applyAll) I18n.applyAll();
+}
+
+/* ── Auto-focus first field on load ─── */
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => document.getElementById('dlEmail')?.focus(), 300);
+});
+</script>
+</body>
+</html>

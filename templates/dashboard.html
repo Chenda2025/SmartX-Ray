@@ -188,8 +188,8 @@
               <div class="fw-semibold small">${ad.title}</div>
               <div class="text-muted small">${ad.body}</div>
             </div>
-            <a href="#" onclick="adClick(${ad.id},'${ad.target_url}');return false;"
-               class="btn btn-sm btn-outline-secondary flex-shrink-0">${I18n.t("dash_learn_more")}</a>
+            <button onclick="adClick(${ad.id},'${ad.target_url}')"
+               class="btn btn-sm btn-outline-secondary flex-shrink-0">${I18n.t("dash_learn_more")}</button>
           </div>
         </div>`;
     }

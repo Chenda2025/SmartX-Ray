@@ -4,22 +4,382 @@
 {% block breadcrumb %}<span data-i18n="adm_nav_logs">System Logs</span>{% endblock %}
 
 {% block content %}
-<div class="d-flex align-items-center justify-content-between mb-4">
+<style>
+/* ── Logs page styles ─────────────────────────────────────────── */
+
+/* Severity pills */
+.sev-pill {
+  display:inline-flex; align-items:center; gap:.28rem;
+  font-size:.68rem; font-weight:700; padding:.2rem .6rem;
+  border-radius:999px; white-space:nowrap;
+}
+.sev-info     { background:#EFF6FF; color:#1D4ED8; }
+.sev-warning  { background:#FEF3C7; color:#92400E; }
+.sev-high     { background:#FFEDD5; color:#9A3412; }
+.sev-critical { background:#FEE2E2; color:#991B1B; }
+
+/* Event type chip */
+.evt-chip {
+  display:inline-flex; align-items:center; gap:.25rem;
+  font-size:.7rem; font-weight:600; padding:.15rem .55rem;
+  border-radius:6px; white-space:nowrap;
+}
+.evt-scan      { background:#EFF6FF; color:#1D4ED8; }
+.evt-auth_login{ background:#D1FAE5; color:#065F46; }
+.evt-auth_fail { background:#FEE2E2; color:#991B1B; }
+.evt-admin     { background:#EDE9FE; color:#5B21B6; }
+.evt-telegram  { background:#E0F2FE; color:#0369A1; }
+.evt-error     { background:#FEF2F2; color:#DC2626; }
+.evt-health    { background:#ECFDF5; color:#059669; }
+.evt-other     { background:#F1F5F9; color:#475569; }
+
+/* Table row severity tinting */
+.log-row-critical { background:#FEF2F2 !important; }
+.log-row-high     { background:#FFF7ED !important; }
+.log-row-warning  { background:#FFFBEB !important; }
+
+/* Soft-deleted row tint */
+.log-row-deleted  { background:#F8F9FA !important; opacity:.72; }
+
+/* Message cell expand */
+.log-msg-wrap {
+  max-width:300px; white-space:nowrap;
+  overflow:hidden; text-overflow:ellipsis;
+  cursor:pointer; font-size:.78rem; color:#334155;
+}
+.log-msg-wrap:hover { color:#6366F1; text-decoration:underline dotted; }
+
+/* Detail drawer */
+.log-detail-row td { background:#F8FAFC !important; padding:.75rem 1rem; }
+.log-detail-box {
+  font-size:.77rem; color:#334155; line-height:1.8;
+  border-left:3px solid #6366F1; padding-left:.75rem;
+}
+.log-detail-box code {
+  background:#EEF2FF; padding:.1rem .3rem;
+  border-radius:4px; font-size:.72rem; color:#4338CA;
+}
+
+/* Processing time badge */
+.ms-badge {
+  font-size:.68rem; font-weight:700; padding:.15rem .45rem;
+  border-radius:5px;
+}
+.ms-fast   { background:#D1FAE5; color:#065F46; }
+.ms-ok     { background:#FEF3C7; color:#92400E; }
+.ms-slow   { background:#FEE2E2; color:#991B1B; }
+
+/* Auto-refresh toggle */
+.ar-toggle {
+  display:inline-flex; align-items:center; gap:.5rem;
+  font-size:.8rem; font-weight:600; color:#475569;
+}
+.ar-toggle input[type=checkbox] {
+  width:34px; height:18px; cursor:pointer; accent-color:#6366F1;
+}
+#arCountdown {
+  font-size:.72rem; color:#94A3B8;
+  min-width:40px; text-align:right;
+}
+
+/* Critical pulse */
+@keyframes sev-pulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(220,38,38,.4); }
+  50%      { box-shadow: 0 0 0 5px rgba(220,38,38,0); }
+}
+.sev-critical { animation: sev-pulse 2s infinite; }
+
+/* Filter inputs — matches design system pattern used by users/ads/etc. pages */
+.filter-input {
+  height:36px; border:1px solid var(--color-border); border-radius:8px;
+  padding:0 12px; font-size:13px; color:var(--color-text); width:100%;
+  background:#fff; outline:none;
+  transition:border-color .15s, box-shadow .15s;
+  font-family:'Inter',sans-serif;
+}
+.filter-input:focus {
+  border-color:var(--color-border-focus,#6366F1);
+  box-shadow:0 0 0 3px rgba(99,102,241,.1);
+}
+.filter-input::placeholder { color:var(--color-hint,#94A3B8); }
+
+/* Select arrow */
+select.filter-input {
+  padding:0 28px 0 10px;
+  background:#fff url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e") no-repeat right 8px center/12px;
+  appearance:none; -webkit-appearance:none;
+}
+
+/* Search wrapper with icon + clear X */
+.filter-input-wrap {
+  position:relative; display:flex; align-items:center;
+}
+.filter-input-wrap .fi-icon {
+  position:absolute; left:10px; color:var(--color-muted,#64748B);
+  font-size:14px; pointer-events:none;
+}
+.filter-input-wrap input.filter-input { padding-left:32px; }
+.filter-input-wrap .fi-clear {
+  position:absolute; right:8px; background:none; border:none;
+  cursor:pointer; color:var(--color-muted,#94A3B8);
+  font-size:12px; padding:2px 4px; border-radius:4px; line-height:1;
+}
+.filter-input-wrap .fi-clear:hover { color:var(--color-text,#0f172a); }
+
+/* Pagination */
+.page-btn {
+  min-width:32px; height:32px; border-radius:8px; padding:0 .5rem;
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:.8rem; font-weight:600; cursor:pointer;
+  border:1.5px solid #E2E8F0; background:#fff; color:#374151;
+  transition:background .12s; white-space:nowrap;
+}
+.page-btn:hover:not([disabled]) { background:#EEF2FF; border-color:#C7D2FE; }
+.page-btn[disabled] { opacity:.38; cursor:not-allowed; }
+.page-btn.cur { background:#6366F1; color:#fff; border-color:#6366F1; }
+
+/* Export menu */
+.export-menu { min-width:148px; border-radius:10px;
+               box-shadow:0 4px 22px rgba(0,0,0,.12); }
+
+/* Active/Trash tabs */
+.log-tab-bar {
+  display:flex; gap:.5rem; margin-bottom:1rem;
+}
+.log-tab {
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.38rem .9rem; border-radius:8px; font-size:.82rem;
+  font-weight:600; border:1.5px solid #E2E8F0; background:#fff;
+  color:#64748B; cursor:pointer; transition:all .12s;
+}
+.log-tab:hover { background:#F8FAFC; border-color:#CBD5E1; }
+.log-tab.active { background:#6366F1; border-color:#6366F1; color:#fff; }
+.log-tab.trash.active { background:#DC2626; border-color:#DC2626; color:#fff; }
+.log-tab .tab-badge {
+  background:rgba(255,255,255,.25); color:inherit;
+  font-size:.65rem; font-weight:700; padding:.05rem .4rem;
+  border-radius:999px; min-width:20px; text-align:center;
+}
+.log-tab:not(.active) .tab-badge {
+  background:#F1F5F9; color:#64748B;
+}
+
+/* Select checkbox column */
+.log-cb { width:36px; }
+.row-cb { accent-color:#6366F1; cursor:pointer; width:15px; height:15px; }
+
+/* Bulk action bar */
+#bulkBar {
+  display:none; align-items:center; gap:.75rem;
+  padding:.55rem 1rem; background:#EEF2FF;
+  border-radius:10px; margin-bottom:.75rem;
+  border:1.5px solid #C7D2FE;
+}
+#bulkBar.show { display:flex; }
+#bulkBar .bulk-count { font-size:.82rem; font-weight:700; color:#4338CA; }
+
+/* Row delete / restore button */
+.btn-log-del {
+  border:none; background:transparent; padding:.2rem .4rem;
+  border-radius:6px; color:#94A3B8; cursor:pointer;
+  transition:all .12s; font-size:.9rem;
+}
+.btn-log-del:hover { background:#FEE2E2; color:#DC2626; }
+.btn-log-restore {
+  border:none; background:transparent; padding:.2rem .4rem;
+  border-radius:6px; color:#94A3B8; cursor:pointer;
+  transition:all .12s; font-size:.9rem;
+}
+.btn-log-restore:hover { background:#D1FAE5; color:#059669; }
+
+/* Deleted badge in trash view */
+.del-badge {
+  display:inline-flex; align-items:center; gap:.25rem;
+  font-size:.63rem; font-weight:700; padding:.1rem .4rem;
+  border-radius:5px; background:#FEE2E2; color:#991B1B;
+  white-space:nowrap;
+}
+
+/* Confirm modal */
+#logConfirmModal .modal-content {
+  border-radius:14px; border:none;
+  box-shadow:0 8px 40px rgba(0,0,0,.16);
+}
+</style>
+
+<!-- ── Page header ──────────────────────────────────────────── -->
+<div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-3">
   <div>
     <h4 class="fw-bold mb-0" data-i18n="adm_log_title">System Logs</h4>
-    <p class="text-muted small mb-0" data-i18n="adm_log_sub">Every scan, AI processing time, auth events, and DB health checks</p>
+    <p class="text-muted small mb-0 mt-1" data-i18n="adm_log_sub">
+      Scans · AI processing · Auth events · Admin actions · DB health
+    </p>
   </div>
-  <!-- Refresh hidden — auto-refresh every 30 s already active -->
-  <button class="btn btn-sm btn-outline-secondary" onclick="loadLogs(1)" style="display:none">
-    <i class="bi bi-arrow-clockwise me-1"></i><span data-i18n="adm_refresh">Refresh</span>
+  <div class="d-flex gap-2 align-items-center flex-wrap">
+    <!-- Auto-refresh toggle (hidden in trash view) -->
+    <label class="ar-toggle" id="arLabel">
+      <input type="checkbox" id="arSwitch" checked onchange="toggleAutoRefresh()">
+      <span data-i18n="adm_log_auto_refresh">Auto-refresh</span>
+      <span id="arCountdown">30s</span>
+    </label>
+    <!-- Export dropdown (hidden in trash view) -->
+    <div class="dropdown" id="exportWrap">
+      <button id="logExportBtn" class="btn btn-sm btn-ghost dropdown-toggle"
+              data-bs-toggle="dropdown">
+        <i class="ti ti-download me-1"></i><span data-i18n="adm_export">Export</span>
+      </button>
+      <ul class="dropdown-menu export-menu">
+        <li><button class="dropdown-item small" onclick="exportLogs('pdf')">
+          <i class="ti ti-file-type-pdf me-2 text-danger"></i>PDF</button></li>
+        <li><button class="dropdown-item small" onclick="exportLogs('docx')">
+          <i class="ti ti-file-type-doc me-2 text-primary"></i>DOCX</button></li>
+      </ul>
+    </div>
+    <!-- Manual refresh -->
+    <button class="btn btn-sm btn-ghost" onclick="loadLogs()" title="Refresh now">
+      <i class="ti ti-refresh" id="refreshIcon"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ── KPI chips ─────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg" style="min-width:130px">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#EEF2FF">
+          <i class="ti ti-clipboard-list" style="color:#6366F1"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_log_kpi_total">Total Logs</div>
+          <div class="fw-bold fs-5" id="kpiTotal">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg" style="min-width:130px">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#FEE2E2">
+          <i class="ti ti-skull" style="color:#DC2626"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_log_kpi_critical">Critical</div>
+          <div class="fw-bold fs-5 text-danger" id="kpiCritical">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg" style="min-width:130px">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#FFEDD5">
+          <i class="ti ti-alert-circle" style="color:#EA580C"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_log_kpi_high">High</div>
+          <div class="fw-bold fs-5" style="color:#EA580C" id="kpiHigh">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg" style="min-width:130px">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#FEF3C7">
+          <i class="ti ti-alert-triangle" style="color:#D97706"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_log_kpi_warning">Warnings</div>
+          <div class="fw-bold fs-5" style="color:#D97706" id="kpiWarning">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg" style="min-width:130px">
+    <div class="panel-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#FEE2E2">
+          <i class="ti ti-shield-x" style="color:#DC2626"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_log_kpi_auth_fail">Auth Failures</div>
+          <div class="fw-bold fs-5 text-danger" id="kpiAuthFail">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Deleted KPI -->
+  <div class="col-6 col-lg" style="min-width:130px">
+    <div class="panel-card p-3" style="cursor:pointer" onclick="switchTab('trash')" title="View trash">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#F1F5F9">
+          <i class="ti ti-trash" style="color:#64748B"></i>
+        </div>
+        <div>
+          <div class="text-muted small" data-i18n="adm_log_kpi_deleted">In Trash</div>
+          <div class="fw-bold fs-5 text-secondary" id="kpiDeleted">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Active / Trash tabs ────────────────────────────────────── -->
+<div class="log-tab-bar">
+  <button class="log-tab active" id="tabActive" onclick="switchTab('active')">
+    <i class="ti ti-clipboard-list"></i>
+    <span data-i18n="adm_log_tab_active">Active Logs</span>
+    <span class="tab-badge" id="tabActiveBadge">—</span>
+  </button>
+  <button class="log-tab trash" id="tabTrash" onclick="switchTab('trash')">
+    <i class="ti ti-trash"></i>
+    <span data-i18n="adm_log_tab_trash">Trash</span>
+    <span class="tab-badge" id="tabTrashBadge">0</span>
   </button>
 </div>
 
-<!-- Severity Legend + Filters -->
-<div class="card table-card p-3 mb-3">
-  <div class="row g-2 align-items-center">
-    <div class="col-md-2">
-      <select class="form-select form-select-sm" id="filterSeverity">
+<!-- ── Bulk action bar ───────────────────────────────────────── -->
+<div id="bulkBar">
+  <i class="ti ti-checkbox" style="color:#4338CA"></i>
+  <span class="bulk-count" id="bulkCount">0 selected</span>
+  <button class="btn btn-sm" id="bulkActionBtn"
+          style="background:#DC2626;color:#fff;border:none;border-radius:7px"
+          onclick="confirmBulkAction()">
+    <i class="ti ti-trash me-1"></i>
+    <span id="bulkActionLbl" data-i18n="adm_log_bulk_delete">Move to Trash</span>
+  </button>
+  <button class="btn btn-sm btn-ghost ms-auto" onclick="clearSelection()">
+    <i class="ti ti-x me-1"></i><span data-i18n="adm_clear">Clear</span>
+  </button>
+</div>
+
+<!-- ── Filter bar ────────────────────────────────────────────── -->
+<div class="panel-card p-3 mb-4">
+  <div class="d-flex flex-wrap gap-2 align-items-end">
+    <!-- Search -->
+    <div class="flex-grow-1" style="min-width:200px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_search">Search</label>
+      <div class="filter-input-wrap">
+        <i class="ti ti-search fi-icon"></i>
+        <input type="text" id="logSearch" class="filter-input"
+               data-i18n-placeholder="adm_log_search_ph"
+               placeholder="Message / IP / User…"
+               onkeydown="if(event.key==='Enter') loadLogs()"
+               oninput="document.getElementById('logSearchClear').style.display=this.value?'':'none'">
+        <button class="fi-clear" id="logSearchClear" style="display:none"
+                onclick="document.getElementById('logSearch').value='';
+                         document.getElementById('logSearchClear').style.display='none';
+                         loadLogs()">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
+    </div>
+    <!-- Severity -->
+    <div style="min-width:135px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_col_severity">Severity</label>
+      <select id="filterSeverity" class="filter-input" style="cursor:pointer"
+              onchange="loadLogs()">
         <option value="" data-i18n="adm_all_severity">All Severity</option>
         <option value="info">Info</option>
         <option value="warning">Warning</option>
@@ -27,63 +387,118 @@
         <option value="critical">Critical</option>
       </select>
     </div>
-    <div class="col-md-2">
-      <select class="form-select form-select-sm" id="filterEventType">
-        <option value="" data-i18n="adm_all_events">All Events</option>
-        <option value="scan">Scan</option>
-        <option value="auth_login">Auth Login</option>
-        <option value="auth_fail">Auth Fail</option>
-        <option value="admin_action">Admin Action</option>
-        <option value="telegram_alert">Telegram Alert</option>
-        <option value="error">Error</option>
+    <!-- Event type -->
+    <div style="min-width:155px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_col_event">Event Type</label>
+      <select id="filterEventType" class="filter-input" style="cursor:pointer"
+              onchange="loadLogs()">
+        <option value=""               data-i18n="adm_all_events">All Events</option>
+        <option value="scan"           data-i18n="adm_log_evt_scan">Scan</option>
+        <option value="auth_login"     data-i18n="adm_log_evt_auth_login">Auth Login</option>
+        <option value="auth_fail"      data-i18n="adm_log_evt_auth_fail">Auth Fail</option>
+        <option value="admin_action"   data-i18n="adm_log_evt_admin">Admin Action</option>
+        <option value="telegram_alert" data-i18n="adm_log_evt_telegram">Telegram Alert</option>
+        <option value="error"          data-i18n="adm_log_evt_error">Error</option>
+        <option value="health_check"   data-i18n="adm_log_evt_health">Health Check</option>
       </select>
     </div>
-    <div class="col-md-2">
-      <button class="btn btn-primary btn-sm w-100" onclick="loadLogs(1)">
-        <i class="bi bi-funnel me-1"></i><span data-i18n="adm_filter">Filter</span>
-      </button>
+    <!-- Rows per page -->
+    <div style="min-width:88px">
+      <label class="form-label small fw-semibold mb-1" data-i18n="adm_log_per_page">Per page</label>
+      <select id="logLimit" class="filter-input" style="cursor:pointer" onchange="loadLogs()">
+        <option value="50">50</option>
+        <option value="100">100</option>
+        <option value="200">200</option>
+      </select>
     </div>
-    <div class="col-md-6 d-flex justify-content-end gap-2 flex-wrap">
-      <span class="badge bg-info">info</span>
-      <span class="badge bg-warning text-dark">warning</span>
-      <span class="badge badge-high">high — pneumonia ≥80%</span>
-      <span class="badge badge-critical">critical</span>
+    <!-- Clear filters -->
+    <div>
+      <label class="form-label small mb-1" style="visibility:hidden">x</label>
+      <button class="btn btn-sm btn-ghost d-flex align-items-center gap-1"
+              onclick="clearLogFilters()">
+        <i class="ti ti-filter-off" style="font-size:14px"></i>
+        <span data-i18n="adm_clear_filters">Clear</span>
+      </button>
     </div>
   </div>
 </div>
 
-<!-- Log Table -->
-<div class="card table-card">
-  <div class="table-responsive">
-    <table class="table table-hover mb-0" style="font-size:.85rem">
+<!-- ── Log table ─────────────────────────────────────────────── -->
+<div class="panel-card overflow-hidden">
+  <div style="overflow-x:auto">
+    <table class="admin-table" id="logsTable" style="min-width:900px">
       <thead>
         <tr>
-          <th>#</th>
-          <th data-i18n="adm_col_time">Time</th>
-          <th data-i18n="adm_col_event">Event</th>
-          <th data-i18n="adm_col_severity">Severity</th>
-          <th data-i18n="adm_col_user">User</th>
+          <th class="log-cb">
+            <input type="checkbox" class="row-cb" id="selectAll"
+                   onchange="toggleSelectAll()" title="Select all">
+          </th>
+          <th style="width:46px">#</th>
+          <th style="width:140px" data-i18n="adm_col_time">Time</th>
+          <th style="width:130px" data-i18n="adm_col_event">Event</th>
+          <th style="width:90px"  data-i18n="adm_col_severity">Severity</th>
+          <th style="width:155px" data-i18n="adm_col_user">User</th>
           <th data-i18n="adm_col_message">Message</th>
-          <th data-i18n="adm_col_ai_ms">AI (ms)</th>
-          <th data-i18n="adm_col_ip">IP</th>
+          <th style="width:80px"  data-i18n="adm_col_ai_ms">AI (ms)</th>
+          <th style="width:105px" data-i18n="adm_col_ip">IP</th>
+          <th style="width:52px"  data-i18n="adm_col_actions">Actions</th>
         </tr>
       </thead>
-      <tbody id="logsTable">
-        <tr><td colspan="8" class="text-center py-4 text-muted">Loading…</td></tr>
+      <tbody id="logsTbody">
+        <tr>
+          <td colspan="10" class="text-center py-5 text-muted">
+            <div class="spinner-border spinner-border-sm" role="status"></div>
+            <span class="ms-2" data-i18n="adm_loading">Loading…</span>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>
-  <div class="d-flex align-items-center justify-content-between p-3 border-top">
+
+  <!-- Table footer -->
+  <div class="d-flex justify-content-between align-items-center px-3 py-2
+              border-top flex-wrap gap-2"
+       style="border-color:#E8EAF6">
     <small class="text-muted" id="logsPagInfo">—</small>
-    <div class="d-flex gap-2">
-      <button class="btn btn-sm btn-outline-secondary" id="logsBtnPrev"
-              onclick="loadLogs(logsPage - 1)" disabled>
-        <i class="bi bi-chevron-left"></i>
-      </button>
-      <button class="btn btn-sm btn-outline-secondary" id="logsBtnNext"
-              onclick="loadLogs(logsPage + 1)" disabled>
-        <i class="bi bi-chevron-right"></i>
-      </button>
+    <div class="d-flex align-items-center gap-1" id="logsPagBtns"></div>
+    <small class="text-muted" id="logsLastUpdated"></small>
+  </div>
+</div>
+
+<!-- ── Confirm delete/restore modal ──────────────────────────── -->
+<div class="modal fade" id="logConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" style="max-width:420px">
+    <div class="modal-content p-4">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div id="confirmIcon" class="stat-icon" style="background:#FEE2E2; flex-shrink:0">
+          <i class="ti ti-trash" style="color:#DC2626"></i>
+        </div>
+        <div>
+          <h6 class="fw-bold mb-0" id="confirmTitle">Move to Trash?</h6>
+          <p class="text-muted small mb-0" id="confirmBody">
+            This log will be soft-deleted and can be recovered later.
+          </p>
+        </div>
+      </div>
+      <div id="confirmNote"
+           class="small p-2 rounded mb-3"
+           style="background:#FEF3C7;color:#92400E;display:none">
+        <i class="ti ti-shield-check me-1"></i>
+        <span data-i18n="adm_log_del_note">
+          The record is preserved in the database for audit purposes.
+          Only the view is hidden — nothing is permanently erased.
+        </span>
+      </div>
+      <div class="d-flex gap-2 justify-content-end">
+        <button class="btn btn-sm btn-ghost" data-bs-dismiss="modal"
+                data-i18n="adm_cancel">Cancel</button>
+        <button class="btn btn-sm" id="confirmOkBtn"
+                style="background:#DC2626;color:#fff;border:none;border-radius:7px"
+                onclick="executeConfirmedAction()">
+          <i class="ti ti-trash me-1" id="confirmOkIco"></i>
+          <span id="confirmOkLbl" data-i18n="adm_log_move_trash">Move to Trash</span>
+        </button>
+      </div>
     </div>
   </div>
 </div>
@@ -91,86 +506,527 @@
 
 {% block scripts %}
 <script>
-// ── i18n keys — Logs page ────────────────────────────────────────────────
+// ── i18n ───────────────────────────────────────────────────────────────────
 Object.assign(TRANSLATIONS, {
-  adm_log_title:  { en: 'System Logs',                                 km: 'កំណត់ហេតុប្រព័ន្ធ' },
-  adm_log_sub:    { en: 'Every scan, AI processing time, auth events, and DB health checks',
-                   km: 'ស្កែន, ពេលវេលា AI, ព្រឹត្តិការណ៍ auth, និង DB health' },
+  adm_log_title:        { en: 'System Logs',              km: 'កំណត់ហេតុប្រព័ន្ធ' },
+  adm_log_sub:          { en: 'Scans · AI processing · Auth events · Admin actions · DB health',
+                          km: 'ស្កែន · AI · ព្រឹត្តិការណ៍ auth · សកម្មភាពអ្នកគ្រប់គ្រង · DB' },
+  adm_log_auto_refresh: { en: 'Auto-refresh',             km: 'ធ្វើបច្ចុប្បន្នភាពស្វ័យប្រវត្តិ' },
+  adm_log_kpi_total:    { en: 'Total Logs',               km: 'កំណត់ហេតុសរុប' },
+  adm_log_kpi_critical: { en: 'Critical',                 km: 'វិបត្តិ' },
+  adm_log_kpi_high:     { en: 'High',                     km: 'ខ្ពស់' },
+  adm_log_kpi_warning:  { en: 'Warnings',                 km: 'ការព្រមាន' },
+  adm_log_kpi_auth_fail:{ en: 'Auth Failures',            km: 'ការ Login បរាជ័យ' },
+  adm_log_kpi_deleted:  { en: 'In Trash',                 km: 'នៅក្នុងធុងសំរាម' },
+  adm_log_tab_active:   { en: 'Active Logs',              km: 'កំណត់ហេតុសកម្ម' },
+  adm_log_tab_trash:    { en: 'Trash',                    km: 'ធុងសំរាម' },
+  adm_log_search_ph:    { en: 'Message / IP / User…',     km: 'សារ / IP / អ្នកប្រើ…' },
+  adm_log_per_page:     { en: 'Per page',                 km: 'ក្នុងមួយទំព័រ' },
+  adm_log_evt_scan:     { en: 'Scan',                     km: 'ស្កែន' },
+  adm_log_evt_auth_login:{ en: 'Auth Login',              km: 'ចូលប្រព័ន្ធ' },
+  adm_log_evt_auth_fail: { en: 'Auth Fail',               km: 'Login បរាជ័យ' },
+  adm_log_evt_admin:    { en: 'Admin Action',             km: 'សកម្មភាពអ្នកគ្រប់គ្រង' },
+  adm_log_evt_telegram: { en: 'Telegram Alert',           km: 'ការជូនដំណឹង Telegram' },
+  adm_log_evt_error:    { en: 'Error',                    km: 'កំហុស' },
+  adm_log_evt_health:   { en: 'Health Check',             km: 'ពិនិត្យសុខភាព' },
+  adm_log_sev_info:     { en: 'Info',                     km: 'ព័ត៌មាន' },
+  adm_log_sev_warning:  { en: 'Warning',                  km: 'ការព្រមាន' },
+  adm_log_sev_high:     { en: 'High',                     km: 'ខ្ពស់' },
+  adm_log_sev_critical: { en: 'Critical',                 km: 'វិបត្តិ' },
+  adm_log_empty:        { en: 'No logs found.',           km: 'រកមិនឃើញកំណត់ហេតុ។' },
+  adm_log_showing:      { en: 'Showing',                  km: 'បង្ហាញ' },
+  adm_log_of:           { en: 'of',                       km: 'នៃ' },
+  adm_log_entries:      { en: 'entries',                  km: 'ធាតុ' },
+  adm_log_page:         { en: 'Page',                     km: 'ទំព័រ' },
+  adm_log_detail_title: { en: 'Log Detail',               km: 'ព័ត៌មានលម្អិតកំណត់ហេតុ' },
+  adm_log_extra:        { en: 'Extra data',               km: 'ទិន្នន័យបន្ថែម' },
+  adm_log_no_extra:     { en: 'No extra data.',           km: 'គ្មានទិន្នន័យបន្ថែម។' },
+  adm_log_bulk_delete:  { en: 'Move to Trash',            km: 'ផ្លាស់ទៅធុងសំរាម' },
+  adm_log_bulk_restore: { en: 'Restore Selected',         km: 'ស្តារដែលបានជ្រើស' },
+  adm_log_del_note:     { en: 'The record is preserved in the database for audit purposes. Only the view is hidden — nothing is permanently erased.',
+                          km: 'កំណត់ត្រាត្រូវបានរក្សាទុកក្នុង DB សម្រាប់ audit ។ លាក់តែការបង្ហាញ — គ្មានការលប់ចោលអចិន្ត្រៃ។' },
+  adm_log_move_trash:   { en: 'Move to Trash',            km: 'ផ្លាស់ទៅធុងសំរាម' },
+  adm_log_restore_btn:  { en: 'Restore',                  km: 'ស្តារ' },
+  adm_log_deleted_at:   { en: 'Deleted at',               km: 'លុបនៅ' },
+  adm_col_actions:      { en: 'Actions',                  km: 'សកម្មភាព' },
+  adm_cancel:           { en: 'Cancel',                   km: 'បោះបង់' },
+  adm_clear:            { en: 'Clear',                    km: 'សំអាត' },
 });
 if (typeof I18n !== 'undefined') I18n.applyAll();
 
-let logsPage = 1;
-
-const SEVERITY_CLASS = {
-  info:     'badge-info',
-  warning:  'bg-warning text-dark',
-  high:     'badge-high',
-  critical: 'badge-critical',
+// ── Maps ───────────────────────────────────────────────────────────────────
+const SEV_CLS = { info:'sev-info', warning:'sev-warning', high:'sev-high', critical:'sev-critical' };
+const SEV_ROW = { critical:'log-row-critical', high:'log-row-high', warning:'log-row-warning' };
+const SEV_ICON = { info:'ti-info-circle', warning:'ti-alert-triangle', high:'ti-alert-circle', critical:'ti-skull' };
+const EVT_CLS  = {
+  scan:'evt-scan', auth_login:'evt-auth_login', auth_fail:'evt-auth_fail',
+  admin_action:'evt-admin', telegram_alert:'evt-telegram', error:'evt-error', health_check:'evt-health'
 };
-
-const EVENT_ICON = {
-  scan:            'bi-image',
-  auth_login:      'bi-box-arrow-in-right',
-  auth_fail:       'bi-shield-x',
-  admin_action:    'bi-shield-check',
-  telegram_alert:  'bi-telegram',
-  error:           'bi-bug',
-  health_check:    'bi-heart-pulse',
+const EVT_ICON = {
+  scan:'ti-x-ray', auth_login:'ti-login-2', auth_fail:'ti-shield-exclamation',
+  admin_action:'ti-shield-check', telegram_alert:'ti-brand-telegram', error:'ti-bug', health_check:'ti-heart-rate-monitor'
 };
+const EVT_KEY = {
+  scan:'adm_log_evt_scan', auth_login:'adm_log_evt_auth_login', auth_fail:'adm_log_evt_auth_fail',
+  admin_action:'adm_log_evt_admin', telegram_alert:'adm_log_evt_telegram', error:'adm_log_evt_error', health_check:'adm_log_evt_health'
+};
+const SEV_KEY = { info:'adm_log_sev_info', warning:'adm_log_sev_warning', high:'adm_log_sev_high', critical:'adm_log_sev_critical' };
 
-async function loadLogs(page = 1) {
-  logsPage = page;
+function _T(k) { return (typeof I18n !== 'undefined') ? I18n.t(k) : k; }
+
+// ── State ──────────────────────────────────────────────────────────────────
+let _logsPage    = 1;
+let _logsTotalPg = 1;
+let _expandedId  = null;
+let _arTimer     = null;
+let _arCountdown = 30;
+let _viewTrash   = false;      // false = active logs, true = trash
+let _selectedIds = new Set();
+let _pendingAction = null;     // {type:'single-del'|'single-restore'|'bulk', id?}
+
+// ── Auto-refresh ───────────────────────────────────────────────────────────
+function toggleAutoRefresh() {
+  const on = document.getElementById('arSwitch').checked;
+  if (on) startAutoRefresh(); else stopAutoRefresh();
+}
+function startAutoRefresh() {
+  stopAutoRefresh();
+  _arCountdown = 30;
+  document.getElementById('arCountdown').textContent = '30s';
+  _arTimer = setInterval(() => {
+    _arCountdown--;
+    const el = document.getElementById('arCountdown');
+    if (el) el.textContent = _arCountdown + 's';
+    if (_arCountdown <= 0) { _arCountdown = 30; loadLogs(_logsPage, true); }
+  }, 1000);
+}
+function stopAutoRefresh() {
+  if (_arTimer) clearInterval(_arTimer);
+  _arTimer = null;
+  const el = document.getElementById('arCountdown');
+  if (el) el.textContent = 'off';
+}
+
+// ── Tab switch ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  _viewTrash = (tab === 'trash');
+  document.getElementById('tabActive').classList.toggle('active', !_viewTrash);
+  document.getElementById('tabTrash').classList.toggle('active',  _viewTrash);
+
+  // Hide auto-refresh + export in trash view (audit trail — no export of deleted)
+  document.getElementById('arLabel').style.display   = _viewTrash ? 'none' : '';
+  document.getElementById('exportWrap').style.display = _viewTrash ? 'none' : '';
+
+  // Update bulk action button label
+  document.getElementById('bulkActionLbl').setAttribute(
+    'data-i18n', _viewTrash ? 'adm_log_bulk_restore' : 'adm_log_bulk_delete'
+  );
+  document.getElementById('bulkActionBtn').style.background =
+    _viewTrash ? '#059669' : '#DC2626';
+  if (typeof I18n !== 'undefined') I18n.applyAll();
+
+  clearSelection();
+  loadLogs(1);
+}
+
+// ── Load ───────────────────────────────────────────────────────────────────
+async function loadLogs(page, silent) {
+  if (page !== undefined) _logsPage = page;
   const severity  = document.getElementById('filterSeverity').value;
   const eventType = document.getElementById('filterEventType').value;
-  const params    = new URLSearchParams({ page, limit: 50 });
-  if (severity)  params.set('severity', severity);
-  if (eventType) params.set('event_type', eventType);
+  const search    = document.getElementById('logSearch').value.trim();
+  const limit     = parseInt(document.getElementById('logLimit').value) || 50;
+
+  const params = new URLSearchParams({ page: _logsPage, limit });
+  if (severity)   params.set('severity',     severity);
+  if (eventType)  params.set('event_type',   eventType);
+  if (search)     params.set('search',       search);
+  if (_viewTrash) params.set('show_deleted', '1');
+
+  if (!silent) {
+    const icon = document.getElementById('refreshIcon');
+    if (icon) icon.classList.add('spin-once');
+    setTimeout(() => icon && icon.classList.remove('spin-once'), 600);
+  }
 
   const r = await apiFetch(`/api/admin/logs?${params}`);
   if (!r) return;
   const d = await r.json();
 
-  document.getElementById('logsPagInfo').textContent =
-    `${d.total.toLocaleString()} entries — page ${d.page}/${d.pages || 1}`;
-  document.getElementById('logsBtnPrev').disabled = d.page <= 1;
-  document.getElementById('logsBtnNext').disabled = !d.has_next;
+  // KPI
+  if (d.stats) {
+    document.getElementById('kpiTotal').textContent    = (d.stats.total    || 0).toLocaleString();
+    document.getElementById('kpiCritical').textContent = (d.stats.critical || 0).toLocaleString();
+    document.getElementById('kpiHigh').textContent     = (d.stats.high     || 0).toLocaleString();
+    document.getElementById('kpiWarning').textContent  = (d.stats.warning  || 0).toLocaleString();
+    document.getElementById('kpiAuthFail').textContent = (d.stats.auth_fail|| 0).toLocaleString();
+    const deletedCnt = d.stats.deleted || 0;
+    document.getElementById('kpiDeleted').textContent  = deletedCnt.toLocaleString();
+    document.getElementById('tabActiveBadge').textContent = (d.stats.total || 0).toLocaleString();
+    document.getElementById('tabTrashBadge').textContent  = deletedCnt.toLocaleString();
+  }
 
-  const tbody = document.getElementById('logsTable');
-  if (!d.logs.length) {
-    tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">No logs found.</td></tr>';
+  _logsTotalPg = d.pages || 1;
+  _paintTable(d.logs || [], d.total || 0, d.page || 1, d.pages || 1);
+
+  if (!silent) {
+    _arCountdown = 30;
+    const el = document.getElementById('arCountdown');
+    if (el && document.getElementById('arSwitch').checked) el.textContent = '30s';
+  }
+  document.getElementById('logsLastUpdated').textContent =
+    _T('adm_last_updated') + ': ' + new Date().toLocaleTimeString();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function _paintTable(logs, total, page, pages) {
+  const limit = parseInt(document.getElementById('logLimit').value || 50);
+  const start = (page - 1) * limit + 1;
+  const end   = Math.min(page * limit, total);
+
+  document.getElementById('logsPagInfo').textContent =
+    `${_T('adm_log_showing')} ${start.toLocaleString()}–${end.toLocaleString()} ${_T('adm_log_of')} ${total.toLocaleString()} ${_T('adm_log_entries')}`;
+
+  // Pagination
+  let pagHtml = `<button class="page-btn" onclick="loadLogs(${page-1})"
+    ${page<=1?'disabled':''}><i class="ti ti-chevron-left"></i></button>`;
+  pagHtml += `<span class="page-btn cur" style="min-width:auto;padding:0 .8rem">
+    ${_T('adm_log_page')} ${page}/${pages}</span>`;
+  pagHtml += `<button class="page-btn" onclick="loadLogs(${page+1})"
+    ${page>=pages?'disabled':''}><i class="ti ti-chevron-right"></i></button>`;
+  document.getElementById('logsPagBtns').innerHTML = pagHtml;
+
+  const tbody = document.getElementById('logsTbody');
+  if (!logs.length) {
+    const icon = _viewTrash ? 'ti-trash' : 'ti-clipboard-list';
+    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-muted">
+      <i class="ti ${icon} d-block mb-2 opacity-25" style="font-size:2rem"></i>
+      ${_T('adm_log_empty')}</td></tr>`;
+    document.getElementById('selectAll').checked = false;
     return;
   }
 
-  tbody.innerHTML = d.logs.map(l => {
-    const icon    = EVENT_ICON[l.event_type] || 'bi-dot';
-    const sevCls  = SEVERITY_CLASS[l.severity] || 'bg-secondary';
-    const rowCls  = l.severity === 'high' ? 'table-danger' :
-                    l.severity === 'warning' ? 'table-warning' :
-                    l.severity === 'critical' ? 'table-danger' : '';
-    return `
-    <tr class="${rowCls}">
-      <td class="text-muted">${l.id}</td>
-      <td style="white-space:nowrap" class="text-muted">${fmtDateTime(l.created_at)}</td>
-      <td><i class="bi ${icon} me-1"></i>${l.event_type}</td>
-      <td><span class="badge ${sevCls}">${l.severity}</span></td>
-      <td class="text-muted small">${l.user_email || '—'}</td>
-      <td style="max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
-          title="${l.message}">
-        ${l.message}
+  tbody.innerHTML = logs.map(l => {
+    const rowCls = l.is_deleted
+      ? 'log-row-deleted'
+      : (SEV_ROW[l.severity] || '');
+    const sevCls = SEV_CLS[l.severity]   || 'sev-info';
+    const evtCls = EVT_CLS[l.event_type] || 'evt-other';
+    const evtIco = EVT_ICON[l.event_type] || 'ti-point';
+    const sevLbl = _T(SEV_KEY[l.severity]   || '') || l.severity;
+    const evtLbl = _T(EVT_KEY[l.event_type] || '') || l.event_type.replace(/_/g,' ');
+
+    const ms = l.processing_ms;
+    const msBadge = ms !== null && ms !== undefined
+      ? `<span class="ms-badge ${ms<1000?'ms-fast':ms<3000?'ms-ok':'ms-slow'}">${ms.toLocaleString()}ms</span>`
+      : '<span class="text-muted" style="font-size:.75rem">—</span>';
+
+    const ts = l.created_at ? fmtDateTime(l.created_at) : '—';
+    const ip = l.ip_address || '—';
+
+    // Deleted timestamp in trash view
+    const delNote = (l.is_deleted && l.deleted_at)
+      ? `<div class="mt-1"><span class="del-badge"><i class="ti ti-trash me-1"></i>${_T('adm_log_deleted_at')}: ${fmtDateTime(l.deleted_at)}</span></div>`
+      : '';
+
+    // Action button
+    const actionBtn = l.is_deleted
+      ? `<button class="btn-log-restore" title="${_T('adm_log_restore_btn')}"
+           onclick="confirmRestore(${l.id})">
+           <i class="ti ti-arrow-back-up"></i></button>`
+      : `<button class="btn-log-del" title="${_T('adm_log_move_trash')}"
+           onclick="confirmDelete(${l.id})">
+           <i class="ti ti-trash"></i></button>`;
+
+    const checked = _selectedIds.has(l.id) ? 'checked' : '';
+
+    return `<tr class="${rowCls}" id="logrow-${l.id}">
+      <td class="log-cb">
+        <input type="checkbox" class="row-cb" data-id="${l.id}" ${checked}
+               onchange="toggleRowSelect(${l.id}, this.checked)">
       </td>
-      <td class="text-center">
-        ${l.processing_ms !== null
-          ? `<span class="badge ${l.processing_ms > 3000 ? 'bg-warning text-dark' : 'bg-secondary'}">${l.processing_ms}ms</span>`
+      <td class="text-muted" style="font-size:.72rem">${l.id}</td>
+      <td style="white-space:nowrap; font-size:.75rem; color:#64748B">${ts}</td>
+      <td>
+        <span class="evt-chip ${evtCls}">
+          <i class="ti ${evtIco}"></i>${evtLbl}
+        </span>
+      </td>
+      <td>
+        <span class="sev-pill ${sevCls}">
+          <i class="ti ${SEV_ICON[l.severity]||'ti-info-circle'}"></i>${sevLbl}
+        </span>
+      </td>
+      <td style="font-size:.75rem;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+          title="${(l.user_email||'').replace(/"/g,'&quot;')}">
+        ${l.user_email
+          ? `<i class="ti ti-user-circle me-1" style="color:#94A3B8"></i>${l.user_email}`
+          : '<span class="text-muted">—</span>'}
+      </td>
+      <td>
+        <div class="log-msg-wrap" onclick="toggleDetail(${l.id})"
+             title="${(l.message||'').replace(/"/g,'&quot;')}">
+          <i class="ti ti-chevron-right me-1" style="font-size:.7rem;color:#94A3B8"
+             id="msgchev-${l.id}"></i>${l.message || '—'}
+        </div>
+      </td>
+      <td class="text-center">${msBadge}</td>
+      <td style="font-size:.73rem;color:#64748B;font-family:monospace">
+        ${ip !== '—'
+          ? `<span style="cursor:pointer" onclick="copyIp('${ip}')" title="Click to copy">${ip}</span>`
           : '—'}
       </td>
-      <td class="text-muted small">${l.ip_address || '—'}</td>
+      <td class="text-center">${actionBtn}</td>
+    </tr>
+    <tr id="logdetail-${l.id}" style="display:none">
+      <td colspan="10" class="log-detail-row">
+        <div class="log-detail-box">
+          <div><strong>${_T('adm_log_detail_title')} #${l.id}</strong></div>
+          <div><i class="ti ti-clock me-1"></i>${l.created_at || '—'}</div>
+          ${l.user_id ? `<div><i class="ti ti-user me-1"></i>User ID: ${l.user_id}</div>` : ''}
+          ${l.scan_id ? `<div><i class="ti ti-x-ray me-1"></i>Scan ID: ${l.scan_id}</div>` : ''}
+          <div><i class="ti ti-message me-1"></i>${l.message || '—'}</div>
+          ${delNote}
+          <div class="mt-1">
+            <strong>${_T('adm_log_extra')}:</strong>
+            ${l.extra && Object.keys(l.extra).length
+              ? `<code>${JSON.stringify(l.extra, null, 2)}</code>`
+              : `<span class="text-muted">${_T('adm_log_no_extra')}</span>`}
+          </div>
+        </div>
+      </td>
     </tr>`;
   }).join('');
+
+  // Sync select-all state
+  const allIds = logs.map(l => l.id);
+  const allChecked = allIds.length > 0 && allIds.every(id => _selectedIds.has(id));
+  document.getElementById('selectAll').checked = allChecked;
+  document.getElementById('selectAll').indeterminate =
+    !allChecked && allIds.some(id => _selectedIds.has(id));
 }
 
-loadLogs();
+// ── Row expand/collapse ────────────────────────────────────────────────────
+function toggleDetail(id) {
+  const row  = document.getElementById(`logdetail-${id}`);
+  const chev = document.getElementById(`msgchev-${id}`);
+  if (!row) return;
+  const open = row.style.display !== 'none';
+  if (_expandedId && _expandedId !== id) {
+    const prev = document.getElementById(`logdetail-${_expandedId}`);
+    const pc   = document.getElementById(`msgchev-${_expandedId}`);
+    if (prev) prev.style.display = 'none';
+    if (pc)   pc.style.transform = '';
+  }
+  row.style.display  = open ? 'none' : 'table-row';
+  if (chev) chev.style.transform = open ? '' : 'rotate(90deg)';
+  _expandedId = open ? null : id;
+}
 
-// Auto-refresh every 30 seconds
-setInterval(() => loadLogs(logsPage), 30_000);
+// ── Select ─────────────────────────────────────────────────────────────────
+function toggleSelectAll() {
+  const checked = document.getElementById('selectAll').checked;
+  document.querySelectorAll('.row-cb[data-id]').forEach(cb => {
+    const id = parseInt(cb.dataset.id);
+    cb.checked = checked;
+    if (checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  });
+  _syncBulkBar();
+}
+
+function toggleRowSelect(id, checked) {
+  if (checked) _selectedIds.add(id); else _selectedIds.delete(id);
+  _syncBulkBar();
+  // Update select-all indeterminate
+  const all = document.querySelectorAll('.row-cb[data-id]');
+  const checkedCount = [...all].filter(c => c.checked).length;
+  const sa = document.getElementById('selectAll');
+  sa.checked = checkedCount === all.length && all.length > 0;
+  sa.indeterminate = checkedCount > 0 && checkedCount < all.length;
+}
+
+function _syncBulkBar() {
+  const bar = document.getElementById('bulkBar');
+  const cnt = _selectedIds.size;
+  if (cnt > 0) {
+    bar.classList.add('show');
+    document.getElementById('bulkCount').textContent =
+      cnt + ' ' + _T(cnt === 1 ? 'adm_log_entries' : 'adm_log_entries');
+    document.getElementById('bulkCount').textContent = cnt + ' selected';
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+function clearSelection() {
+  _selectedIds.clear();
+  document.querySelectorAll('.row-cb').forEach(cb => cb.checked = false);
+  _syncBulkBar();
+}
+
+// ── Confirm modal helpers ──────────────────────────────────────────────────
+let _confirmModal = null;
+function _getModal() {
+  if (!_confirmModal)
+    _confirmModal = new bootstrap.Modal(document.getElementById('logConfirmModal'));
+  return _confirmModal;
+}
+
+function _setModalStyle(isRestore) {
+  const icon  = document.getElementById('confirmIcon');
+  const okBtn = document.getElementById('confirmOkBtn');
+  const okIco = document.getElementById('confirmOkIco');
+  const okLbl = document.getElementById('confirmOkLbl');
+  const note  = document.getElementById('confirmNote');
+  if (isRestore) {
+    icon.style.background  = '#D1FAE5';
+    icon.querySelector('i').className = 'ti ti-arrow-back-up';
+    icon.querySelector('i').style.color = '#059669';
+    okBtn.style.background = '#059669';
+    okIco.className        = 'ti ti-arrow-back-up me-1';
+    okLbl.setAttribute('data-i18n', 'adm_log_restore_btn');
+    note.style.display     = 'none';
+  } else {
+    icon.style.background  = '#FEE2E2';
+    icon.querySelector('i').className = 'ti ti-trash';
+    icon.querySelector('i').style.color = '#DC2626';
+    okBtn.style.background = '#DC2626';
+    okIco.className        = 'ti ti-trash me-1';
+    okLbl.setAttribute('data-i18n', 'adm_log_move_trash');
+    note.style.display     = '';
+  }
+  if (typeof I18n !== 'undefined') I18n.applyAll();
+}
+
+// ── Single delete / restore ────────────────────────────────────────────────
+function confirmDelete(id) {
+  _pendingAction = { type: 'single-del', id };
+  _setModalStyle(false);
+  document.getElementById('confirmTitle').textContent =
+    _T('adm_log_move_trash') + ' #' + id + '?';
+  document.getElementById('confirmBody').textContent =
+    _T('adm_log_del_note');
+  _getModal().show();
+}
+
+function confirmRestore(id) {
+  _pendingAction = { type: 'single-restore', id };
+  _setModalStyle(true);
+  document.getElementById('confirmTitle').textContent =
+    _T('adm_log_restore_btn') + ' #' + id + '?';
+  document.getElementById('confirmBody').textContent =
+    'Log #' + id + ' will be moved back to active logs.';
+  _getModal().show();
+}
+
+// ── Bulk confirm ───────────────────────────────────────────────────────────
+function confirmBulkAction() {
+  if (_selectedIds.size === 0) return;
+  _pendingAction = { type: 'bulk' };
+  const isRestore = _viewTrash;
+  _setModalStyle(isRestore);
+  const cnt = _selectedIds.size;
+  document.getElementById('confirmTitle').textContent =
+    (isRestore ? _T('adm_log_bulk_restore') : _T('adm_log_bulk_delete'))
+    + ' (' + cnt + ')?';
+  document.getElementById('confirmBody').textContent =
+    cnt + ' log(s) will be ' + (isRestore ? 'restored.' : 'moved to trash.');
+  _getModal().show();
+}
+
+// ── Execute confirmed action ───────────────────────────────────────────────
+async function executeConfirmedAction() {
+  _getModal().hide();
+  if (!_pendingAction) return;
+
+  const { type, id } = _pendingAction;
+  _pendingAction = null;
+
+  if (type === 'single-del') {
+    const r = await apiFetch(`/api/admin/logs/${id}`, { method: 'DELETE' });
+    if (!r || !r.ok) { toast('Failed to delete log.', 'error'); return; }
+    toast(`Log #${id} moved to trash.`, 'success');
+  } else if (type === 'single-restore') {
+    const r = await apiFetch(`/api/admin/logs/${id}/restore`, { method: 'PATCH' });
+    if (!r || !r.ok) { toast('Failed to restore log.', 'error'); return; }
+    toast(`Log #${id} restored.`, 'success');
+  } else if (type === 'bulk') {
+    const ids = [..._selectedIds];
+    const endpoint = _viewTrash
+      ? '/api/admin/logs/bulk-restore'
+      : '/api/admin/logs/bulk-delete';
+    const r = await apiFetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    });
+    if (!r || !r.ok) { toast('Bulk action failed.', 'error'); return; }
+    const d = await r.json();
+    toast(d.message || 'Done.', 'success');
+    clearSelection();
+  }
+
+  loadLogs(_logsPage);
+}
+
+// ── Copy IP ────────────────────────────────────────────────────────────────
+function copyIp(ip) {
+  navigator.clipboard?.writeText(ip).then(() =>
+    toast(`IP ${ip} copied`, 'success')
+  ).catch(() => {});
+}
+
+// ── Export ─────────────────────────────────────────────────────────────────
+async function exportLogs(format) {
+  const severity  = document.getElementById('filterSeverity').value;
+  const eventType = document.getElementById('filterEventType').value;
+  const search    = document.getElementById('logSearch').value.trim();
+  const lang      = (typeof I18n !== 'undefined') ? I18n.getLang() : 'en';
+
+  const params = new URLSearchParams({ lang });
+  if (severity)  params.set('severity',   severity);
+  if (eventType) params.set('event_type', eventType);
+  if (search)    params.set('search',     search);
+
+  const r = await apiFetch(`/api/admin/logs/export/${format}?${params}`);
+  if (!r || !r.ok) { toast(_T('adm_export_error') || 'Export failed.', 'error'); return; }
+  const blob = await r.blob();
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
+  a.download = `smartxray_logs_${new Date().toISOString().slice(0,10)}.${format}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Clear filters ──────────────────────────────────────────────────────────
+function clearLogFilters() {
+  document.getElementById('logSearch').value       = '';
+  document.getElementById('filterSeverity').value  = '';
+  document.getElementById('filterEventType').value = '';
+  document.getElementById('logLimit').value        = '50';
+  // Hide the inline clear-X on the search box
+  const clr = document.getElementById('logSearchClear');
+  if (clr) clr.style.display = 'none';
+  loadLogs(1);
+}
+
+// ── Refresh icon spin ──────────────────────────────────────────────────────
+const _spinStyle = document.createElement('style');
+_spinStyle.textContent = `
+  @keyframes _iconSpin { to { transform: rotate(360deg); } }
+  .spin-once { animation: _iconSpin .6s linear; }
+`;
+document.head.appendChild(_spinStyle);
+
+// ── Lang hook ──────────────────────────────────────────────────────────────
+const _prevLogsToggle = window.adminToggleLang || (() => {});
+window.adminToggleLang = function () {
+  _prevLogsToggle();
+  loadLogs(_logsPage, true);
+};
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadLogs(1);
+startAutoRefresh();
 </script>
 {% endblock %}

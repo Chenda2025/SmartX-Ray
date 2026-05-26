@@ -11,12 +11,15 @@ let UD = {
   currentScanData: null,
   scanPage:     1,
   allScans:     [],
+  scanMap:      {},          // id → scan object, for quick modal lookup
+  doctors:      [],            // loaded from /api/marketplace/doctors
   doctorFilter: 'all',
   selectedDate: null,
   selectedTime: null,
-  activeDoctorFee: 15,
-  activeDoctorName: '',
-  activeDoctorSpec: '',
+  activeDoctorId:    null,
+  activeDoctorFee:   15,
+  activeDoctorName:  '',
+  activeDoctorSpec:  '',
   activeDoctorColor: { bg:'#EEF2FF', color:'#6366F1' },
   bookedAppointments: [],
   uploadedFile: null,
@@ -25,44 +28,17 @@ let UD = {
   currentHeatmapUrl: null,
 };
 
-/* ── Sample doctor data (matches spec exactly) ───────────────────────────── */
-const DOCTORS = [
-  {
-    id:1, initials:'SM', bg:'#EEF2FF', color:'#6366F1',
-    name:'Dr. Sophal Meas', specialty:'Radiology', uni:'RUPP',
-    experience:'5 yrs', rating:4.8, reviews:42, fee:15,
-    available:'Available today', verified:true,
-  },
-  {
-    id:2, initials:'PK', bg:'#ECFDF5', color:'#10B981',
-    name:'Dr. Pisey Keo', specialty:'Pulmonology', uni:'NUM',
-    experience:'8 yrs', rating:4.6, reviews:28, fee:20,
-    available:'Available tomorrow', verified:true,
-  },
-  {
-    id:3, initials:'KL', bg:'#FEF3C7', color:'#F59E0B',
-    name:'Dr. Kosal Lim', specialty:'General', uni:'IU',
-    experience:'3 yrs', rating:4.9, reviews:61, fee:10,
-    available:'Available today', verified:true,
-  },
-  {
-    id:4, initials:'SR', bg:'#FEF2F2', color:'#EF4444',
-    name:'Dr. Sreymom Roth', specialty:'Cardiology', uni:'RUPP',
-    experience:'10 yrs', rating:4.7, reviews:35, fee:25,
-    available:'Available Mon', verified:true,
-  },
-  {
-    id:5, initials:'BN', bg:'#EEF2FF', color:'#6366F1',
-    name:'Dr. Bopha Nhem', specialty:'Radiology', uni:'AUSF',
-    experience:'6 yrs', rating:4.5, reviews:19, fee:18,
-    available:'Available Wed', verified:true,
-  },
-  {
-    id:6, initials:'DC', bg:'#ECFDF5', color:'#10B981',
-    name:'Dr. Dara Chan', specialty:'Pulmonology', uni:'UHS',
-    experience:'4 yrs', rating:4.4, reviews:12, fee:15,
-    available:'Available Fri', verified:false,
-  },
+/* SDM = Scan Detail Modal state */
+let SDM = { zoomLevel: 1, reportId: null, imageUrl: null };
+
+/* ── Doctor colour palette — assigned by index ───────────────────────────── */
+const _DOC_PALETTE = [
+  { bg:'#EEF2FF', color:'#6366F1' },
+  { bg:'#ECFDF5', color:'#10B981' },
+  { bg:'#FEF3C7', color:'#F59E0B' },
+  { bg:'#FEF2F2', color:'#EF4444' },
+  { bg:'#F0FDF4', color:'#059669' },
+  { bg:'#FFF7ED', color:'#EA580C' },
 ];
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -83,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (UD.isPro) document.body.classList.add('is-pro');
 
   /* Apply i18n default */
-  I18n.apply();
+  I18n.applyAll();
 
   udInitNav();
   udInitWelcome();
@@ -128,21 +104,40 @@ function udInitNav() {
     }
   });
 
-  /* Active nav link scroll */
+  /* Active nav + tab highlight on scroll */
+  const _udSections = ['scan-section','history-section','doctor-section','appt-section'];
+  const _udAllLinks = document.querySelectorAll('.ud-nav-links a[data-section], .ud-tab-bar a[data-section]');
+  window.addEventListener('scroll', _udUpdateActiveNav, { passive: true });
+  _udUpdateActiveNav();
+}
+
+function _udUpdateActiveNav() {
   const sections = ['scan-section','history-section','doctor-section','appt-section'];
-  const navLinks = document.querySelectorAll('.ud-nav-links a');
-  window.addEventListener('scroll', () => {
-    let current = '';
-    sections.forEach(id => {
-      const el = document.getElementById(id);
-      if (el && window.scrollY >= el.offsetTop - 80) current = id;
-    });
-    navLinks.forEach(a => {
-      a.classList.remove('active');
-      if (current && a.href.includes(current)) a.classList.add('active');
-      if (!current && a.href.endsWith('/dashboard')) a.classList.add('active');
-    });
+  let current = '';
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && window.scrollY >= el.offsetTop - 100) current = id;
   });
+  document.querySelectorAll('.ud-nav-links a[data-section], .ud-tab-bar a[data-section]').forEach(a => {
+    const ds = a.dataset.section;
+    a.classList.toggle('active', current ? ds === current : ds === 'top');
+  });
+}
+
+/* ── udScrollTo — in-page smooth scroll, never leaves the dashboard ── */
+function udScrollTo(sectionId) {
+  if (sectionId === 'top') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    const el = document.getElementById(sectionId);
+    if (!el) return;
+    const navH = parseFloat(
+      getComputedStyle(document.documentElement).getPropertyValue('--nav-height')
+    ) || 64;
+    const top = el.getBoundingClientRect().top + window.scrollY - navH - 16;
+    window.scrollTo({ top, behavior: 'smooth' });
+  }
+  // Let the scroll listener update active states naturally
 }
 
 function udToggleDropdown() {
@@ -158,7 +153,7 @@ function udLogout() {
 function udToggleLang() {
   I18n.toggle();
   const btn = document.getElementById('udLangBtn');
-  btn.textContent = I18n.lang === 'km' ? 'English' : 'ខ្មែរ';
+  btn.textContent = I18n.getLang() === 'km' ? 'English' : 'ខ្មែរ';
   /* Refresh greeting */
   udSetGreeting();
   /* Refresh dynamic content */
@@ -180,16 +175,16 @@ async function udInitAds() {
   if (UD.isPro) return;
   /* Try to load real ad */
   try {
-    const res  = await api.get('/ads/active?placement=banner');
+    const res  = await api.get('/ads?placement=banner');
     const data = await res.json();
-    if (data && data.ad) {
-      const ad = data.ad;
+    if (data && data.ads && data.ads.length > 0) {
+      const ad = data.ads[0];
       const img = document.getElementById('udAdImg');
       if (ad.image_url) {
         img.innerHTML = `<img src="${ad.image_url}" alt="Ad" />`;
       }
       document.getElementById('udAdText').textContent =
-        (I18n.lang === 'km' ? 'ឧបត្ថម្ភ — ' : 'Sponsored — ') +
+        (I18n.getLang() === 'km' ? 'ឧបត្ថម្ភ — ' : 'Sponsored — ') +
         (ad.advertiser || 'Cambodia Medical Supplies');
     }
   } catch { /* use default */ }
@@ -211,7 +206,7 @@ function udSetGreeting() {
   const h   = new Date().getHours();
   let greet;
   const name = (UD.user?.full_name || '').split(' ')[0] || 'there';
-  if (I18n.lang === 'km') {
+  if (I18n.getLang() === 'km') {
     greet = h < 12 ? 'អរុណសួស្តី' : h < 17 ? 'ទិវាសួស្តី' : 'សាយណ្ហសួស្តី';
     document.getElementById('udGreeting').textContent = `${greet} ${name}`;
   } else {
@@ -435,10 +430,10 @@ function udShowResult(data) {
 
   /* PDF button */
   document.getElementById('udSaveBtn').disabled = false;
-  if (UD.isPro && data.report_url) {
+  if (UD.isPro && data.report_id) {
     document.getElementById('udPdfBtnLocked').classList.add('ud-hidden');
     const pdfPro = document.getElementById('udPdfBtnPro');
-    pdfPro.href  = data.report_url;
+    pdfPro.dataset.reportId = data.report_id;
     pdfPro.classList.remove('ud-hidden');
   } else {
     document.getElementById('udPdfBtnLocked').classList.remove('ud-hidden');
@@ -486,6 +481,9 @@ async function udLoadHistory() {
     const res  = await api.get('/scan/history?page=1&limit=10');
     const data = await res.json();
     UD.allScans = data.scans || [];
+    /* Build quick-lookup map for the detail modal */
+    UD.scanMap  = {};
+    UD.allScans.forEach(s => { UD.scanMap[s.id] = s; });
     udRenderHistory(UD.allScans);
     udRefreshScanBadge();
   } catch {
@@ -522,34 +520,58 @@ function udRenderHistory(scans) {
 
   /* Table rows */
   tbody.innerHTML = scans.map(s => {
-    const isPneu = s.prediction === 'PNEUMONIA';
-    const date   = s.created_at
-      ? new Date(s.created_at).toLocaleDateString(undefined,
-          { day:'2-digit', month:'short', year:'numeric' })
-      : '—';
-    const scanId = '#SCN-' + String(s.id || 0).padStart(3,'0');
-    const conf   = (parseFloat(s.confidence) || 0).toFixed(1) + '%';
-    const procMs = s.processing_time_ms || 0;
-    const aiTime = procMs ? (procMs / 1000).toFixed(1) + 's' : '—';
+    const isPneu  = s.prediction === 'PNEUMONIA';
+    const dt      = s.created_at ? new Date(s.created_at) : null;
+    const dateStr = dt ? dt.toLocaleDateString(undefined, { day:'2-digit', month:'short', year:'numeric' }) : '—';
+    const timeStr = dt ? dt.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' }) : '';
+    const scanId  = '#SCN-' + String(s.id || 0).padStart(3,'0');
+    const confRaw = parseFloat(s.confidence) || 0;
+    const conf    = confRaw.toFixed(1) + '%';
+    const procMs  = s.processing_time_ms || 0;
+    const aiTime  = procMs ? (procMs / 1000).toFixed(2) + 's' : '—';
     const pillCls = isPneu ? 'pneumonia' : 'normal';
+    const pillDot = isPneu ? '🔴' : '🟢';
     const pillLbl = isPneu
       ? (I18n.t('hist_pill_pneumonia') || 'PNEUMONIA')
       : (I18n.t('hist_pill_normal')    || 'NORMAL');
+    const confBar = `
+      <div class="ud-conf-wrap">
+        <span class="ud-conf-val ${pillCls}">${conf}</span>
+        <div class="ud-conf-bar">
+          <div class="ud-conf-fill ${pillCls}" style="width:${Math.min(confRaw,100)}%"></div>
+        </div>
+      </div>`;
     const pdfHtml = UD.isPro && s.report_id
-      ? `<a class="ud-tbl-pdf-pro" href="/api/scan/report/${s.report_id}/download"
-            title="Download PDF"><i class="ti ti-download"></i></a>`
-      : `<span class="ud-tbl-pdf-locked" title="${I18n.t('hist_dl_locked')||'Upgrade to Pro'}">
-            <i class="ti ti-lock"></i></span>`;
+      ? `<button class="ud-hist-pdf-btn pro" onclick="udDownloadReport(${s.report_id})" title="Download PDF Report">
+           <i class="ti ti-file-download"></i>
+         </button>`
+      : `<button class="ud-hist-pdf-btn locked" title="${I18n.t('hist_dl_locked')||'Upgrade to Pro'}" disabled>
+           <i class="ti ti-lock"></i>
+         </button>`;
     return `
       <tr>
-        <td>${date}</td>
-        <td><span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${scanId}</span></td>
-        <td><span class="ud-result-pill ${pillCls}">${pillLbl}</span></td>
-        <td>${conf}</td>
-        <td>${aiTime}</td>
         <td>
-          <div style="display:flex;align-items:center;gap:6px;">
-            <a class="ud-tbl-view-btn" href="/scan/${s.id}" data-i18n="hist_view">${I18n.t('hist_view')||'View'}</a>
+          <div class="ud-hist-date">${dateStr}</div>
+          <div class="ud-hist-time">${timeStr}</div>
+        </td>
+        <td><span class="ud-hist-id">${scanId}</span></td>
+        <td>
+          <span class="ud-result-pill ${pillCls}">
+            <span class="ud-pill-dot">${pillDot}</span>${pillLbl}
+          </span>
+        </td>
+        <td>${confBar}</td>
+        <td>
+          <span class="ud-ai-time-val">
+            <i class="ti ti-clock" style="font-size:12px;opacity:.6;"></i> ${aiTime}
+          </span>
+        </td>
+        <td>
+          <div class="ud-hist-actions">
+            <button class="ud-hist-view-btn" onclick="udOpenScanDetailModal(${s.id})">
+              <i class="ti ti-eye"></i>
+              <span>${I18n.t('hist_view')||'View'}</span>
+            </button>
             ${pdfHtml}
           </div>
         </td>
@@ -558,34 +580,57 @@ function udRenderHistory(scans) {
 
   /* Phone card list */
   mCards.innerHTML = scans.map(s => {
-    const isPneu = s.prediction === 'PNEUMONIA';
-    const date   = s.created_at
-      ? new Date(s.created_at).toLocaleDateString() : '—';
-    const scanId = '#SCN-' + String(s.id || 0).padStart(3,'0');
-    const conf   = (parseFloat(s.confidence) || 0).toFixed(1) + '%';
+    const isPneu  = s.prediction === 'PNEUMONIA';
+    const dt      = s.created_at ? new Date(s.created_at) : null;
+    const dateStr = dt ? dt.toLocaleDateString(undefined, { day:'2-digit', month:'short', year:'numeric' }) : '—';
+    const timeStr = dt ? dt.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' }) : '';
+    const scanId  = '#SCN-' + String(s.id || 0).padStart(3,'0');
+    const confRaw = parseFloat(s.confidence) || 0;
+    const conf    = confRaw.toFixed(1) + '%';
+    const procMs  = s.processing_time_ms || 0;
+    const aiTime  = procMs ? (procMs / 1000).toFixed(2) + 's' : '—';
     const pillCls = isPneu ? 'pneumonia' : 'normal';
     const pillLbl = isPneu
       ? (I18n.t('hist_pill_pneumonia')||'PNEUMONIA')
       : (I18n.t('hist_pill_normal')||'NORMAL');
     const pdfHtml = UD.isPro && s.report_id
-      ? `<a class="ud-tbl-pdf-pro" href="/api/scan/report/${s.report_id}/download" style="font-size:13px;padding:6px 10px;">
-            <i class="ti ti-download"></i> PDF</a>`
-      : `<span class="ud-tbl-pdf-locked" style="font-size:13px;padding:6px 10px;">
-            <i class="ti ti-lock"></i> PDF</span>`;
+      ? `<button class="ud-hist-pdf-btn pro" onclick="udDownloadReport(${s.report_id})">
+           <i class="ti ti-file-download"></i> PDF
+         </button>`
+      : `<button class="ud-hist-pdf-btn locked" disabled>
+           <i class="ti ti-lock"></i> PDF
+         </button>`;
     return `
       <div class="ud-scan-card">
-        <div class="ud-scan-card-top">
-          <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-muted)">${scanId}</span>
-          <span style="font-size:11px;color:var(--text-muted)">${date}</span>
-        </div>
-        <div class="ud-scan-card-mid">
+        <!-- Card head: ID + pill -->
+        <div class="ud-scan-card-head">
+          <span class="ud-hist-id">${scanId}</span>
           <span class="ud-result-pill ${pillCls}">${pillLbl}</span>
-          <span style="font-size:12px;color:var(--text-muted)">${conf}</span>
         </div>
-        <div class="ud-scan-card-bot">
-          <a class="ud-tbl-view-btn" href="/scan/${s.id}" style="font-size:12px;">
-            ${I18n.t('hist_view')||'View'}
-          </a>
+        <!-- Stats row -->
+        <div class="ud-scan-card-stats">
+          <div class="ud-scan-stat">
+            <span class="ud-scan-stat-lbl"><i class="ti ti-calendar" style="font-size:11px;"></i> Date</span>
+            <span class="ud-scan-stat-val">${dateStr}<br><small>${timeStr}</small></span>
+          </div>
+          <div class="ud-scan-stat">
+            <span class="ud-scan-stat-lbl"><i class="ti ti-chart-bar" style="font-size:11px;"></i> Confidence</span>
+            <span class="ud-scan-stat-val ${pillCls}" style="font-weight:700;">${conf}</span>
+          </div>
+          <div class="ud-scan-stat">
+            <span class="ud-scan-stat-lbl"><i class="ti ti-clock" style="font-size:11px;"></i> AI Time</span>
+            <span class="ud-scan-stat-val">${aiTime}</span>
+          </div>
+        </div>
+        <!-- Confidence bar -->
+        <div class="ud-conf-bar" style="margin:8px 0 12px;">
+          <div class="ud-conf-fill ${pillCls}" style="width:${Math.min(confRaw,100)}%"></div>
+        </div>
+        <!-- Actions -->
+        <div class="ud-scan-card-actions">
+          <button class="ud-hist-view-btn" onclick="udOpenScanDetailModal(${s.id})">
+            <i class="ti ti-eye"></i> ${I18n.t('hist_view')||'View Details'}
+          </button>
           ${pdfHtml}
         </div>
       </div>`;
@@ -595,7 +640,17 @@ function udRenderHistory(scans) {
 /* ════════════════════════════════════════════════════════════════════════════
    8. FIND DOCTOR PANEL
    ════════════════════════════════════════════════════════════════════════════ */
-function udInitDoctors() {
+async function udInitDoctors() {
+  const grid = document.getElementById('udDoctorGrid');
+  if (grid) grid.innerHTML = `<div class="ud-empty" style="grid-column:1/-1;"><i class="ti ti-loader" style="animation:spin 1s linear infinite"></i></div>`;
+
+  try {
+    const res  = await fetch('/api/marketplace/doctors?limit=12');
+    const data = await res.json();
+    UD.doctors = (data.doctors || []);
+  } catch {
+    UD.doctors = [];
+  }
   udRenderDoctors();
 }
 
@@ -611,71 +666,75 @@ function udFilterDoctors() {
 }
 
 function udRenderDoctors() {
-  const query = (document.getElementById('udDoctorSearch')?.value || '').toLowerCase();
+  const query  = (document.getElementById('udDoctorSearch')?.value || '').toLowerCase();
   const filter = UD.doctorFilter;
+  const docs   = UD.doctors || [];
 
-  const filtered = DOCTORS.filter(d => {
-    const matchFilter = filter === 'all' || d.specialty === filter;
+  const filtered = docs.filter(d => {
+    const matchFilter = filter === 'all' || (d.specialty || '').toLowerCase().includes(filter.toLowerCase());
     const matchQuery  = !query ||
-      d.name.toLowerCase().includes(query) ||
-      d.specialty.toLowerCase().includes(query) ||
-      d.uni.toLowerCase().includes(query);
+      (d.full_name  || '').toLowerCase().includes(query) ||
+      (d.specialty  || '').toLowerCase().includes(query) ||
+      (d.hospital   || '').toLowerCase().includes(query);
     return matchFilter && matchQuery;
   });
 
   const grid = document.getElementById('udDoctorGrid');
+  if (!grid) return;
+
   if (!filtered.length) {
     grid.innerHTML = `
       <div class="ud-empty" style="grid-column:1/-1;">
         <i class="ti ti-search-off"></i>
-        <span class="ud-empty-h">No doctors found</span>
+        <span class="ud-empty-h">${I18n.t('doc_no_results') || 'No doctors found'}</span>
       </div>`;
     return;
   }
 
-  grid.innerHTML = filtered.map(d => udDoctorCardHTML(d)).join('');
+  grid.innerHTML = filtered.map((d, i) => udDoctorCardHTML(d, i)).join('');
 }
 
-function udDoctorCardHTML(d) {
-  const stars = Array.from({length:5}, (_,i) =>
+function udDoctorCardHTML(d, idx = 0) {
+  const palette  = _DOC_PALETTE[idx % _DOC_PALETTE.length];
+  const initials = (d.full_name || 'DR').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  const rating   = Number(d.rating || 0).toFixed(1);
+  const stars    = Array.from({length:5}, (_,i) =>
     `<i class="ti ti-star${i < Math.floor(d.rating) ? '-filled' : ''}" style="font-size:13px;"></i>`
   ).join('');
-  const verBadge = d.verified
+  const fee = d.rate_per_session ? `$${d.rate_per_session}` : (d.qualifications ? '' : '—');
+  const verBadge = d.is_verified
     ? `<span class="ud-verified-badge">
          <i class="ti ti-shield-check" style="font-size:12px;"></i>
-         ${I18n.t('doc_verified')||'Verified'}
+         ${I18n.t('doc_verified') || 'Verified'}
        </span>`
     : '';
   return `
     <div class="ud-doc-card">
       <div class="ud-doc-top">
         <div class="ud-doc-info">
-          <div class="ud-doc-avatar" style="background:${d.bg};color:${d.color};">${d.initials}</div>
+          <div class="ud-doc-avatar" style="background:${palette.bg};color:${palette.color};">${initials}</div>
           <div>
-            <div class="ud-doc-name">${d.name}</div>
-            <div class="ud-doc-spec">${d.specialty}</div>
+            <div class="ud-doc-name">${d.full_name || '—'}</div>
+            <div class="ud-doc-spec">${d.specialty || '—'}</div>
           </div>
         </div>
         ${verBadge}
       </div>
       <div class="ud-doc-meta">
-        <span class="ud-doc-uni">${d.uni}</span>
-        <span class="ud-doc-exp">${d.experience}</span>
+        <span class="ud-doc-uni">${d.hospital || d.city || '—'}</span>
+        <span class="ud-doc-exp">${d.qualifications || ''}</span>
       </div>
       <div class="ud-doc-rating">
         <span class="ud-stars">${stars}</span>
-        <span class="ud-rating-num">${d.rating}</span>
-        <span class="ud-rating-rev">(${d.reviews} ${I18n.t('doc_reviews')||'reviews'})</span>
+        <span class="ud-rating-num">${rating}</span>
+        <span class="ud-rating-rev">(${d.review_count || 0} ${I18n.t('doc_reviews') || 'reviews'})</span>
       </div>
-      <div class="ud-doc-price">
-        <i class="ti ti-currency-dollar"></i>
-        $${d.fee} ${I18n.t('doc_consult')||'/ consultation'}
-      </div>
+      ${fee ? `<div class="ud-doc-price"><i class="ti ti-currency-dollar"></i>${fee} ${I18n.t('doc_consult') || '/ consultation'}</div>` : ''}
       <div class="ud-doc-actions">
         <button class="ud-doc-view-btn" onclick="window.location='/marketplace'"
-          data-i18n="doc_view">${I18n.t('doc_view')||'View Profile'}</button>
+          data-i18n="doc_view">${I18n.t('doc_view') || 'View Profile'}</button>
         <button class="ud-doc-book-btn" onclick="udOpenBookModal(${d.id})"
-          data-i18n="doc_book">${I18n.t('doc_book')||'Book Now'}</button>
+          data-i18n="doc_book">${I18n.t('doc_book') || 'Book Now'}</button>
       </div>
     </div>`;
 }
@@ -683,7 +742,18 @@ function udDoctorCardHTML(d) {
 /* ════════════════════════════════════════════════════════════════════════════
    9. APPOINTMENTS
    ════════════════════════════════════════════════════════════════════════════ */
-function udInitAppointments() {
+async function udInitAppointments() {
+  await udLoadAppointments();
+}
+
+async function udLoadAppointments() {
+  try {
+    const res  = await API.get('/api/appointments');
+    const data = await res.json();
+    if (res.ok && data.appointments) {
+      UD.bookedAppointments = data.appointments;
+    }
+  } catch (_) { /* network error — keep empty array */ }
   udRenderAppointments();
 }
 
@@ -691,26 +761,92 @@ function udRenderAppointments() {
   const list  = document.getElementById('udApptList');
   const empty = document.getElementById('udApptEmpty');
 
-  if (!UD.bookedAppointments.length) {
+  const active = UD.bookedAppointments.filter(a => a.status !== 'cancelled');
+
+  if (!active.length) {
     list.innerHTML = '';
     empty.classList.remove('ud-hidden');
     return;
   }
   empty.classList.add('ud-hidden');
-  list.innerHTML = UD.bookedAppointments.map(a => `
-    <div class="ud-appt-row">
-      <div class="ud-appt-avatar" style="background:${a.color.bg};color:${a.color.fg};">${a.initials}</div>
+
+  list.innerHTML = active.map((a, idx) => {
+    const palette  = _DOC_PALETTE[a.doctor_id % _DOC_PALETTE.length];
+    const initials = (a.doctor_name || 'DR').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const dateStr  = _udFmtDate(a.appointment_date);
+    const fee      = a.fee_snapshot ? `$${Number(a.fee_snapshot).toFixed(2)}` : '';
+    const noteHtml = a.note
+      ? `<div class="ud-appt-note"><i class="ti ti-notes"></i> ${_udEsc(a.note)}</div>`
+      : '';
+    const statusClass = a.status === 'completed' ? 'completed' : 'confirmed';
+    const statusLabel = a.status === 'completed'
+      ? (I18n.t('appt_completed') || 'Completed')
+      : (I18n.t('appt_confirmed') || 'Confirmed');
+
+    return `
+    <div class="ud-appt-row" id="appt-row-${a.id}">
+      <div class="ud-appt-avatar" style="background:${palette.bg};color:${palette.color};">${initials}</div>
       <div class="ud-appt-info">
-        <div class="ud-appt-name">${a.docName}</div>
-        <div class="ud-appt-time">${a.date} · ${a.time}</div>
+        <div class="ud-appt-name">${_udEsc(a.doctor_name)}</div>
+        <div class="ud-appt-spec">${_udEsc(a.doctor_specialty)}</div>
+        <div class="ud-appt-time">
+          <i class="ti ti-calendar"></i> ${dateStr}
+          &nbsp;·&nbsp;
+          <i class="ti ti-clock"></i> ${_udEsc(a.appointment_time)}
+          ${fee ? `&nbsp;·&nbsp;<i class="ti ti-cash"></i> ${fee}` : ''}
+        </div>
+        ${noteHtml}
       </div>
-      <span class="ud-status-pill confirmed">${I18n.t('appt_confirmed')||'Confirmed'}</span>
-      <button class="ud-join-btn">
-        <i class="ti ti-video"></i>
-        ${I18n.t('appt_join')||'Join Meeting'}
-      </button>
-    </div>`
-  ).join('');
+      <span class="ud-status-pill ${statusClass}">${statusLabel}</span>
+      <div class="ud-appt-actions">
+        <button class="ud-join-btn">
+          <i class="ti ti-video"></i>
+          ${I18n.t('appt_join') || 'Join Meeting'}
+        </button>
+        ${a.status === 'confirmed' ? `
+        <button class="ud-cancel-appt-btn" onclick="udCancelAppointment(${a.id})">
+          <i class="ti ti-x"></i>
+          ${I18n.t('appt_cancel') || 'Cancel'}
+        </button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Cancel appointment ──────────────────────────────────────────────────── */
+async function udCancelAppointment(aptId) {
+  if (!confirm(I18n.t('appt_cancel_confirm') || 'Cancel this appointment?')) return;
+
+  try {
+    const res  = await API.patch(`/api/appointments/${aptId}/cancel`, {});
+    const data = await res.json();
+    if (res.ok) {
+      // Update local state
+      const apt = UD.bookedAppointments.find(a => a.id === aptId);
+      if (apt) apt.status = 'cancelled';
+      udRenderAppointments();
+      udShowToast(I18n.t('toast_cancelled') || 'Appointment cancelled.', 'info');
+    } else {
+      udShowToast(data.error || 'Could not cancel appointment.', 'error');
+    }
+  } catch {
+    udShowToast('Network error. Please try again.', 'error');
+  }
+}
+
+/* ── Date formatter: "2026-05-26" → "26 May 2026" ────────────────────────── */
+function _udFmtDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = iso.split('-').map(Number);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${d} ${months[m - 1]} ${y}`;
+}
+
+/* ── XSS-safe escaper ────────────────────────────────────────────────────── */
+function _udEsc(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
 }
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -724,23 +860,29 @@ function udInitUpgradeBanner() {
    11. BOOK NOW MODAL
    ════════════════════════════════════════════════════════════════════════════ */
 function udOpenBookModal(doctorId) {
-  const d = DOCTORS.find(x => x.id === doctorId);
+  const d = UD.doctors.find(x => x.id === doctorId);
   if (!d) return;
 
-  UD.activeDoctorFee  = d.fee;
-  UD.activeDoctorName = d.name;
-  UD.activeDoctorSpec = d.specialty;
-  UD.activeDoctorColor = { bg: d.bg, color: d.color };
+  const idx      = UD.doctors.indexOf(d);
+  const palette  = _DOC_PALETTE[idx % _DOC_PALETTE.length];
+  const initials = (d.full_name || 'DR').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+  const fee      = d.rate_per_session || 0;
+
+  UD.activeDoctorId    = d.id;
+  UD.activeDoctorFee   = fee;
+  UD.activeDoctorName  = d.full_name;
+  UD.activeDoctorSpec  = d.specialty;
+  UD.activeDoctorColor = palette;
 
   /* Avatar */
   const av = document.getElementById('mdAvatar');
-  av.textContent  = d.initials;
-  av.style.background = d.bg;
-  av.style.color      = d.color;
+  av.textContent      = initials;
+  av.style.background = palette.bg;
+  av.style.color      = palette.color;
 
-  document.getElementById('mdDocName').textContent = d.name;
-  document.getElementById('mdDocSpec').textContent = d.specialty;
-  document.getElementById('mdFee').textContent = `$${d.fee}.00`;
+  document.getElementById('mdDocName').textContent = d.full_name || '—';
+  document.getElementById('mdDocSpec').textContent = d.specialty  || '—';
+  document.getElementById('mdFee').textContent = `$${fee.toFixed(2)}`;
 
   /* Reset selections */
   UD.selectedDate = null;
@@ -830,31 +972,212 @@ function udSelectTime(el, time) {
   UD.selectedTime = time;
 }
 
-/* ── Confirm booking ────────────────────────────────────────────────────── */
-function udConfirmBooking() {
+/* ── Confirm booking — saves to database ────────────────────────────────── */
+async function udConfirmBooking() {
   if (!UD.selectedDate) {
-    udShowToast('Please select a date.', 'warning');
+    udShowToast(I18n.t('toast_select_date') || 'Please select a date.', 'warning');
     return;
   }
   if (!UD.selectedTime) {
-    udShowToast('Please select a time slot.', 'warning');
+    udShowToast(I18n.t('toast_select_time') || 'Please select a time slot.', 'warning');
     return;
   }
 
-  /* Add to local appointments */
-  UD.bookedAppointments.push({
-    docName:  UD.activeDoctorName,
-    spec:     UD.activeDoctorSpec,
-    initials: UD.activeDoctorName.split(' ').slice(1).map(w=>w[0]).join('').slice(0,2).toUpperCase() || 'DR',
-    date:     UD.selectedDate,
-    time:     UD.selectedTime,
-    color:    { bg: UD.activeDoctorColor.bg, fg: UD.activeDoctorColor.color },
-  });
+  /* Convert "May 26, 2026" → "2026-05-26" */
+  const parsed = new Date(UD.selectedDate);
+  if (isNaN(parsed)) {
+    udShowToast('Invalid date selected.', 'error');
+    return;
+  }
+  const isoDate = parsed.toISOString().split('T')[0];   // YYYY-MM-DD
 
-  udCloseBookModal();
-  udRenderAppointments();
-  document.getElementById('appt-section').scrollIntoView({ behavior:'smooth' });
-  udShowToast(I18n.t('toast_booked') || 'Appointment booked successfully!', 'success');
+  /* Show loading on the confirm button */
+  const btn = document.querySelector('.ud-btn-confirm');
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) {
+    btn.disabled  = true;
+    btn.innerHTML = `<span class="ud-btn-spinner"></span>${I18n.t('modal_booking') || 'Booking…'}`;
+  }
+
+  try {
+    const res  = await API.post('/api/appointments', {
+      doctor_id:        UD.activeDoctorId,
+      appointment_date: isoDate,
+      appointment_time: UD.selectedTime,
+      note:             (document.getElementById('udNote')?.value || '').trim() || null,
+    });
+    const data = await res.json();
+
+    if (res.status === 201) {
+      /* Add the newly created appointment to local state */
+      UD.bookedAppointments.push(data.appointment);
+      udCloseBookModal();
+      udRenderAppointments();
+      document.getElementById('appt-section').scrollIntoView({ behavior: 'smooth' });
+      udShowToast(I18n.t('toast_booked') || 'Appointment booked successfully!', 'success');
+    } else if (res.status === 409) {
+      udShowToast(data.error || 'You already have this appointment.', 'warning');
+    } else {
+      udShowToast(data.error || 'Booking failed. Please try again.', 'error');
+    }
+  } catch {
+    udShowToast('Network error. Please try again.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = origHtml; }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   SCAN DETAIL DRAWER  — opens from history "View" button
+   ════════════════════════════════════════════════════════════════════════════ */
+
+function udOpenScanDetailModal(scanId) {
+  const s = UD.scanMap[scanId];
+  if (!s) { udShowToast('Scan data not found.', 'error'); return; }
+
+  const isPneu  = s.prediction === 'PNEUMONIA';
+  const conf    = parseFloat(s.confidence) || 0;
+  const scanLabel = '#SCN-' + String(s.id).padStart(3, '0');
+
+  /* ── Header ─────────────────────────────────────────────────────── */
+  document.getElementById('sdmScanId').textContent = scanLabel;
+  const dt = s.created_at ? new Date(s.created_at) : null;
+  document.getElementById('sdmDate').textContent = dt
+    ? dt.toLocaleDateString(undefined, { day:'2-digit', month:'short', year:'numeric' }) +
+      ' · ' + dt.toLocaleTimeString(undefined, { hour:'2-digit', minute:'2-digit' })
+    : '—';
+
+  /* ── Result label ───────────────────────────────────────────────── */
+  const lbl = document.getElementById('sdmResultLabel');
+  lbl.textContent = isPneu
+    ? (I18n.t('result_pneumonia') || 'PNEUMONIA DETECTED')
+    : (I18n.t('result_normal')    || 'NORMAL');
+  lbl.className = `ud-sdm-result-label ${isPneu ? 'pneumonia' : 'normal'}`;
+
+  /* ── Confidence ring ────────────────────────────────────────────── */
+  const pct       = Math.min(conf, 100) / 100;
+  const dashOff   = 283 - 283 * pct;
+  const ringFill  = document.getElementById('sdmRingFill');
+  ringFill.style.strokeDashoffset = dashOff;
+  ringFill.className = `ud-ring-fill ${isPneu ? 'pneumonia' : 'normal'}`;
+  document.getElementById('sdmRingPct').textContent = conf.toFixed(1) + '%';
+
+  /* ── Detail rows ────────────────────────────────────────────────── */
+  document.getElementById('sdmDetailId').textContent      = scanLabel;
+  document.getElementById('sdmDetailModel').textContent   = s.model_version || 'CNN+ANN v1.0';
+  const gcStatus = s.gradcam_status === 'done'
+    ? '✓ Available' : (s.gradcam_status === 'failed' ? '✗ Failed' : '—');
+  document.getElementById('sdmDetailGradcam').textContent = gcStatus;
+  document.getElementById('sdmDetailUni').textContent     = UD.user?.university || 'RUPP';
+
+  /* ── X-ray viewer ───────────────────────────────────────────────── */
+  SDM.zoomLevel = 1;
+  SDM.reportId  = s.report_id || null;
+  SDM.imageUrl  = s.image_path ? `/static/${s.image_path}` : '';
+
+  const xrayImg = document.getElementById('sdmXrayImg');
+  xrayImg.src   = SDM.imageUrl;
+  xrayImg.style.transform = 'scale(1)';
+
+  const hmImg    = document.getElementById('sdmHeatmapImg');
+  const hmToggle = document.getElementById('sdmHeatmapToggle');
+  const hmOverlay = document.getElementById('sdmHeatmapOverlay');
+
+  if (s.heatmap_path && s.gradcam_status === 'done') {
+    hmImg.src         = `/static/${s.heatmap_path}`;
+    hmToggle.disabled = false;
+    hmToggle.checked  = false;
+    hmOverlay.classList.remove('visible');
+  } else {
+    hmImg.src         = '';
+    hmToggle.disabled = true;
+    hmToggle.checked  = false;
+    hmOverlay.classList.remove('visible');
+  }
+
+  /* ── PDF button ─────────────────────────────────────────────────── */
+  const pdfLocked = document.getElementById('sdmPdfLocked');
+  const pdfPro    = document.getElementById('sdmPdfPro');
+  if (UD.isPro && s.report_id) {
+    pdfPro.dataset.reportId = s.report_id;
+    pdfLocked.classList.add('ud-hidden');
+    pdfPro.classList.remove('ud-hidden');
+  } else {
+    pdfLocked.classList.remove('ud-hidden');
+    pdfPro.classList.add('ud-hidden');
+  }
+
+  /* ── Open drawer ────────────────────────────────────────────────── */
+  document.getElementById('udScanDetailModal').classList.add('open');
+  document.body.style.overflow = 'hidden';  // prevent bg scroll
+}
+
+function udCloseScanDetailModal() {
+  document.getElementById('udScanDetailModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function udCloseScanDetail(e) {
+  if (e.target === document.getElementById('udScanDetailModal')) {
+    udCloseScanDetailModal();
+  }
+}
+
+/* SDM viewer controls */
+function sdmZoomIn()    { SDM.zoomLevel = Math.min(SDM.zoomLevel + 0.25, 3);   _sdmApplyZoom(); }
+function sdmZoomOut()   { SDM.zoomLevel = Math.max(SDM.zoomLevel - 0.25, 0.5); _sdmApplyZoom(); }
+function sdmZoomReset() { SDM.zoomLevel = 1; _sdmApplyZoom(); }
+function _sdmApplyZoom() {
+  document.getElementById('sdmXrayImg').style.transform = `scale(${SDM.zoomLevel})`;
+}
+function sdmToggleHeatmap(chk) {
+  const ov = document.getElementById('sdmHeatmapOverlay');
+  chk.checked ? ov.classList.add('visible') : ov.classList.remove('visible');
+}
+function sdmDownloadXray() {
+  if (!SDM.imageUrl) return;
+  const a = document.createElement('a');
+  a.href = SDM.imageUrl; a.download = 'xray.jpg'; a.click();
+}
+
+/* Keyboard: Esc closes the drawer */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') udCloseScanDetailModal();
+});
+
+/* ════════════════════════════════════════════════════════════════════════════
+   PDF REPORT DOWNLOAD  (uses api.get so the JWT header is sent)
+   ════════════════════════════════════════════════════════════════════════════ */
+async function udDownloadReport(reportId) {
+  /* Called from result panel button (data-report-id) or history table */
+  const id = reportId
+    || document.getElementById('sdmPdfPro')?.dataset?.reportId
+    || document.getElementById('udPdfBtnPro')?.dataset?.reportId;
+  if (!id) return;
+
+  udShowToast('Preparing download…', 'info', 2500);
+  try {
+    const res = await api.get(`/scan/report/${id}/download`);
+    if (!res.ok) {
+      const msg = res.status === 401 || res.status === 403
+        ? 'Session expired — please log in again.'
+        : 'Download failed. Please try again.';
+      udShowToast(msg, 'error');
+      return;
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = `SmartXRay-Report-${id}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    udShowToast('Download failed. Check your connection.', 'error');
+    console.error(err);
+  }
 }
 
 /* ════════════════════════════════════════════════════════════════════════════

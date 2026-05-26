@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="en" id="dd-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Dashboard — SmartX-Ray</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/doctor-dashboard.css" />
+</head>
+<body class="dd-state-approved">
+
+<!-- ══════════════════════════════════════════════════════════════
+     COMPONENT 1 — DOCTOR NAVIGATION HEADER
+     ══════════════════════════════════════════════════════════════ -->
+<header class="dd-nav">
+  <!-- Brand -->
+  <a href="javascript:void(0)" class="dd-brand" onclick="ddNavTo('top')" title="Back to top">
+    <span class="dd-brand-name">SmartX-Ray</span>
+    <span class="dd-brand-divider"></span>
+    <span class="dd-brand-sub" data-i18n="dd_portal">Doctor Portal</span>
+  </a>
+
+  <!-- Center nav -->
+  <nav class="dd-nav-center">
+    <a href="javascript:void(0)" class="active" data-i18n="dd_nav_dash" onclick="ddNavTo('top')">Dashboard</a>
+    <a href="javascript:void(0)" data-i18n="dd_nav_appt" onclick="ddNavTo('appt-section')">Appointments</a>
+    <a href="javascript:void(0)" data-i18n="dd_nav_profile" onclick="ddNavTo('profile-section')">My Profile</a>
+    <a href="javascript:void(0)" data-i18n="dd_nav_earn" onclick="ddNavTo('earnings-section')">Earnings</a>
+  </nav>
+
+  <!-- Right cluster -->
+  <div class="dd-nav-right">
+    <button class="dd-lang-btn" id="ddLangBtn" onclick="ddToggleLang()">ខ្មែរ</button>
+
+    <!-- Status pill -->
+    <span class="dd-status-pill pending" id="ddStatusPill">
+      <i class="ti ti-clock"></i>
+      <span data-i18n="dd_status_pending">Pending</span>
+    </span>
+
+    <button class="dd-bell"><i class="ti ti-bell"></i></button>
+
+    <div class="dd-avatar-wrap">
+      <div class="dd-avatar" id="ddAvatar" onclick="ddToggleDropdown()">SM</div>
+      <div class="dd-dropdown" id="ddDropdown">
+        <div class="dd-dropdown-info">
+          <div class="dd-dropdown-name" id="ddDropName">Dr. Sophal Meas</div>
+          <div class="dd-dropdown-spec" id="ddDropSpec">Radiology</div>
+        </div>
+        <a href="javascript:void(0)" class="dd-dropdown-item" onclick="ddCloseDropdown(); ddNavTo('profile-section')">
+          <i class="ti ti-user"></i>
+          <span data-i18n="dd_my_profile">My Profile</span>
+        </a>
+        <div class="dd-dropdown-divider"></div>
+        <button class="dd-dropdown-item danger" onclick="ddLogout()">
+          <i class="ti ti-logout"></i>
+          <span data-i18n="nav_logout">Logout</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- DEV: state switcher -->
+    <select class="dd-state-switch" id="ddStateSwitcher" onchange="ddSwitchState(this.value)" title="Preview state">
+      <option value="approved">✓ Approved</option>
+      <option value="pending">⏳ Pending</option>
+      <option value="rejected">✗ Rejected</option>
+      <option value="not_registered">＋ Register</option>
+    </select>
+  </div>
+</header>
+
+<!-- Phone bottom tab bar -->
+<div class="dd-tab-bar">
+  <a href="javascript:void(0)" class="dd-tab active" data-i18n="dd_nav_dash" onclick="ddNavTo('top')">
+    <i class="ti ti-layout-dashboard"></i><span>Dashboard</span>
+  </a>
+  <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_appt" onclick="ddNavTo('appt-section')">
+    <i class="ti ti-calendar"></i><span>Appointments</span>
+  </a>
+  <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_profile" onclick="ddNavTo('profile-section')">
+    <i class="ti ti-user"></i><span>Profile</span>
+  </a>
+  <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_earn" onclick="ddNavTo('earnings-section')">
+    <i class="ti ti-cash"></i><span>Earnings</span>
+  </a>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     MAIN PAGE
+     ══════════════════════════════════════════════════════════════ -->
+<main class="dd-page">
+
+  <!-- ═══════════════════════════════════════════════════
+       STATE 0 — NOT REGISTERED (first visit)
+       ═══════════════════════════════════════════════════ -->
+  <div class="dd-state-section dd-not-registered-view">
+
+    <!-- Hero banner -->
+    <div class="dd-banner dd-banner-register">
+      <i class="ti ti-stethoscope dd-banner-icon indigo"></i>
+      <div class="dd-banner-body">
+        <div class="dd-banner-title" data-i18n="dd_reg_title">Join SmartX-Ray as a Doctor</div>
+        <div class="dd-banner-sub" data-i18n="dd_reg_sub">Fill in your credentials below. Our admin team will verify your license within 24 hours and activate your profile.</div>
+      </div>
+      <span class="dd-status-pill indigo">
+        <i class="ti ti-user-plus"></i>
+        <span data-i18n="dd_reg_apply">Apply Now</span>
+      </span>
+    </div>
+
+    <!-- Registration form -->
+    <div class="dd-card dd-edit-form-card" id="dd-register-form">
+      <div class="dd-card-header">
+        <div class="dd-card-title" data-i18n="dd_reg_form_title">Doctor Application</div>
+        <span class="dd-edit-badge" data-i18n="dd_reg_free">Free to apply</span>
+      </div>
+      <div class="dd-form-grid">
+        <!-- Full Name -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_full_name">Full Name</label>
+          <input type="text" class="dd-form-input" id="reg_full_name" placeholder="Dr. Your Name" />
+        </div>
+        <!-- Specialty -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_specialty">Specialty</label>
+          <input type="text" class="dd-form-input" id="reg_specialty" placeholder="e.g. Radiology" />
+        </div>
+        <!-- License Number -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_license_no">License Number</label>
+          <input type="text" class="dd-form-input" id="reg_license_no" placeholder="e.g. KH-MED-0001" />
+        </div>
+        <!-- Hospital / Clinic -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_hospital">Hospital / Clinic</label>
+          <input type="text" class="dd-form-input" id="reg_hospital" placeholder="e.g. RUPP Medical Centre" />
+        </div>
+        <!-- Qualifications -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_qualifications">Qualifications</label>
+          <input type="text" class="dd-form-input" id="reg_qualifications" placeholder="e.g. MBBS, MD" />
+        </div>
+        <!-- Rate -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_rate">Consultation Rate ($)</label>
+          <input type="number" class="dd-form-input" id="reg_rate" placeholder="15" min="0" />
+        </div>
+        <!-- Availability -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_availability">Availability</label>
+          <input type="text" class="dd-form-input" id="reg_availability" placeholder="e.g. Mon–Fri 9–5" />
+        </div>
+        <!-- Bio (full width) -->
+        <div class="dd-form-group dd-form-full">
+          <label class="dd-form-label" data-i18n="dd_prof_bio">Professional Bio</label>
+          <textarea class="dd-form-textarea" id="reg_bio" rows="4" placeholder="Briefly describe your clinical experience…"></textarea>
+        </div>
+        <!-- License document upload hint (full width) -->
+        <div class="dd-form-group dd-form-full">
+          <label class="dd-form-label" data-i18n="dd_license_doc">License Document</label>
+          <input type="file" id="reg_license_file" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                 onchange="ddHandleFileSelect(this,'ddRegFileLabel')" />
+          <div class="dd-upload-zone" id="ddRegUploadZone"
+               onclick="document.getElementById('reg_license_file').click()"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="ddHandleDrop(event,'reg_license_file','ddRegFileLabel')">
+            <i class="ti ti-cloud-upload"></i>
+            <span id="ddRegFileLabel" data-i18n="dd_upload_hint">Upload a scan of your medical license (PDF / JPG)</span>
+          </div>
+        </div>
+      </div>
+      <!-- Error notice -->
+      <div class="dd-form-error-banner" id="ddRegError" style="display:none;">
+        <i class="ti ti-alert-circle"></i>
+        <span id="ddRegErrorMsg">Please fill all required fields.</span>
+      </div>
+      <button class="dd-resubmit-btn" id="ddRegBtn" onclick="ddRegister()">
+        <i class="ti ti-send"></i>
+        <span data-i18n="dd_submit_application">Submit Application</span>
+      </button>
+    </div>
+
+  </div><!-- /not-registered-view -->
+
+  <!-- ═══════════════════════════════════════════════════
+       STATE 1 — PENDING
+       ═══════════════════════════════════════════════════ -->
+  <div class="dd-state-section dd-pending-view">
+
+    <!-- Pending status banner -->
+    <div class="dd-banner dd-banner-pending">
+      <i class="ti ti-clock dd-banner-icon amber"></i>
+      <div class="dd-banner-body">
+        <div class="dd-banner-title" data-i18n="dd_pending_title">Your profile is under review</div>
+        <div class="dd-banner-sub" data-i18n="dd_pending_sub">Our admin team is reviewing your medical license and credentials. You will receive an email notification within 24 hours.</div>
+      </div>
+      <div class="dd-banner-meta" data-i18n="dd_submitted_2h">Submitted: 2 hours ago</div>
+    </div>
+
+    <!-- What happens next — 3 steps -->
+    <div class="dd-card dd-steps-card">
+      <div class="dd-card-title" data-i18n="dd_what_next">What happens next?</div>
+      <div class="dd-steps-row">
+        <!-- Step 1: completed -->
+        <div class="dd-step completed">
+          <div class="dd-step-circle completed"><i class="ti ti-check"></i></div>
+          <div class="dd-step-label" data-i18n="dd_step1_title">Profile Submitted</div>
+          <div class="dd-step-sub" data-i18n="dd_step1_sub">Your application was received</div>
+        </div>
+        <div class="dd-step-line completed"></div>
+        <!-- Step 2: active -->
+        <div class="dd-step active">
+          <div class="dd-step-circle active">
+            <span class="dd-step-pulse"></span>
+            <i class="ti ti-eye"></i>
+          </div>
+          <div class="dd-step-label" data-i18n="dd_step2_title">Admin Review</div>
+          <div class="dd-step-sub" data-i18n="dd_step2_sub">License verification in progress</div>
+        </div>
+        <div class="dd-step-line upcoming"></div>
+        <!-- Step 3: upcoming -->
+        <div class="dd-step upcoming">
+          <div class="dd-step-circle upcoming"><i class="ti ti-check"></i></div>
+          <div class="dd-step-label" data-i18n="dd_step3_title">Go Live</div>
+          <div class="dd-step-sub" data-i18n="dd_step3_sub">Appear in patient directory</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile preview (read-only) -->
+    <div class="dd-card dd-profile-preview-card" data-nav="profile-section">
+      <div class="dd-card-header">
+        <div class="dd-card-title" data-i18n="dd_submitted_profile">Your Submitted Profile</div>
+        <span class="dd-status-pill pending"><i class="ti ti-clock"></i> <span data-i18n="dd_status_pending">Pending</span></span>
+      </div>
+      <div class="dd-profile-preview-grid">
+        <!-- Left: identity -->
+        <div class="dd-profile-preview-left">
+          <div class="dd-profile-avatar" style="background:#EEF2FF;color:#6366F1;">SM</div>
+          <div class="dd-profile-name">Dr. Sophal Meas</div>
+          <div class="dd-profile-badges">
+            <span class="dd-badge indigo">Radiology</span>
+            <span class="dd-badge indigo">RUPP</span>
+          </div>
+          <div class="dd-profile-rows">
+            <div class="dd-profile-row"><span class="dd-profile-lbl" data-i18n="dd_license_no">License No.</span><span>KH-MED-2891</span></div>
+            <div class="dd-profile-row"><span class="dd-profile-lbl" data-i18n="dd_specialty">Specialty</span><span>Radiology</span></div>
+            <div class="dd-profile-row"><span class="dd-profile-lbl" data-i18n="dd_university">University</span><span>RUPP</span></div>
+            <div class="dd-profile-row"><span class="dd-profile-lbl" data-i18n="dd_experience">Experience</span><span>10 years</span></div>
+            <div class="dd-profile-row"><span class="dd-profile-lbl" data-i18n="dd_rate">Rate</span><span>$15/session</span></div>
+            <div class="dd-profile-row"><span class="dd-profile-lbl" data-i18n="dd_availability">Availability</span><span>Mon–Fri 9–5</span></div>
+          </div>
+        </div>
+        <!-- Right: bio + doc -->
+        <div class="dd-profile-preview-right">
+          <div class="dd-profile-section-lbl" data-i18n="dd_prof_bio">Professional Bio</div>
+          <p class="dd-profile-bio">Experienced radiologist specialising in chest X-ray interpretation and AI-assisted pneumonia diagnostics. 10 years clinical practice at RUPP Medical Centre. Passionate about improving diagnostic accuracy with technology.</p>
+          <div class="dd-profile-section-lbl" style="margin-top:16px;">License Document</div>
+          <div class="dd-license-box">
+            <i class="ti ti-file-certificate"></i>
+            <span data-i18n="dd_license_submitted">License Document Submitted</span>
+          </div>
+          <div class="dd-info-note blue" style="margin-top:14px;">
+            <i class="ti ti-info-circle"></i>
+            <span data-i18n="dd_cant_edit">You cannot edit your profile while it is under review.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /pending-view -->
+
+  <!-- ═══════════════════════════════════════════════════
+       STATE 2 — APPROVED
+       ═══════════════════════════════════════════════════ -->
+  <div class="dd-state-section dd-approved-view">
+
+    <!-- "Complete Your Profile" alert — shown by JS when fields are missing -->
+    <div class="dd-banner dd-banner-complete" id="ddCompleteBanner" style="display:none;">
+      <i class="ti ti-info-circle dd-banner-icon indigo"></i>
+      <div class="dd-banner-body">
+        <div class="dd-banner-title" data-i18n="dd_complete_title">Complete your profile to go fully live</div>
+        <div class="dd-banner-sub"   data-i18n="dd_complete_sub">Some details are missing. Patients see your rate and availability — fill them in to receive bookings.</div>
+      </div>
+      <button class="dd-btn-complete" onclick="ddNavTo('profile-section')" data-i18n="dd_complete_cta">Complete Now</button>
+    </div>
+
+    <!-- Welcome + Approved banner -->
+    <div class="dd-banner dd-banner-approved">
+      <i class="ti ti-shield-check dd-banner-icon green"></i>
+      <div class="dd-banner-body">
+        <div class="dd-banner-title" data-i18n="dd_approved_title">Profile approved — You are live!</div>
+        <div class="dd-banner-sub" data-i18n="dd_approved_sub">Patients can now find and book your consultation.</div>
+      </div>
+      <span class="dd-status-pill approved">
+        <i class="ti ti-shield-check"></i>
+        <span data-i18n="dd_status_approved">Verified</span>
+      </span>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="dd-kpi-grid">
+      <div class="dd-kpi-card">
+        <div class="dd-kpi-icon" style="background:#EEF2FF;color:#6366F1;"><i class="ti ti-calendar"></i></div>
+        <div class="dd-kpi-body">
+          <div class="dd-kpi-val indigo">24</div>
+          <div class="dd-kpi-label" data-i18n="dd_total_appt">Total Appointments</div>
+          <div class="dd-kpi-tag green" data-i18n="dd_plus3_week">+3 this week</div>
+        </div>
+      </div>
+      <div class="dd-kpi-card">
+        <div class="dd-kpi-icon" style="background:#FEF3C7;color:#F59E0B;"><i class="ti ti-clock"></i></div>
+        <div class="dd-kpi-body">
+          <div class="dd-kpi-val">3</div>
+          <div class="dd-kpi-label" data-i18n="dd_today_sched">Today's Schedule</div>
+          <div class="dd-kpi-tag amber" data-i18n="dd_next_10">Next: 10:00 AM</div>
+        </div>
+      </div>
+      <div class="dd-kpi-card">
+        <div class="dd-kpi-icon" style="background:#ECFDF5;color:#10B981;"><i class="ti ti-users"></i></div>
+        <div class="dd-kpi-body">
+          <div class="dd-kpi-val green">18</div>
+          <div class="dd-kpi-label" data-i18n="dd_total_patients">Total Patients</div>
+          <div class="dd-kpi-tag green" data-i18n="dd_plus2_new">+2 new</div>
+        </div>
+      </div>
+      <div class="dd-kpi-card">
+        <div class="dd-kpi-icon" style="background:#ECFDF5;color:#10B981;"><i class="ti ti-cash"></i></div>
+        <div class="dd-kpi-body">
+          <div class="dd-kpi-val">$270</div>
+          <div class="dd-kpi-label" data-i18n="dd_earn_month">Earnings This Month</div>
+          <div class="dd-kpi-tag muted" data-i18n="dd_18sess">18 sessions × $15</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Today's Schedule -->
+    <div class="dd-card dd-schedule-card" id="appt-section">
+      <div class="dd-card-header">
+        <div class="dd-schedule-header-left">
+          <div class="dd-card-title" data-i18n="dd_today_sched">Today's Schedule</div>
+          <span class="dd-live-dot"><span class="dd-dot"></span><span data-i18n="dd_live">Live</span></span>
+        </div>
+        <div class="dd-schedule-date">25 May 2026</div>
+      </div>
+
+      <div class="dd-timeline">
+
+        <!-- 09:00 Confirmed -->
+        <div class="dd-tl-row">
+          <div class="dd-tl-time">
+            <span class="dd-tl-hh">09:00</span>
+            <span class="dd-tl-ampm">AM</span>
+          </div>
+          <div class="dd-tl-connector confirmed">
+            <div class="dd-tl-dot confirmed"></div>
+            <div class="dd-tl-line confirmed"></div>
+          </div>
+          <div class="dd-appt-card confirmed">
+            <div class="dd-appt-top">
+              <div class="dd-appt-patient">
+                <div class="dd-appt-avatar" style="background:#ECFDF5;color:#10B981;">SC</div>
+                <div>
+                  <div class="dd-appt-name">Sopheap Chea</div>
+                  <div class="dd-appt-meta"><i class="ti ti-video"></i> Video consultation · RUPP</div>
+                </div>
+              </div>
+              <span class="dd-appt-pill confirmed" data-i18n="dd_confirmed">Confirmed</span>
+            </div>
+            <div class="dd-appt-note"><i class="ti ti-notes"></i> <em data-i18n="dd_note_chest">Note: chest pain follow-up</em></div>
+            <div class="dd-appt-actions">
+              <button class="dd-btn-join" onclick="ddShowToast('Opening video meeting…','info')"><i class="ti ti-video"></i> <span data-i18n="dd_join">Join Meeting</span></button>
+              <button class="dd-btn-detail" onclick="ddShowToast('Loading patient details…','info')"><span data-i18n="dd_view_det">View Details</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 10:30 Upcoming -->
+        <div class="dd-tl-row">
+          <div class="dd-tl-time">
+            <span class="dd-tl-hh">10:30</span>
+            <span class="dd-tl-ampm">AM</span>
+          </div>
+          <div class="dd-tl-connector upcoming">
+            <div class="dd-tl-dot upcoming"></div>
+            <div class="dd-tl-line upcoming"></div>
+          </div>
+          <div class="dd-appt-card upcoming">
+            <div class="dd-appt-top">
+              <div class="dd-appt-patient">
+                <div class="dd-appt-avatar" style="background:#EEF2FF;color:#6366F1;">DH</div>
+                <div>
+                  <div class="dd-appt-name">Dara Heng</div>
+                  <div class="dd-appt-meta"><i class="ti ti-video"></i> Video consultation · IU</div>
+                </div>
+              </div>
+              <span class="dd-appt-pill upcoming" data-i18n="dd_upcoming">Upcoming</span>
+            </div>
+            <div class="dd-appt-actions">
+              <button class="dd-btn-join" onclick="ddShowToast('Meeting not yet active.','warning')"><i class="ti ti-video"></i> <span data-i18n="dd_join">Join Meeting</span></button>
+              <button class="dd-btn-cancel" onclick="ddShowToast('Appointment cancelled.','error')"><span data-i18n="dd_cancel">Cancel</span></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 14:00 Completed -->
+        <div class="dd-tl-row">
+          <div class="dd-tl-time">
+            <span class="dd-tl-hh">02:00</span>
+            <span class="dd-tl-ampm">PM</span>
+          </div>
+          <div class="dd-tl-connector completed">
+            <div class="dd-tl-dot completed"></div>
+          </div>
+          <div class="dd-appt-card completed">
+            <div class="dd-appt-top">
+              <div class="dd-appt-patient">
+                <div class="dd-appt-avatar" style="background:#F1F5F9;color:#94A3B8;">MN</div>
+                <div>
+                  <div class="dd-appt-name dd-strikethrough">Maly Noun</div>
+                  <div class="dd-appt-meta">Video consultation · NUM</div>
+                </div>
+              </div>
+              <span class="dd-appt-pill completed" data-i18n="dd_completed">Completed</span>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /timeline -->
+    </div><!-- /schedule-card -->
+
+    <!-- Double panel: Appointments + Earnings -->
+    <div class="dd-double-panel">
+
+      <!-- LEFT: Upcoming Appointments table -->
+      <div class="dd-card dd-appt-table-card">
+        <div class="dd-card-header">
+          <div class="dd-card-title" data-i18n="dd_upcoming_appt">Upcoming Appointments</div>
+          <a href="javascript:void(0)" class="dd-view-all" data-i18n="dd_view_all" onclick="ddNavTo('appt-section')">View all →</a>
+        </div>
+        <div class="dd-table-wrap">
+          <table class="dd-table">
+            <thead>
+              <tr>
+                <th data-i18n="dd_col_patient">Patient</th>
+                <th data-i18n="dd_col_datetime">Date &amp; Time</th>
+                <th data-i18n="dd_col_note">Note</th>
+                <th data-i18n="dd_col_status">Status</th>
+                <th data-i18n="dd_col_actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#ECFDF5;color:#10B981;">SC</div><span>Sopheap C.</span></div></td>
+                <td>25 May · 10:00</td>
+                <td><em class="dd-note-text" data-i18n="dd_note_chest">chest pain</em></td>
+                <td><span class="dd-appt-pill confirmed" data-i18n="dd_confirmed">Confirmed</span></td>
+                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-join" onclick="ddShowToast('Joining…','info')"><i class="ti ti-video"></i></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#EEF2FF;color:#6366F1;">DH</div><span>Dara H.</span></div></td>
+                <td>25 May · 14:00</td>
+                <td><span class="dd-note-text muted">—</span></td>
+                <td><span class="dd-appt-pill confirmed" data-i18n="dd_confirmed">Confirmed</span></td>
+                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-join" onclick="ddShowToast('Joining…','info')"><i class="ti ti-video"></i></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#FEF3C7;color:#F59E0B;">VR</div><span>Vichet R.</span></div></td>
+                <td>26 May · 09:00</td>
+                <td><em class="dd-note-text" data-i18n="dd_note_followup">follow up</em></td>
+                <td><span class="dd-appt-pill upcoming" data-i18n="dd_upcoming">Upcoming</span></td>
+                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-cancel" onclick="ddShowToast('Cancelled.','error')"><i class="ti ti-x"></i></button></div></td>
+              </tr>
+              <tr>
+                <td><div class="dd-pat-cell"><div class="dd-pat-av" style="background:#F1F5F9;color:#64748B;">SK</div><span>Sreyla K.</span></div></td>
+                <td>27 May · 11:00</td>
+                <td><span class="dd-note-text muted">—</span></td>
+                <td><span class="dd-appt-pill upcoming" data-i18n="dd_upcoming">Upcoming</span></td>
+                <td><div class="dd-tbl-actions"><button class="dd-btn-sm-cancel" onclick="ddShowToast('Cancelled.','error')"><i class="ti ti-x"></i></button></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: Earnings Summary -->
+      <div class="dd-card dd-earnings-card" id="earnings-section">
+        <div class="dd-card-title" data-i18n="dd_earnings_summary">Earnings Summary</div>
+
+        <div class="dd-earn-block green-block">
+          <div class="dd-earn-lbl" data-i18n="dd_this_month">This Month</div>
+          <div class="dd-earn-val green">$270</div>
+          <div class="dd-earn-sub" data-i18n="dd_18_sessions">18 sessions completed</div>
+        </div>
+
+        <div class="dd-earn-block">
+          <div class="dd-earn-lbl" data-i18n="dd_pending_payout">Pending Payout</div>
+          <div class="dd-earn-val amber">$45</div>
+          <div class="dd-earn-sub" data-i18n="dd_3_pending">3 sessions pending</div>
+        </div>
+
+        <div class="dd-earn-block">
+          <div class="dd-earn-lbl" data-i18n="dd_total_alltime">Total All Time</div>
+          <div class="dd-earn-val">$1,840</div>
+        </div>
+
+        <!-- Progress bar -->
+        <div class="dd-progress-wrap">
+          <div class="dd-progress-lbl" data-i18n="dd_sessions_target">18 of 25 sessions target</div>
+          <div class="dd-progress-track">
+            <div class="dd-progress-fill" style="width:72%"></div>
+          </div>
+        </div>
+
+        <div class="dd-info-note blue dd-aba-note">
+          <i class="ti ti-credit-card"></i>
+          <span data-i18n="dd_aba_note">Payments processed via ABA KHQR</span>
+        </div>
+      </div>
+    </div><!-- /double-panel -->
+
+    <!-- ── My Profile (edit) — approved doctors complete/edit their info ── -->
+    <div class="dd-card dd-edit-form-card" id="profile-section">
+      <div class="dd-card-header">
+        <div class="dd-card-title" data-i18n="dd_my_profile_edit">My Profile</div>
+        <span class="dd-edit-badge" data-i18n="dd_editing_enabled">Editing enabled</span>
+      </div>
+      <div class="dd-form-grid">
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_full_name">Full Name</label>
+          <input type="text" class="dd-form-input" id="prof_full_name" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_specialty">Specialty</label>
+          <input type="text" class="dd-form-input" id="prof_specialty" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_license_no">License Number</label>
+          <input type="text" class="dd-form-input" id="prof_license_no" placeholder="e.g. KH-MED-0001" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_hospital">Hospital / Clinic</label>
+          <input type="text" class="dd-form-input" id="prof_hospital" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_qualifications">Qualifications</label>
+          <input type="text" class="dd-form-input" id="prof_qualifications" placeholder="e.g. MBBS, MD" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_rate">Consultation Rate ($)</label>
+          <input type="number" class="dd-form-input" id="prof_rate" min="0" placeholder="15" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_availability">Availability</label>
+          <input type="text" class="dd-form-input" id="prof_availability" placeholder="e.g. Mon–Fri 9–5" />
+        </div>
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_phone">Phone</label>
+          <input type="text" class="dd-form-input" id="prof_phone" placeholder="+855 12 345 678" />
+        </div>
+        <div class="dd-form-group dd-form-full">
+          <label class="dd-form-label" data-i18n="dd_prof_bio">Professional Bio</label>
+          <textarea class="dd-form-textarea" id="prof_bio" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="dd-form-error-banner" id="ddProfError" style="display:none;">
+        <i class="ti ti-alert-circle"></i><span id="ddProfErrorMsg">Error.</span>
+      </div>
+      <button class="dd-resubmit-btn" id="ddProfSaveBtn" onclick="ddSaveProfile()">
+        <i class="ti ti-device-floppy"></i>
+        <span data-i18n="dd_save_profile">Save Profile</span>
+      </button>
+    </div><!-- /profile-section -->
+
+    <!-- Ratings & Reviews -->
+    <div class="dd-card dd-reviews-card" data-nav="profile-section">
+      <div class="dd-card-title" data-i18n="dd_ratings_reviews">Ratings &amp; Reviews</div>
+      <div class="dd-reviews-grid">
+        <!-- Left: summary -->
+        <div class="dd-rating-summary">
+          <div class="dd-big-rating">4.8</div>
+          <div class="dd-stars-row">
+            <i class="ti ti-star-filled"></i>
+            <i class="ti ti-star-filled"></i>
+            <i class="ti ti-star-filled"></i>
+            <i class="ti ti-star-filled"></i>
+            <i class="ti ti-star-half-filled"></i>
+          </div>
+          <div class="dd-rating-count" data-i18n="dd_42_reviews">42 reviews total</div>
+          <!-- Star bars -->
+          <div class="dd-star-bars">
+            <div class="dd-star-bar"><span>5★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:67%"></div></div><span>28</span></div>
+            <div class="dd-star-bar"><span>4★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:24%"></div></div><span>10</span></div>
+            <div class="dd-star-bar"><span>3★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:7%"></div></div><span>3</span></div>
+            <div class="dd-star-bar"><span>2★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:2%"></div></div><span>1</span></div>
+            <div class="dd-star-bar"><span>1★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:0%"></div></div><span>0</span></div>
+          </div>
+        </div>
+        <!-- Right: recent reviews -->
+        <div class="dd-reviews-list">
+          <div class="dd-review-card">
+            <div class="dd-review-top">
+              <div class="dd-review-patient"><div class="dd-pat-av sm" style="background:#EEF2FF;color:#6366F1;">SC</div><div><div class="dd-review-name">Sopheap Chea</div><div class="dd-review-date">20 May 2026</div></div></div>
+              <div class="dd-review-stars"><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i></div>
+            </div>
+            <p class="dd-review-text" data-i18n="dd_review1">Dr. Meas was very professional and thorough in the consultation.</p>
+            <div class="dd-review-source" data-i18n="dd_from_market">from SmartX-Ray Marketplace</div>
+          </div>
+          <div class="dd-review-card">
+            <div class="dd-review-top">
+              <div class="dd-review-patient"><div class="dd-pat-av sm" style="background:#ECFDF5;color:#10B981;">DH</div><div><div class="dd-review-name">Dara Heng</div><div class="dd-review-date">18 May 2026</div></div></div>
+              <div class="dd-review-stars"><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star"></i></div>
+            </div>
+            <p class="dd-review-text" data-i18n="dd_review2">Good advice, will consult again.</p>
+            <div class="dd-review-source" data-i18n="dd_from_market">from SmartX-Ray Marketplace</div>
+          </div>
+          <div class="dd-review-card">
+            <div class="dd-review-top">
+              <div class="dd-review-patient"><div class="dd-pat-av sm" style="background:#FEF3C7;color:#F59E0B;">VR</div><div><div class="dd-review-name">Vichet Ros</div><div class="dd-review-date">15 May 2026</div></div></div>
+              <div class="dd-review-stars"><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i></div>
+            </div>
+            <p class="dd-review-text" data-i18n="dd_review3">Highly recommended doctor.</p>
+            <div class="dd-review-source" data-i18n="dd_from_market">from SmartX-Ray Marketplace</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /approved-view -->
+
+  <!-- ═══════════════════════════════════════════════════
+       STATE 3 — REJECTED
+       ═══════════════════════════════════════════════════ -->
+  <div class="dd-state-section dd-rejected-view">
+
+    <!-- Rejection banner -->
+    <div class="dd-banner dd-banner-rejected">
+      <i class="ti ti-alert-circle dd-banner-icon red"></i>
+      <div class="dd-banner-body">
+        <div class="dd-banner-title" data-i18n="dd_rejected_title">Your profile was not approved</div>
+        <div class="dd-rejection-box">
+          <div class="dd-rejection-lbl" data-i18n="dd_rejection_reason_lbl">Reason for rejection:</div>
+          <p class="dd-rejection-text" data-i18n="dd_rejection_text">
+            Your medical license number (KH-MED-2891) could not be verified in the Ministry of Health database. Please resubmit with a valid license.
+          </p>
+        </div>
+      </div>
+      <div class="dd-banner-meta red" data-i18n="dd_rejected_on">Rejected on: 24 May 2026</div>
+    </div>
+
+    <!-- How to fix steps -->
+    <div class="dd-card dd-fix-card">
+      <div class="dd-card-title" data-i18n="dd_how_to_fix">How to fix and resubmit</div>
+      <div class="dd-fix-steps">
+        <div class="dd-fix-step">
+          <div class="dd-fix-num">1</div>
+          <div class="dd-fix-content">
+            <div class="dd-fix-title" data-i18n="dd_fix1_title">Review the rejection reason</div>
+            <div class="dd-fix-sub" data-i18n="dd_fix1_sub">Read the admin feedback carefully</div>
+          </div>
+        </div>
+        <div class="dd-fix-step">
+          <div class="dd-fix-num">2</div>
+          <div class="dd-fix-content">
+            <div class="dd-fix-title" data-i18n="dd_fix2_title">Update your profile information</div>
+            <div class="dd-fix-sub" data-i18n="dd_fix2_sub">Fix the issue mentioned above</div>
+          </div>
+        </div>
+        <div class="dd-fix-step">
+          <div class="dd-fix-num">3</div>
+          <div class="dd-fix-content">
+            <div class="dd-fix-title" data-i18n="dd_fix3_title">Resubmit your application</div>
+            <div class="dd-fix-sub" data-i18n="dd_fix3_sub">Admin will review again within 24hrs</div>
+          </div>
+        </div>
+      </div>
+      <button class="dd-resubmit-cta" onclick="document.getElementById('dd-edit-form').scrollIntoView({behavior:'smooth'})">
+        <i class="ti ti-refresh"></i>
+        <span data-i18n="dd_update_resubmit">Update Profile &amp; Resubmit</span>
+      </button>
+    </div>
+
+    <!-- Edit Profile Form -->
+    <div class="dd-card dd-edit-form-card" id="dd-edit-form" data-nav="profile-section">
+      <div class="dd-card-header">
+        <div class="dd-card-title" data-i18n="dd_update_profile">Update Your Profile</div>
+        <span class="dd-edit-badge" data-i18n="dd_editing_enabled">Editing enabled</span>
+      </div>
+      <div class="dd-form-grid">
+        <!-- Full Name -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_full_name">Full Name</label>
+          <input type="text" class="dd-form-input" value="Dr. Sophal Meas" />
+        </div>
+        <!-- Specialty -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_specialty">Specialty</label>
+          <input type="text" class="dd-form-input" value="Radiology" />
+        </div>
+        <!-- License Number (flagged) -->
+        <div class="dd-form-group dd-form-group-error">
+          <label class="dd-form-label" data-i18n="dd_license_no">License Number</label>
+          <input type="text" class="dd-form-input error" value="KH-MED-2891" placeholder="Enter correct license number" />
+          <div class="dd-form-error-msg">
+            <i class="ti ti-alert-circle"></i>
+            <span data-i18n="dd_flagged_by_admin">This field was flagged by admin</span>
+          </div>
+        </div>
+        <!-- Experience -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_experience">Experience (years)</label>
+          <input type="number" class="dd-form-input" value="10" min="0" />
+        </div>
+        <!-- Rate -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_rate">Consultation Rate ($)</label>
+          <input type="number" class="dd-form-input" value="15" min="0" />
+        </div>
+        <!-- Availability -->
+        <div class="dd-form-group">
+          <label class="dd-form-label" data-i18n="dd_availability">Availability</label>
+          <input type="text" class="dd-form-input" value="Mon–Fri 9–5" />
+        </div>
+        <!-- Bio (full width) -->
+        <div class="dd-form-group dd-form-full">
+          <label class="dd-form-label" data-i18n="dd_prof_bio">Professional Bio</label>
+          <textarea class="dd-form-textarea">Experienced radiologist specialising in chest X-ray interpretation and AI-assisted pneumonia diagnostics. 10 years clinical practice at RUPP Medical Centre.</textarea>
+        </div>
+        <!-- License re-upload (full width) -->
+        <div class="dd-form-group dd-form-full">
+          <label class="dd-form-label" data-i18n="dd_license_doc">License Document</label>
+          <input type="file" id="resub_license_file" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                 onchange="ddHandleFileSelect(this,'ddResubFileLabel')" />
+          <div class="dd-upload-zone amber-zone" id="ddResubUploadZone"
+               onclick="document.getElementById('resub_license_file').click()"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="ddHandleDrop(event,'resub_license_file','ddResubFileLabel')">
+            <i class="ti ti-cloud-upload"></i>
+            <span id="ddResubFileLabel" data-i18n="dd_reupload_clear">Please upload a clearer scan</span>
+          </div>
+        </div>
+      </div>
+      <button class="dd-resubmit-btn" onclick="ddResubmit()">
+        <i class="ti ti-send"></i>
+        <span data-i18n="dd_resubmit">Resubmit Application</span>
+      </button>
+    </div>
+
+  </div><!-- /rejected-view -->
+
+</main><!-- /dd-page -->
+
+<!-- Toast container -->
+<div class="dd-toast-container" id="ddToastContainer"></div>
+
+<!-- Spin animation -->
+<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+
+<!-- i18n + scripts -->
+<script src="/static/js/i18n.js"></script>
+<script>
+/* ── Doctor Dashboard translations ──────────────────────── */
+Object.assign(TRANSLATIONS, {
+  dd_portal:          { en:"Doctor Portal",                km:"វិបផតផាលវេជ្ជបណ្ឌិត" },
+  dd_nav_dash:        { en:"Dashboard",                    km:"ផ្ទាំងវេជ្ជបណ្ឌិត" },
+  dd_nav_appt:        { en:"Appointments",                 km:"ការណាត់ជួប" },
+  dd_nav_profile:     { en:"My Profile",                   km:"ប្រវត្តិខ្ញុំ" },
+  dd_nav_earn:        { en:"Earnings",                     km:"ចំណូល" },
+  dd_status_pending:  { en:"Pending",                      km:"រង់ចាំ" },
+  dd_status_approved: { en:"Verified",                     km:"បានផ្ទៀង" },
+  dd_status_rejected: { en:"Rejected",                     km:"បដិសេធ" },
+  dd_my_profile:      { en:"My Profile",                   km:"ប្រវត្តិខ្ញុំ" },
+
+  /* Not-registered state */
+  dd_reg_title:       { en:"Join SmartX-Ray as a Doctor",        km:"ចូលរួម SmartX-Ray ជាវេជ្ជបណ្ឌិត" },
+  dd_reg_sub:         { en:"Fill in your credentials below. Our admin team will verify your license within 24 hours and activate your profile.", km:"បំពេញព័ត៌មានខាងក្រោម។ ក្រុមការងារAdmin នឹងផ្ទៀងអាជ្ញាបណ្ណក្នុង 24 ម៉ោង។" },
+  dd_reg_apply:       { en:"Apply Now",                           km:"ដាក់ពាក្យឥឡូវ" },
+  dd_reg_form_title:  { en:"Doctor Application",                  km:"ពាក្យសុំវេជ្ជបណ្ឌិត" },
+  dd_reg_free:        { en:"Free to apply",                       km:"ដោយឥតគិតថ្លៃ" },
+  dd_hospital:        { en:"Hospital / Clinic",                   km:"មន្ទីរពេទ្យ / គ្លីនិក" },
+  dd_qualifications:  { en:"Qualifications",                      km:"គុណវុឌ្ឍិ" },
+  dd_upload_hint:     { en:"Upload a scan of your medical license (PDF / JPG)", km:"បញ្ចូលការស្កែនអាជ្ញាបណ្ណ (PDF / JPG)" },
+  dd_submit_application: { en:"Submit Application",               km:"ដាក់ពាក្យ" },
+
+  /* Pending state */
+  dd_pending_title:   { en:"Your profile is under review", km:"ប្រវត្តិរបស់អ្នកកំពុងត្រួតពិនិត្យ" },
+  dd_pending_sub:     { en:"Our admin team is reviewing your medical license and credentials. You will receive an email notification within 24 hours.", km:"ក្រុមការងារAdmin កំពុងពិនិត្យអាជ្ញាបណ្ណ និងលិខិតបញ្ជាក់របស់អ្នក។ អ្នកនឹងទទួលអ៊ីមែលក្នុង 24 ម៉ោង។" },
+  dd_submitted_2h:    { en:"Submitted: 2 hours ago",       km:"បានដាក់ស្នើ: 2 ម៉ោងមុន" },
+  dd_what_next:       { en:"What happens next?",           km:"អ្វីនឹងកើតឡើងបន្ទាប់?" },
+  dd_step1_title:     { en:"Profile Submitted",            km:"បានដាក់ប្រវត្តិ" },
+  dd_step1_sub:       { en:"Your application was received",km:"ពាក្យសុំរបស់អ្នកបានទទួល" },
+  dd_step2_title:     { en:"Admin Review",                 km:"ការត្រួតពិនិត្យ Admin" },
+  dd_step2_sub:       { en:"License verification in progress", km:"កំពុងផ្ទៀងអាជ្ញាបណ្ណ" },
+  dd_step3_title:     { en:"Go Live",                      km:"ចាប់ផ្តើម" },
+  dd_step3_sub:       { en:"Appear in patient directory",  km:"បង្ហាញក្នុងបញ្ជីអ្នកជំងឺ" },
+  dd_submitted_profile:{ en:"Your Submitted Profile",      km:"ប្រវត្តិដែលបានដាក់ស្នើ" },
+  dd_license_no:      { en:"License No.",                  km:"អាជ្ញាបណ្ណ" },
+  dd_specialty:       { en:"Specialty",                    km:"ឯកទេស" },
+  dd_university:      { en:"University",                   km:"សាកល" },
+  dd_experience:      { en:"Experience",                   km:"បទពិសោធន៍" },
+  dd_rate:            { en:"Rate",                         km:"តម្លៃ" },
+  dd_availability:    { en:"Availability",                 km:"ម៉ោងទំនេរ" },
+  dd_prof_bio:        { en:"Professional Bio",             km:"ជីវប្រវត្តិ" },
+  dd_license_submitted:{ en:"License Document Submitted",  km:"ឯកសារអាជ្ញាបណ្ណបានដាក់" },
+  dd_cant_edit:       { en:"You cannot edit your profile while it is under review.", km:"អ្នកមិនអាចកែប្រវត្តិពេលវាកំពុងត្រួតពិនិត្យ" },
+
+  /* Profile completion */
+  dd_complete_title:  { en:"Complete your profile to go fully live", km:"បំពេញប្រវត្តិដើម្បីបង្ហាញពេញ" },
+  dd_complete_sub:    { en:"Some details are missing. Patients see your rate and availability — fill them in to receive bookings.", km:"ព័ត៌មានខ្លះខ្វះ។ អ្នកជំងឺមើលតម្លៃ និងម៉ោងទំនេររបស់អ្នក" },
+  dd_complete_cta:    { en:"Complete Now",                           km:"បំពេញឥឡូវ" },
+  dd_my_profile_edit: { en:"My Profile",                            km:"ប្រវត្តិខ្ញុំ" },
+  dd_phone:           { en:"Phone",                                  km:"ទូរស័ព្ទ" },
+  dd_save_profile:    { en:"Save Profile",                          km:"រក្សាទុកប្រវត្តិ" },
+
+  /* Approved state */
+  dd_approved_title:  { en:"Profile approved — You are live!", km:"ប្រវត្តិបានអនុម័ត — អ្នកកំពុងដំណើរការ!" },
+  dd_approved_sub:    { en:"Patients can now find and book your consultation.", km:"អ្នកជំងឺអាចរករការពិគ្រោះរបស់អ្នកបាន" },
+  dd_total_appt:      { en:"Total Appointments",            km:"ការណាត់ជួបសរុប" },
+  dd_today_sched:     { en:"Today's Schedule",              km:"កាលវិភាគថ្ងៃនេះ" },
+  dd_total_patients:  { en:"Total Patients",                km:"អ្នកជំងឺសរុប" },
+  dd_earn_month:      { en:"Earnings This Month",           km:"ចំណូលខែនេះ" },
+  dd_plus3_week:      { en:"+3 this week",                  km:"+3 សប្តាហ៍នេះ" },
+  dd_next_10:         { en:"Next: 10:00 AM",                km:"បន្ទាប់: 10:00 ព្រឹក" },
+  dd_plus2_new:       { en:"+2 new",                        km:"+2 ថ្មី" },
+  dd_18sess:          { en:"18 sessions × $15",             km:"18 វគ្គ × $15" },
+  dd_live:            { en:"Live",                          km:"ផ្សាយផ្ទាល់" },
+  dd_note_chest:      { en:"chest pain follow-up",          km:"តាមដានការឈឺទ្រូង" },
+  dd_note_followup:   { en:"follow up",                     km:"តាមដាន" },
+  dd_confirmed:       { en:"Confirmed",                     km:"បានបញ្ជាក់" },
+  dd_upcoming:        { en:"Upcoming",                      km:"ខាងមុខ" },
+  dd_completed:       { en:"Completed",                     km:"បានបញ្ចប់" },
+  dd_cancelled:       { en:"Cancelled",                     km:"បានបោះបង់" },
+  dd_join:            { en:"Join Meeting",                  km:"ចូលរួមប្រជុំ" },
+  dd_cancel:          { en:"Cancel",                        km:"បោះបង់" },
+  dd_view_det:        { en:"View Details",                  km:"មើលព័ត៌មាន" },
+  dd_upcoming_appt:   { en:"Upcoming Appointments",         km:"ការណាត់ជួបខាងមុខ" },
+  dd_view_all:        { en:"View all →",                    km:"មើលទាំងអស់ →" },
+  dd_col_patient:     { en:"Patient",                       km:"អ្នកជំងឺ" },
+  dd_col_datetime:    { en:"Date & Time",                   km:"កាលបរិច្ឆេទ & ម៉ោង" },
+  dd_col_note:        { en:"Note",                          km:"កំណត់ចំណាំ" },
+  dd_col_status:      { en:"Status",                        km:"ស្ថានភាព" },
+  dd_col_actions:     { en:"Actions",                       km:"សកម្មភាព" },
+  dd_earnings_summary:{ en:"Earnings Summary",              km:"សង្ខេបចំណូល" },
+  dd_this_month:      { en:"This Month",                    km:"ខែនេះ" },
+  dd_pending_payout:  { en:"Pending Payout",                km:"ការទូទាត់រង់ចាំ" },
+  dd_total_alltime:   { en:"Total All Time",                km:"សរុបគ្រប់ពេល" },
+  dd_18_sessions:     { en:"18 sessions completed",         km:"18 វគ្គបានបញ្ចប់" },
+  dd_3_pending:       { en:"3 sessions pending",            km:"3 វគ្គរង់ចាំ" },
+  dd_sessions_target: { en:"18 of 25 sessions target",      km:"18 ក្នុង 25 វគ្គគោលដៅ" },
+  dd_aba_note:        { en:"Payments processed via ABA KHQR",km:"ការទូទាត់តាម ABA KHQR" },
+  dd_ratings_reviews: { en:"Ratings & Reviews",             km:"ការវាយតម្លៃ & មតិ" },
+  dd_42_reviews:      { en:"42 reviews total",              km:"42 មតិសរុប" },
+  dd_review1:         { en:"Dr. Meas was very professional and thorough in the consultation.", km:"វេជ្ជបណ្ឌិត Meas មានវិជ្ជាជីវៈ និងលំអិតណាស់ក្នុងការពិគ្រោះ។" },
+  dd_review2:         { en:"Good advice, will consult again.", km:"ការណែនាំល្អ នឹងពិគ្រោះម្ដងទៀត។" },
+  dd_review3:         { en:"Highly recommended doctor.",    km:"វេជ្ជបណ្ឌិតដែលណែនាំខ្លាំង។" },
+  dd_from_market:     { en:"from SmartX-Ray Marketplace",   km:"ពី SmartX-Ray ផ្សារ" },
+
+  /* Rejected state */
+  dd_rejected_title:  { en:"Your profile was not approved", km:"ប្រវត្តិរបស់អ្នកមិនត្រូវបានអនុម័ត" },
+  dd_rejection_reason_lbl:{ en:"Reason for rejection:",    km:"មូលហេតុនៃការបដិសេធ:" },
+  dd_rejection_text:  { en:"Your medical license number (KH-MED-2891) could not be verified in the Ministry of Health database. Please resubmit with a valid license.", km:"លេខអាជ្ញាបណ្ណ (KH-MED-2891) មិនអាចផ្ទៀងផ្ទាត់ក្នុងមូលដ្ឋានទិន្នន័យក្រសួងសុខាភិបាល" },
+  dd_rejected_on:     { en:"Rejected on: 24 May 2026",     km:"បានបដិសេធ: 24 ឧសភា 2026" },
+  dd_how_to_fix:      { en:"How to fix and resubmit",      km:"របៀបកែ និងដាក់ពាក្យម្តងទៀត" },
+  dd_fix1_title:      { en:"Review the rejection reason",  km:"ពិនិត្យមូលហេតុបដិសេធ" },
+  dd_fix1_sub:        { en:"Read the admin feedback carefully", km:"អានមតិ Admin ដោយប្រុងប្រយ័ត្ន" },
+  dd_fix2_title:      { en:"Update your profile information", km:"ធ្វើបច្ចុប្បន្នភាពព័ត៌មាន" },
+  dd_fix2_sub:        { en:"Fix the issue mentioned above", km:"កែបញ្ហាដែលបានរៀបរាប់" },
+  dd_fix3_title:      { en:"Resubmit your application",    km:"ដាក់ពាក្យម្តងទៀត" },
+  dd_fix3_sub:        { en:"Admin will review again within 24hrs", km:"Admin នឹងពិនិត្យម្ដងទៀតក្នុង 24 ម៉ោង" },
+  dd_update_resubmit: { en:"Update Profile & Resubmit",    km:"ធ្វើបច្ចុប្បន្នភាព & ដាក់ពាក្យម្តងទៀត" },
+  dd_update_profile:  { en:"Update Your Profile",          km:"ធ្វើបច្ចុប្បន្នភាពប្រវត្តិ" },
+  dd_editing_enabled: { en:"Editing enabled",              km:"អនុញ្ញាតកែ" },
+  dd_full_name:       { en:"Full Name",                    km:"ឈ្មោះពេញ" },
+  dd_license_doc:     { en:"License Document",             km:"ឯកសារអាជ្ញាបណ្ណ" },
+  dd_reupload_clear:  { en:"Please upload a clearer scan", km:"សូមបញ្ចូលការស្កែនច្បាស់ជាង" },
+  dd_flagged_by_admin:{ en:"This field was flagged by admin", km:"វាលនេះត្រូវបានដាក់ទង់ដោយ Admin" },
+  dd_resubmit:        { en:"Resubmit Application",         km:"ដាក់ពាក្យម្តងទៀត" },
+});
+</script>
+<script src="/static/js/doctor-dashboard.js"></script>
+</body>
+</html>

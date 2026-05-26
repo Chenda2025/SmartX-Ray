@@ -46,9 +46,9 @@
     const heatmapUrl = s.heatmap_url || (s.heatmap_path ? `/static/${s.heatmap_path}` : "");
 
     const reportSection = isPro && s.report_id
-      ? `<a href="/api/scan/report/${s.report_id}/download" class="btn btn-warning fw-bold">
+      ? `<button onclick="downloadReport(${s.report_id})" class="btn btn-warning fw-bold">
            <i class="fa-solid fa-file-pdf me-2"></i>${I18n.t("result_pdf_btn")}
-         </a>`
+         </button>`
       : !isPro
       ? `<div class="alert alert-warning d-flex align-items-center gap-2 mt-2">
            <i class="fa-solid fa-lock"></i>
@@ -65,7 +65,7 @@
                <div class="fw-semibold small">${s.ad.title}</div>
                <div class="text-muted small">${s.ad.body}</div>
              </div>
-             <a href="#" onclick="adClick(${s.ad.id}, '${s.ad.target_url}')" class="btn btn-sm btn-outline-secondary flex-shrink-0">${I18n.t("dash_learn_more")}</a>
+             <button onclick="adClick(${s.ad.id}, '${s.ad.target_url}')" class="btn btn-sm btn-outline-secondary flex-shrink-0">${I18n.t("dash_learn_more")}</button>
            </div>
          </div>`
       : "";
@@ -155,6 +155,19 @@
         <i class="fa-solid fa-triangle-exclamation me-1"></i>
         ${I18n.t("result_disclaimer")}
       </div>`;
+  }
+
+  async function downloadReport(reportId) {
+    try {
+      const res = await api.get(`/scan/report/${reportId}/download`);
+      if (!res.ok) { alert(I18n.t("result_pdf_error") || "Download failed."); return; }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href = url; a.download = `SmartXRay-Report-${reportId}.pdf`;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    } catch { alert("Download failed. Please try again."); }
   }
 
   async function adClick(adId, targetUrl) {

@@ -42,7 +42,28 @@ def _load():
         raise FileNotFoundError(f"Model not found: {model_path}")
 
     logger.info("Loading model from %s …", model_path)
-    model = tf.keras.models.load_model(model_path, compile=False)
+
+    # ── Keras version-mismatch shim ────────────────────────────────────────
+    # The .h5 file was saved with Keras ≥ 3.6 which adds `quantization_config`
+    # to Dense layer configs.  Older runtimes (Keras 3.3.x bundled with
+    # TF 2.16) raise TypeError on that unknown key.
+    # Fix: supply a subclass that pops the key before delegating to super().
+    class _PatchedDense(tf.keras.layers.Dense):
+        @classmethod
+        def from_config(cls, config):
+            config.pop("quantization_config", None)
+            return super().from_config(config)
+
+    try:
+        model = tf.keras.models.load_model(
+            model_path,
+            compile=False,
+            custom_objects={"Dense": _PatchedDense},
+        )
+    except Exception:
+        # Fallback: try without custom_objects (future-proof if Keras fixes it)
+        model = tf.keras.models.load_model(model_path, compile=False)
+
     logger.info("Model loaded — input shape: %s", model.input_shape)
     return model
 

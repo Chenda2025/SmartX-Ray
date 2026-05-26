@@ -313,7 +313,7 @@
         <!-- Pneumonia box -->
         <div style="flex:1; text-align:center; padding:14px 8px;
                     background:var(--color-red-light); border-radius:var(--radius-card)">
-          <div style="font-size:26px; font-weight:800; color:var(--color-red-dark)"
+          <div class="adm-big-num" style="color:var(--color-red-dark)"
                id="sb-pneumonia">—</div>
           <div style="font-size:11px; color:var(--color-muted); margin-top:3px"
                data-i18n="adm_pneumonia">Pneumonia</div>
@@ -322,7 +322,7 @@
         <!-- Normal box -->
         <div style="flex:1; text-align:center; padding:14px 8px;
                     background:var(--color-green-light); border-radius:var(--radius-card)">
-          <div style="font-size:26px; font-weight:800; color:var(--color-green-dark)"
+          <div class="adm-big-num" style="color:var(--color-green-dark)"
                id="sb-normal">—</div>
           <div style="font-size:11px; color:var(--color-muted); margin-top:3px"
                data-i18n="adm_normal">Normal</div>
@@ -350,116 +350,110 @@
 <!-- ══════════════════════════════════════════════════════════════════════════
      Bottom row: Telegram Widget + Quick Actions
      ══════════════════════════════════════════════════════════════════════════ -->
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px"
-     class="panel-grid">
+<div style="display:grid; grid-template-columns:4fr 1fr; gap:16px; margin-bottom:20px">
 
-  <!-- ── COMPONENT 6 — Telegram Alerts Widget (.telegram-card) ── -->
-  <div class="telegram-card">
+  <!-- ── COMPONENT 6 — Doctor License Review ── -->
+  <div class="panel-card" style="display:flex; flex-direction:column">
+
+    <!-- Header -->
+    <div class="panel-card-header">
+      <div class="panel-card-title" style="gap:10px; align-items:flex-start">
+        <i class="ti ti-license" style="color:var(--color-amber); font-size:18px; margin-top:1px; flex-shrink:0"></i>
+        <div style="min-width:0">
+          <div style="font-weight:600; font-size:13px" data-i18n="adm_doc_review_title">Doctor License Submissions</div>
+          <div style="font-size:11px; color:var(--color-muted); font-weight:400; margin-top:2px"
+               data-i18n="adm_doc_review_sub">Review Cambodian doctor license submissions — approve or reject</div>
+        </div>
+      </div>
+      <a href="/admin/marketplace" class="btn btn-sm btn-ghost" style="font-size:11px; flex-shrink:0">
+        <span data-i18n="adm_view_all">View all</span>
+        <i class="ti ti-arrow-right" style="font-size:11px"></i>
+      </a>
+    </div>
+
+    <!-- Doctor list -->
+    <div class="panel-card-body" id="doctorQueueBody"
+         style="flex:1; overflow-y:auto; max-height:220px; padding:0">
+      <!-- Skeleton -->
+      <div style="padding:14px 18px">
+        <div class="skeleton skeleton-row full"   style="margin:6px 0; height:14px"></div>
+        <div class="skeleton skeleton-row medium" style="margin:6px 0; height:14px"></div>
+        <div class="skeleton skeleton-row full"   style="margin:6px 0; height:14px"></div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="panel-card-footer">
+      <i class="ti ti-clock" style="font-size:11px"></i>
+      <span id="doctorQueueUpdated" data-i18n="adm_last_updated">Last updated just now</span>
+    </div>
+
+  </div><!-- /.doctor-review card -->
+
+
+  <!-- ── COMPONENT 7 — Telegram Alerts Widget ── -->
+  <div class="telegram-card" style="display:flex;flex-direction:column">
 
     <!-- Header -->
     <div class="telegram-card-header">
       <i class="ti ti-brand-telegram"></i>
-      <div style="flex:1; min-width:0">
+      <div style="flex:1;min-width:0">
         <div class="label" data-i18n="adm_tg_title">Telegram Alerts</div>
-        <div class="bot-handle" id="tgBotHandle">—</div>
+        <div class="bot-handle" id="tgWidgetHandle">Checking…</div>
       </div>
-      <!-- Live status badge -->
-      <span id="tgStatusBadge"
-            style="display:none; font-size:10px; margin-right:6px; flex-shrink:0"></span>
-      <button onclick="showTgConfigModal()" class="btn btn-sm btn-outline"
-              style="font-size:11px; padding:4px 10px; flex-shrink:0">
-        <i class="ti ti-settings" style="font-size:12px; margin-right:3px"></i>
-        <span data-i18n="adm_configure">Configure</span>
-      </button>
+      <!-- Live status dot -->
+      <span id="tgWidgetDot"
+            style="width:9px;height:9px;border-radius:50%;background:#CBD5E1;flex-shrink:0"
+            title="Bot status"></span>
     </div>
 
-    <!-- Toggles -->
-    <div class="telegram-card-body">
-      <div class="tg-toggle-wrap">
+    <!-- Status + toggles -->
+    <div style="padding:12px 14px 0; flex:1">
+
+      <!-- Connection status line -->
+      <div id="tgWidgetStatus"
+           style="font-size:11px; color:var(--color-muted); margin-bottom:10px;
+                  padding:6px 10px; background:var(--color-page-bg);
+                  border-radius:7px; display:flex; align-items:center; gap:6px">
+        <i class="ti ti-loader-2" style="font-size:12px"></i>Loading…
+      </div>
+
+      <!-- Compact toggles -->
+      <div class="tg-toggle-wrap" style="margin-bottom:6px">
         <label class="switch">
-          <input type="checkbox" id="tgHighConf" checked onchange="saveTgPref('high_conf', this.checked)">
+          <input type="checkbox" id="tgHighConf" checked
+                 onchange="saveTgPref('high_conf', this.checked)">
           <span class="switch-slider"></span>
         </label>
         <div class="tg-toggle-label" data-i18n="adm_tg_high_conf">Pneumonia ≥ 80%</div>
       </div>
       <div class="tg-toggle-wrap">
         <label class="switch">
-          <input type="checkbox" id="tgDailySummary" checked onchange="saveTgPref('daily_summary', this.checked)">
+          <input type="checkbox" id="tgDailySummary"
+                 onchange="saveTgPref('daily_summary', this.checked)">
           <span class="switch-slider"></span>
         </label>
         <div class="tg-toggle-label" data-i18n="adm_tg_daily">Daily Summary</div>
       </div>
-      <div class="tg-toggle-wrap">
-        <label class="switch">
-          <input type="checkbox" id="tgCritical" onchange="saveTgPref('critical', this.checked)">
-          <span class="switch-slider"></span>
-        </label>
-        <div class="tg-toggle-label" data-i18n="adm_tg_critical">Critical Errors</div>
-      </div>
+    </div>
 
-      <!-- Test button row -->
-      <div style="margin-top:10px; padding-top:10px;
-                  border-top:1px solid rgba(255,255,255,.12)">
-        <button id="tgTestBtn" onclick="sendTgTest()" disabled
-                class="btn btn-sm btn-outline"
-                style="width:100%; font-size:11px; padding:5px 10px">
-          <i class="ti ti-send" style="font-size:12px; margin-right:4px"></i>
-          <span data-i18n="adm_tg_test">Send Test Alert</span>
-        </button>
-      </div>
+    <!-- Footer actions -->
+    <div style="padding:10px 14px 12px; border-top:1px solid var(--color-border);
+                margin-top:10px; display:flex; gap:6px">
+      <button id="tgTestBtn" onclick="sendTgTest()" disabled
+              class="btn btn-sm btn-outline"
+              style="flex:1; font-size:11px; padding:5px 8px">
+        <i class="ti ti-send" style="font-size:11px; margin-right:3px"></i>
+        <span data-i18n="adm_tg_test">Test Alert</span>
+      </button>
+      <a href="/admin/telegram" class="btn btn-sm btn-ghost"
+         style="font-size:11px; padding:5px 8px; white-space:nowrap">
+        <i class="ti ti-settings" style="font-size:11px; margin-right:3px"></i>
+        <span data-i18n="adm_tg_settings">Settings</span>
+      </a>
     </div>
 
   </div><!-- /.telegram-card -->
-
-
-  <!-- ── COMPONENT 7 — Quick Actions  (page-header pattern + action grid) ── -->
-  <div class="panel-card">
-    <div class="panel-card-header">
-      <div class="panel-card-title">
-        <i class="ti ti-bolt" style="font-size:15px"></i>
-        <span data-i18n="adm_quick_actions">Quick Actions</span>
-      </div>
-    </div>
-    <div style="padding:14px 16px">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px">
-
-        <a href="/admin/users" class="btn btn-outline"
-           style="flex-direction:column; align-items:flex-start; gap:4px;
-                  padding:12px; height:auto; text-align:left">
-          <i class="ti ti-users" style="font-size:20px; color:var(--color-indigo)"></i>
-          <span style="font-size:12px; font-weight:600"
-                data-i18n="adm_manage_users">Manage Users</span>
-        </a>
-
-        <a href="/admin/marketplace" class="btn btn-outline"
-           style="flex-direction:column; align-items:flex-start; gap:4px;
-                  padding:12px; height:auto; text-align:left; position:relative">
-          <i class="ti ti-stethoscope" style="font-size:20px; color:var(--color-amber)"></i>
-          <span style="font-size:12px; font-weight:600"
-                data-i18n="adm_doc_approvals">Doctor Queue</span>
-          <span class="badge badge-amber" id="qa-badge"
-                style="position:absolute; top:8px; right:8px; display:none; font-size:9px"></span>
-        </a>
-
-        <a href="/admin/ads" class="btn btn-outline"
-           style="flex-direction:column; align-items:flex-start; gap:4px;
-                  padding:12px; height:auto; text-align:left">
-          <i class="ti ti-speakerphone" style="font-size:20px; color:var(--color-green)"></i>
-          <span style="font-size:12px; font-weight:600"
-                data-i18n="adm_nav_ads">Ad Manager</span>
-        </a>
-
-        <a href="/admin/logs" class="btn btn-outline"
-           style="flex-direction:column; align-items:flex-start; gap:4px;
-                  padding:12px; height:auto; text-align:left">
-          <i class="ti ti-activity" style="font-size:20px; color:var(--color-muted)"></i>
-          <span style="font-size:12px; font-weight:600"
-                data-i18n="adm_nav_logs">System Logs</span>
-        </a>
-
-      </div>
-    </div>
-  </div><!-- /.panel-card quick actions -->
 
 </div><!-- /.bottom row -->
 
@@ -483,11 +477,17 @@ Object.assign(TRANSLATIONS, {
   adm_ad_ctr:         { en: 'Ad Click-Through Rate',      km: 'អត្រាចុចផ្សាយពាណិជ្ជ' },
   adm_pro_rate:       { en: 'Pro Conversion',             km: 'ការប្តូរ Pro' },
   adm_monthly_rev:    { en: 'Est. Monthly Revenue',       km: 'ចំណូលប្រចាំខែ (ប.ច.)' },
-  adm_tg_title:       { en: 'Telegram Alerts',            km: 'ការជូនដំណឹង Telegram' },
-  adm_tg_high_conf:   { en: 'Pneumonia ≥ 80%',            km: 'ជំងឺរលាកសួត ≥ 80%' },
-  adm_tg_daily:       { en: 'Daily Summary',               km: 'សង្ខេបប្រចាំថ្ងៃ' },
-  adm_tg_critical:    { en: 'Critical Errors',             km: 'កំហុសសំខាន់' },
-  adm_tg_test:        { en: 'Send Test Alert',             km: 'ផ្ញើការជូនដំណឹងសាកល្បង' },
+  adm_tg_title:         { en: 'Telegram Alerts',            km: 'ការជូនដំណឹង Telegram' },
+  adm_tg_high_conf:     { en: 'Pneumonia ≥ 80%',            km: 'ជំងឺរលាកសួត ≥ 80%' },
+  adm_tg_daily:         { en: 'Daily Summary',              km: 'សង្ខេបប្រចាំថ្ងៃ' },
+  adm_tg_critical:      { en: 'Critical Errors',            km: 'កំហុសសំខាន់' },
+  adm_tg_test:          { en: 'Test Alert',                 km: 'ផ្ញើការជូនដំណឹងសាកល្បង' },
+  adm_tg_settings:      { en: 'Settings',                   km: 'ការកំណត់' },
+  adm_doc_review_title: { en: 'Doctor License Submissions', km: 'ស្នើសុំអាជ្ញាប័ណ្ណវេជ្ជបណ្ឌិត' },
+  adm_doc_review_sub:   { en: 'Review Cambodian doctor license submissions — approve or reject', km: 'ពិនិត្យការស្នើអាជ្ញាប័ណ្ណ — អនុម័ត ឬ បដិសេធ' },
+  adm_doc_approve:      { en: 'Approve',                   km: 'អនុម័ត' },
+  adm_doc_reject:       { en: 'Reject',                    km: 'បដិសេធ' },
+  adm_doc_no_pending:   { en: 'No pending submissions',    km: 'មិនមានការស្នើរង់ចាំ' },
   adm_last_updated:   { en: 'Last updated just now',      km: 'ធ្វើបច្ចុប្បន្នភាពថ្មីៗ' },
   adm_scan_results:   { en: 'Scan Results',               km: 'លទ្ធផលស្កែន' },
   adm_pneumonia:      { en: 'Pneumonia',                  km: 'ជំងឺរលាកសួត' },
@@ -673,86 +673,109 @@ async function loadRecentScans() {
 }
 
 
-// ── Telegram: load live status from /api/admin/telegram/status ───────────
-async function loadTgStatus() {
-  const r = await apiFetch('/api/admin/telegram/status');
+// ── Doctor Queue: load pending submissions ────────────────────────────────
+async function loadDoctorQueue() {
+  const body = $('doctorQueueBody');
+  if (!body) return;
+
+  const r = await apiFetch('/api/admin/marketplace/doctors?status=pending&limit=5');
   if (!r || !r.ok) return;
   const d = await r.json();
 
-  // Badge
-  const badge = $('tgStatusBadge');
-  if (badge) {
-    badge.style.display = '';
-    if (d.configured && d.reachable) {
-      badge.textContent  = '● Online';
-      badge.className    = 'badge badge-green';
-    } else if (d.configured && !d.reachable) {
-      badge.textContent  = '● Offline';
-      badge.className    = 'badge badge-amber';
-    } else {
-      badge.textContent  = '● Not set';
-      badge.className    = 'badge';
-      badge.style.cssText += '; background:#F1F5F9; color:var(--color-muted)';
-    }
-  }
+  const doctors = d.doctors || [];
 
-  // Bot handle
-  const handle = $('tgBotHandle');
-  if (handle) {
-    handle.textContent = d.bot_username
-      ? '@' + d.bot_username
-      : d.configured ? 'Configured (offline?)' : 'Not configured';
-  }
-
-  // Test button
-  const btn = $('tgTestBtn');
-  if (btn) {
-    btn.disabled = !d.configured;
-    if (!d.configured) btn.title = 'Configure Telegram first';
-  }
-
-  // Cache for modal
-  window._tgStatus = d;
-}
-
-// ── Telegram: send test alert ─────────────────────────────────────────────
-async function sendTgTest() {
-  const btn = $('tgTestBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML =
-      '<i class="ti ti-loader-2" style="font-size:12px;margin-right:4px"></i>Sending…';
-  }
-
-  const r = await apiFetch('/api/admin/telegram/test', { method: 'POST' });
-
-  // Restore button
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML =
-      '<i class="ti ti-send" style="font-size:12px;margin-right:4px"></i>' +
-      '<span data-i18n="adm_tg_test">Send Test Alert</span>';
+  if (!doctors.length) {
+    body.innerHTML = `
+      <div class="empty-state" style="padding:28px 18px; text-align:center">
+        <i class="ti ti-circle-check" style="font-size:28px; color:var(--color-green); display:block; margin-bottom:6px"></i>
+        <p style="font-size:12px; color:var(--color-muted); margin:0"
+           data-i18n="adm_doc_no_pending">No pending submissions</p>
+      </div>`;
     if (typeof I18n !== 'undefined') I18n.applyAll();
+    return;
   }
 
-  if (!r) return;
+  body.innerHTML = doctors.map(doc => `
+    <div class="doctor-queue-row" id="dqr-${doc.id}"
+         style="display:flex; align-items:center; gap:10px;
+                padding:10px 18px; border-bottom:1px solid var(--color-border)">
+      <!-- Avatar -->
+      <div style="width:34px; height:34px; border-radius:50%; flex-shrink:0;
+                  background:var(--color-amber-light,#FEF3C7);
+                  display:flex; align-items:center; justify-content:center">
+        <i class="ti ti-stethoscope" style="font-size:16px; color:var(--color-amber)"></i>
+      </div>
+      <!-- Info -->
+      <div style="flex:1; min-width:0">
+        <div style="font-size:12px; font-weight:600; white-space:nowrap;
+                    overflow:hidden; text-overflow:ellipsis">${escHtml(doc.full_name)}</div>
+        <div style="font-size:11px; color:var(--color-muted); white-space:nowrap;
+                    overflow:hidden; text-overflow:ellipsis">${escHtml(doc.specialty || '—')}</div>
+      </div>
+      <!-- Actions -->
+      <div style="display:flex; gap:5px; flex-shrink:0">
+        <button onclick="doctorAction(${doc.id},'approve')"
+                class="btn btn-sm"
+                style="font-size:10px; padding:3px 9px; background:var(--color-green);
+                       color:#fff; border:none; border-radius:6px; cursor:pointer">
+          <i class="ti ti-check" style="font-size:11px"></i>
+        </button>
+        <button onclick="doctorAction(${doc.id},'reject')"
+                class="btn btn-sm"
+                style="font-size:10px; padding:3px 9px; background:var(--color-red,#EF4444);
+                       color:#fff; border:none; border-radius:6px; cursor:pointer">
+          <i class="ti ti-x" style="font-size:11px"></i>
+        </button>
+      </div>
+    </div>`).join('');
+
+  // Footer timestamp
+  const footer = $('doctorQueueUpdated');
+  if (footer) footer.textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ── Doctor approve / reject ───────────────────────────────────────────────
+async function doctorAction(id, action) {
+  const row = $(`dqr-${id}`);
+  if (row) row.style.opacity = '0.5';
+
+  const r = await apiFetch(`/api/admin/marketplace/doctors/${id}/${action}`, { method: 'PATCH' });
+  if (!r) { if (row) row.style.opacity = ''; return; }
   const d = await r.json();
-  toast(d.message || (d.ok ? 'Sent!' : 'Failed.'), d.ok ? 'success' : 'error');
+
+  if (r.ok) {
+    toast(d.message || (action === 'approve' ? 'Approved!' : 'Rejected.'),
+          action === 'approve' ? 'success' : 'warning');
+    // Fade out the row
+    if (row) {
+      row.style.transition = 'opacity .3s';
+      row.style.opacity    = '0';
+      setTimeout(() => { row.remove(); checkEmptyQueue(); }, 320);
+    }
+    // Refresh KPI badge
+    loadStats();
+  } else {
+    toast(d.message || 'Error.', 'error');
+    if (row) row.style.opacity = '';
+  }
 }
 
-// ── Telegram preference persistence (localStorage) ────────────────────────
-function saveTgPref(key, val) {
-  const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
-  prefs[key] = val;
-  localStorage.setItem('tg_prefs', JSON.stringify(prefs));
-  toast(val ? 'Alert enabled.' : 'Alert disabled.', val ? 'success' : 'warning');
+function checkEmptyQueue() {
+  const body = $('doctorQueueBody');
+  if (body && !body.querySelector('.doctor-queue-row')) {
+    body.innerHTML = `
+      <div class="empty-state" style="padding:28px 18px; text-align:center">
+        <i class="ti ti-circle-check" style="font-size:28px; color:var(--color-green); display:block; margin-bottom:6px"></i>
+        <p style="font-size:12px; color:var(--color-muted); margin:0">No pending submissions</p>
+      </div>`;
+  }
 }
 
-function restoreTgPrefs() {
-  const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
-  if ('high_conf'     in prefs) $('tgHighConf').checked     = prefs.high_conf;
-  if ('daily_summary' in prefs) $('tgDailySummary').checked = prefs.daily_summary;
-  if ('critical'      in prefs) $('tgCritical').checked     = prefs.critical;
+// ── HTML escape helper ────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 
@@ -764,14 +787,91 @@ async function loadDashboard() {
     icon.style.transform  = 'rotate(360deg)';
     setTimeout(() => { icon.style.transition = ''; icon.style.transform = ''; }, 650);
   }
-  await Promise.all([loadStats(), loadRecentScans()]);
+  await Promise.all([loadStats(), loadRecentScans(), loadDoctorQueue()]);
+}
+
+
+// ── Telegram: load live status ────────────────────────────────────────────
+async function loadTgStatus() {
+  const r = await apiFetch('/api/admin/telegram/status');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+
+  // Enable test button
+  const btn = $('tgTestBtn');
+  if (btn) { btn.disabled = !(d.configured || d.token_only); }
+
+  // Widget status line
+  const statusEl = $('tgWidgetStatus');
+  const dotEl    = $('tgWidgetDot');
+  const handleEl = $('tgWidgetHandle');
+
+  if (d.configured && d.reachable) {
+    if (dotEl)    { dotEl.style.background = '#10B981'; dotEl.title = 'Online'; }
+    if (handleEl) handleEl.textContent = d.bot_username ? `@${d.bot_username}` : 'Bot active';
+    if (statusEl) statusEl.innerHTML =
+      `<i class="ti ti-circle-check" style="color:#10B981;font-size:13px"></i>
+       <span style="color:#059669;font-weight:600">Connected</span>
+       ${d.chat_id_preview ? `· Chat <code style="font-size:10px">${d.chat_id_preview}</code>` : ''}`;
+  } else if (d.token_only) {
+    if (dotEl)    { dotEl.style.background = '#F59E0B'; dotEl.title = 'Token only'; }
+    if (handleEl) handleEl.textContent = d.bot_username ? `@${d.bot_username}` : 'Token set';
+    if (statusEl) statusEl.innerHTML =
+      `<i class="ti ti-alert-triangle" style="color:#F59E0B;font-size:13px"></i>
+       <span style="color:#92400E">Needs Chat ID —
+       <a href="/admin/telegram" style="color:#6366F1;font-weight:600">Setup →</a></span>`;
+  } else {
+    if (dotEl)    { dotEl.style.background = '#EF4444'; dotEl.title = 'Not configured'; }
+    if (handleEl) handleEl.textContent = 'Not configured';
+    if (statusEl) statusEl.innerHTML =
+      `<i class="ti ti-x-circle" style="color:#EF4444;font-size:13px"></i>
+       <span style="color:#991B1B">Not set up —
+       <a href="/admin/telegram" style="color:#6366F1;font-weight:600">Configure →</a></span>`;
+  }
+
+  // Cache for use by other components
+  window._tgStatus = d;
+}
+
+// ── Telegram: send test alert ─────────────────────────────────────────────
+async function sendTgTest() {
+  const btn = $('tgTestBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2" style="font-size:12px;margin-right:4px"></i>Sending…';
+  }
+  const r = await apiFetch('/api/admin/telegram/test', { method: 'POST' });
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send" style="font-size:12px;margin-right:4px"></i>' +
+                    '<span data-i18n="adm_tg_test">Send Test Alert</span>';
+    if (typeof I18n !== 'undefined') I18n.applyAll();
+  }
+  if (!r) return;
+  const d = await r.json();
+  toast(d.message || (d.ok ? 'Sent!' : 'Failed.'), d.ok ? 'success' : 'error');
+}
+
+// ── Telegram preference persistence ──────────────────────────────────────
+function saveTgPref(key, val) {
+  const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
+  prefs[key] = val;
+  localStorage.setItem('tg_prefs', JSON.stringify(prefs));
+  toast(val ? 'Alert enabled.' : 'Alert disabled.', val ? 'success' : 'warning');
+}
+
+function restoreTgPrefs() {
+  const prefs = JSON.parse(localStorage.getItem('tg_prefs') || '{}');
+  if ('high_conf'     in prefs) $('tgHighConf').checked     = prefs.high_conf;
+  if ('daily_summary' in prefs) $('tgDailySummary').checked = prefs.daily_summary;
 }
 
 
 // ── Auto-refresh every 60 s ───────────────────────────────────────────────
 restoreTgPrefs();
-loadTgStatus();           // load live bot status on page init
+loadTgStatus();
 loadDashboard();
-setInterval(loadDashboard, 60_000);
+loadDoctorQueue();
+setInterval(() => { loadDashboard(); loadDoctorQueue(); loadTgStatus(); }, 60_000);
 </script>
 {% endblock %}

@@ -23,22 +23,28 @@ def create_app(env: str | None = None) -> Flask:
     mail.init_app(app)
 
     # ── Blueprints ─────────────────────────────────────────────────────────
-    from app.routes.auth import auth_bp
-    from app.routes.scan import scan_bp
+    from app.routes.auth        import auth_bp
+    from app.routes.scan        import scan_bp
     from app.routes.subscription import subscription_bp
     from app.routes.marketplace import marketplace_bp
-    from app.routes.ads import ads_bp
-    from app.routes.pages import pages_bp
-    from app.routes.admin import admin_bp, admin_api_bp
+    from app.routes.ads         import ads_bp
+    from app.routes.pages       import pages_bp
+    from app.routes.admin       import admin_bp, admin_api_bp
+    from app.routes.doctor      import doctor_bp
+    from app.routes.appointment import appointment_bp, doctors_bp, patient_bp
 
-    app.register_blueprint(auth_bp,         url_prefix="/api/auth")
-    app.register_blueprint(scan_bp,         url_prefix="/api/scan")
-    app.register_blueprint(subscription_bp, url_prefix="/api/subscription")
-    app.register_blueprint(marketplace_bp,  url_prefix="/api/marketplace")
-    app.register_blueprint(ads_bp,          url_prefix="/api/ads")
+    app.register_blueprint(auth_bp,          url_prefix="/api/auth")
+    app.register_blueprint(scan_bp,          url_prefix="/api/scan")
+    app.register_blueprint(subscription_bp,  url_prefix="/api/subscription")
+    app.register_blueprint(marketplace_bp,   url_prefix="/api/marketplace")
+    app.register_blueprint(ads_bp,           url_prefix="/api/ads")
+    app.register_blueprint(doctor_bp,        url_prefix="/api/doctor")
+    app.register_blueprint(appointment_bp,   url_prefix="/api/appointments")
+    app.register_blueprint(doctors_bp,       url_prefix="/api/doctors")
+    app.register_blueprint(patient_bp,       url_prefix="/api/patient")
     app.register_blueprint(pages_bp)
-    app.register_blueprint(admin_bp,        url_prefix="/admin")
-    app.register_blueprint(admin_api_bp,    url_prefix="/api/admin")
+    app.register_blueprint(admin_bp,         url_prefix="/admin")
+    app.register_blueprint(admin_api_bp,     url_prefix="/api/admin")
 
     # ── Upload folders ──────────────────────────────────────────────────────
     for folder_key in ("UPLOAD_FOLDER", "HEATMAP_FOLDER", "REPORT_FOLDER"):
@@ -182,24 +188,35 @@ def create_app(env: str | None = None) -> Flask:
         from app.models.subscription import Subscription
         from app.models.ad           import Ad
         from app.models.doctor       import Doctor
+        from app.models.appointment  import Appointment
         from app.models.report       import Report
         from app.models.transaction  import Transaction
         from app.models.system_log   import SystemLog
         return dict(
             db=db,
             User=User, Scan=Scan, Subscription=Subscription,
-            Ad=Ad, Doctor=Doctor, Report=Report, Transaction=Transaction,
-            SystemLog=SystemLog,
+            Ad=Ad, Doctor=Doctor, Appointment=Appointment,
+            Report=Report, Transaction=Transaction, SystemLog=SystemLog,
         )
 
     # ── CLI commands ────────────────────────────────────────────────────────
     @app.cli.command("seed-db")
-    def seed_db():
-        """Seed the database with demo users, doctors, and ads."""
+    @click.option("--cambodia", is_flag=True, default=True,
+                  help="Use the Cambodian sample dataset (default).")
+    @click.option("--legacy",   is_flag=True, default=False,
+                  help="Use the legacy seed file (root seed.py).")
+    def seed_db(cambodia, legacy):
+        """Seed the database with sample data.
+
+        Default: Cambodian actors — admin, 4 doctors, 3 patients, scans,
+        appointments, reviews, telegram config.  (db/seed.py)
+
+        --legacy: original 6-doctor international dataset.  (seed.py)
+        """
         import importlib.util, pathlib
-        spec = importlib.util.spec_from_file_location(
-            "seed", pathlib.Path(__file__).parent.parent / "seed.py"
-        )
+        root = pathlib.Path(__file__).parent.parent
+        seed_file = root / ("seed.py" if legacy else "db/seed.py")
+        spec   = importlib.util.spec_from_file_location("seed", seed_file)
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         module.seed()

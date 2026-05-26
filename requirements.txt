@@ -20,9 +20,10 @@ Pillow==10.4.0
 matplotlib==3.9.1
 scipy==1.13.1
 
-# PDF Generation
+# PDF / DOCX Generation
 reportlab==4.2.2
 PyPDF2==3.0.1
+python-docx==1.1.2
 
 # Payments (Stripe)
 stripe==10.5.0

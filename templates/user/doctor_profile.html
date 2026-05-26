@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en" id="dp-html">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doctor Profile — SmartX-Ray</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%236366F1'/><text x='16' y='22' font-size='18' text-anchor='middle' fill='white' font-family='sans-serif'>X</text></svg>" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.3.0/dist/tabler-icons.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Hanuman:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --indigo: #6366F1; --indigo-dk: #4F46E5; --indigo-lt: #EEF2FF;
+    --green:  #10B981; --green-lt: #ECFDF5;
+    --amber:  #F59E0B; --amber-lt: #FEF3C7;
+    --red:    #EF4444; --red-lt:   #FEF2F2;
+    --text:   #0F172A; --text2: #475569; --muted: #94A3B8;
+    --bg:     #F0F4F8; --surface: #FFFFFF; --border: #E2E8F0;
+    --shadow: 0 1px 4px rgba(15,23,42,.07); --r: 12px;
+  }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+  html[lang="km"] * { font-family:'Hanuman','DM Sans',sans-serif !important; }
+
+  /* Nav */
+  .dp-nav {
+    position:sticky; top:0; z-index:100;
+    display:flex; align-items:center; gap:1rem; padding:.75rem 1.5rem;
+    background:#fff; border-bottom:1.5px solid var(--border);
+  }
+  .dp-back { display:flex; align-items:center; gap:.4rem; text-decoration:none; font-size:.85rem; font-weight:600; color:var(--text2); padding:.35rem .75rem; border:1.5px solid var(--border); border-radius:8px; background:#fff; transition:border-color .14s,color .14s; }
+  .dp-back:hover { border-color:var(--indigo); color:var(--indigo); }
+  .dp-brand { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.1rem; color:var(--indigo); text-decoration:none; margin-left:auto; }
+  .dp-lang-btn { padding:.3rem .7rem; border-radius:8px; border:1.5px solid var(--border); background:#fff; font-size:.8rem; font-weight:600; cursor:pointer; color:var(--text2); }
+
+  /* Layout */
+  .dp-page { max-width:1060px; margin:0 auto; padding:2rem 1.5rem; display:grid; grid-template-columns:320px 1fr; gap:1.5rem; align-items:start; }
+  @media (max-width:820px) { .dp-page { grid-template-columns:1fr; } }
+
+  /* Cards */
+  .dp-card { background:var(--surface); border:1.5px solid var(--border); border-radius:var(--r); padding:1.4rem; box-shadow:var(--shadow); }
+
+  /* Profile sidebar */
+  .dp-avatar-lg {
+    width:80px; height:80px; border-radius:18px; margin:0 auto 1rem;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.6rem; font-weight:700; color:#fff;
+  }
+  .dp-name   { text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.2rem; }
+  .dp-spec   { text-align:center; color:var(--indigo); font-weight:600; font-size:.88rem; margin-top:.15rem; }
+  .dp-verified { display:flex; align-items:center; justify-content:center; gap:.25rem; font-size:.75rem; font-weight:700; color:var(--green); margin-top:.4rem; }
+  .dp-stars  { display:flex; align-items:center; justify-content:center; gap:.15rem; margin:.6rem 0 .25rem; }
+  .dp-star   { font-size:.85rem; color:var(--border); }
+  .dp-star.on { color:var(--amber); }
+  .dp-rating-val { font-size:.9rem; font-weight:700; color:var(--text); margin-left:.3rem; }
+  .dp-rev-cnt    { font-size:.78rem; color:var(--muted); margin-left:.2rem; }
+
+  .dp-meta-list { margin-top:1rem; display:flex; flex-direction:column; gap:.55rem; }
+  .dp-meta-row  { display:flex; align-items:flex-start; gap:.6rem; font-size:.84rem; color:var(--text2); }
+  .dp-meta-row i { color:var(--muted); margin-top:.1rem; flex-shrink:0; }
+  .dp-meta-val  { color:var(--text); font-weight:500; }
+
+  /* Book CTA */
+  .dp-book-cta {
+    display:block; width:100%; padding:.9rem; border-radius:10px; border:none;
+    background:var(--indigo); color:#fff; font-size:1rem; font-weight:700;
+    cursor:pointer; text-align:center; text-decoration:none; margin-top:1.25rem;
+    transition:background .14s; letter-spacing:.01em;
+  }
+  .dp-book-cta:hover { background:var(--indigo-dk); }
+
+  /* Right column */
+  .dp-right { display:flex; flex-direction:column; gap:1.25rem; }
+
+  /* Section title */
+  .dp-section-title { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1rem; margin-bottom:.9rem; color:var(--text); display:flex; align-items:center; gap:.45rem; }
+  .dp-section-title i { color:var(--indigo); }
+
+  /* Bio */
+  .dp-bio { font-size:.9rem; line-height:1.7; color:var(--text2); }
+
+  /* Available slots */
+  .dp-slot-date-tabs { display:flex; gap:.5rem; overflow-x:auto; padding-bottom:.35rem; margin-bottom:.85rem; scrollbar-width:none; }
+  .dp-slot-date-tabs::-webkit-scrollbar { display:none; }
+  .dp-date-tab {
+    flex-shrink:0; padding:.42rem .85rem; border-radius:9px; cursor:pointer;
+    border:1.5px solid var(--border); background:#fff; text-align:center; font-size:.8rem;
+    transition:all .14s;
+  }
+  .dp-date-tab .day-name { font-weight:600; font-size:.75rem; color:var(--muted); display:block; }
+  .dp-date-tab .day-num  { font-weight:700; font-size:.92rem; color:var(--text); }
+  .dp-date-tab.active    { background:var(--indigo); border-color:var(--indigo); }
+  .dp-date-tab.active .day-name,
+  .dp-date-tab.active .day-num { color:#fff; }
+  .dp-date-tab:hover:not(.active) { border-color:var(--indigo); }
+
+  .dp-slot-grid { display:flex; flex-wrap:wrap; gap:.5rem; }
+  .dp-slot {
+    padding:.42rem .85rem; border-radius:8px; font-size:.82rem; font-weight:600;
+    cursor:pointer; border:1.5px solid var(--border); background:#fff; color:var(--text);
+    transition:all .14s;
+  }
+  .dp-slot:hover:not(.booked) { border-color:var(--indigo); color:var(--indigo); background:var(--indigo-lt); }
+  .dp-slot.selected { background:var(--indigo); border-color:var(--indigo); color:#fff; }
+  .dp-slot.booked   { background:var(--bg); color:var(--muted); cursor:not-allowed; text-decoration:line-through; }
+  .dp-slot-none { font-size:.84rem; color:var(--muted); padding:.4rem 0; }
+
+  /* Reviews */
+  .dp-review-card { border:1px solid var(--border); border-radius:10px; padding:1rem; margin-bottom:.75rem; }
+  .dp-review-top  { display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem; }
+  .dp-reviewer    { display:flex; align-items:center; gap:.55rem; }
+  .dp-rev-av      { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:700; flex-shrink:0; }
+  .dp-rev-name    { font-weight:600; font-size:.84rem; }
+  .dp-rev-date    { font-size:.75rem; color:var(--muted); }
+  .dp-rev-stars   { display:flex; gap:.1rem; }
+  .dp-rev-star    { font-size:.75rem; color:var(--border); }
+  .dp-rev-star.on { color:var(--amber); }
+  .dp-rev-text    { font-size:.84rem; color:var(--text2); line-height:1.6; }
+
+  /* Loading */
+  .dp-spinner { display:inline-block; width:28px; height:28px; border:3px solid var(--border); border-top-color:var(--indigo); border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* Toast */
+  .dp-toast-wrap { position:fixed; bottom:1.5rem; right:1.5rem; z-index:999; display:flex; flex-direction:column-reverse; gap:.5rem; }
+  .dp-toast { display:flex; align-items:center; gap:.65rem; padding:.7rem 1rem; border-radius:10px; background:#1E293B; color:#fff; font-size:.84rem; box-shadow:0 4px 20px rgba(0,0,0,.25); animation:fadeUp .25s ease; }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } }
+  .dp-toast.error { border-left:3px solid var(--red); }
+
+  @media (max-width:600px) { .dp-page { padding:1rem; } }
+  </style>
+</head>
+<body>
+
+<header class="dp-nav">
+  <a href="/find-doctor" class="dp-back"><i class="ti ti-arrow-left"></i> <span data-i18n="dp_back">Doctors</span></a>
+  <a href="/" class="dp-brand">SmartX-Ray</a>
+  <button class="dp-lang-btn" id="dpLangBtn" onclick="dpToggleLang()" style="margin-left:.75rem;">ខ្មែរ</button>
+</header>
+
+<main class="dp-page" id="dpPage">
+
+  <!-- LEFT: Profile sidebar -->
+  <aside>
+    <div class="dp-card" id="dpSidebar">
+      <div style="text-align:center;padding:2rem;"><div class="dp-spinner"></div></div>
+    </div>
+  </aside>
+
+  <!-- RIGHT: Details -->
+  <div class="dp-right" id="dpRight" style="display:none;">
+
+    <!-- Bio -->
+    <div class="dp-card" id="dpBioCard">
+      <div class="dp-section-title"><i class="ti ti-user"></i> <span data-i18n="dp_about">About</span></div>
+      <p class="dp-bio" id="dpBio">—</p>
+    </div>
+
+    <!-- Available Slots -->
+    <div class="dp-card">
+      <div class="dp-section-title"><i class="ti ti-calendar"></i> <span data-i18n="dp_slots">Available Slots</span></div>
+      <div class="dp-slot-date-tabs" id="dpDateTabs"></div>
+      <div class="dp-slot-grid" id="dpSlotGrid"><div class="dp-slot-none" data-i18n="dp_select_date">Select a date above</div></div>
+    </div>
+
+    <!-- Reviews -->
+    <div class="dp-card">
+      <div class="dp-section-title"><i class="ti ti-star"></i> <span data-i18n="dp_reviews">Patient Reviews</span></div>
+      <div id="dpReviews"><div style="color:var(--muted);font-size:.85rem;" data-i18n="dp_no_reviews">No reviews yet</div></div>
+    </div>
+
+  </div>
+
+</main>
+
+<div class="dp-toast-wrap" id="dpToasts"></div>
+
+<script src="/static/js/i18n.js"></script>
+<script>
+Object.assign(TRANSLATIONS, {
+  dp_back:        { en:'Doctors',            km:'វេជ្ជបណ្ឌិត' },
+  dp_about:       { en:'About',              km:'អំពី' },
+  dp_slots:       { en:'Available Slots',    km:'ម៉ោងទំនេរ' },
+  dp_select_date: { en:'Select a date above',km:'ជ្រើសកាលបរិច្ឆេទខាងលើ' },
+  dp_reviews:     { en:'Patient Reviews',    km:'មតិអ្នកជំងឺ' },
+  dp_no_reviews:  { en:'No reviews yet',     km:'មិនទាន់មានមតិ' },
+  dp_verified:    { en:'Verified Doctor',    km:'វេជ្ជបណ្ឌិតបានផ្ទៀង' },
+  dp_license:     { en:'License',            km:'អាជ្ញាបណ្ណ' },
+  dp_hospital:    { en:'Hospital',           km:'មន្ទីរពេទ្យ' },
+  dp_university:  { en:'University',         km:'សាកលវិទ្យាល័យ' },
+  dp_experience:  { en:'Experience',         km:'បទពិសោធន៍' },
+  dp_rate:        { en:'Consultation Rate',  km:'តម្លៃពិគ្រោះ' },
+  dp_availability:{ en:'Availability',       km:'ម៉ោងទំនេរ' },
+  dp_per_session: { en:'/ session',          km:'/ វគ្គ' },
+  dp_book_btn:    { en:'Book Appointment',   km:'ណាត់ជួប' },
+  dp_years:       { en:'years',              km:'ឆ្នាំ' },
+  dp_slot_booked: { en:'Booked',             km:'បានណាត់' },
+  dp_no_slots:    { en:'No slots available this day', km:'គ្មានម៉ោងទំនេរថ្ងៃនេះ' },
+  dp_reviews_cnt: { en:'reviews',            km:'មតិ' },
+});
+</script>
+<script>
+'use strict';
+
+const COLORS = [
+  ['#4F46E5','#EEF2FF'],['#059669','#ECFDF5'],['#D97706','#FEF3C7'],
+  ['#DC2626','#FEF2F2'],['#0891B2','#ECFEFF'],['#7C3AED','#F5F3FF'],
+];
+function _colorFor(name) {
+  let h=0; for(let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))>>>0;
+  return COLORS[h%COLORS.length];
+}
+function _initials(name) {
+  if(!name) return '?';
+  const p=name.replace(/^Dr\.?\s*/i,'').split(' ');
+  return (p[0][0]+(p[1]?.[0]||'')).toUpperCase();
+}
+function _stars(r, size='.9rem') {
+  let s='';
+  for(let i=1;i<=5;i++) s+=`<span class="dp-star ${i<=Math.round(r)?'on':''}"><i class="ti ti-star-filled" style="font-size:${size}"></i></span>`;
+  return s;
+}
+
+let DP_ID = null;
+let DP_DOC = null;
+let DP_SELECTED_DATE = null;
+let LANG = localStorage.getItem('lang')||'en';
+window.LANG = LANG;
+
+// Get doctor_id from URL: /doctor/123
+function getDoctorId() {
+  const m = window.location.pathname.match(/\/doctor\/(\d+)/);
+  return m ? parseInt(m[1]) : null;
+}
+
+async function dpLoad() {
+  DP_ID = getDoctorId();
+  if (!DP_ID) { dpToast('Invalid doctor URL','error'); return; }
+
+  try {
+    const res  = await fetch(`/api/doctors/${DP_ID}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error||'Not found');
+    DP_DOC = data.doctor;
+    dpRenderSidebar(DP_DOC);
+    dpRenderRight(DP_DOC);
+    document.title = `${DP_DOC.full_name} — SmartX-Ray`;
+  } catch(e) {
+    document.getElementById('dpSidebar').innerHTML = `<div style="padding:2rem;text-align:center;color:var(--red);">${e.message}</div>`;
+    dpToast(e.message,'error');
+  }
+}
+
+function dpRenderSidebar(d) {
+  const [fg] = _colorFor(d.full_name);
+  const initials = _initials(d.full_name);
+  const rating   = parseFloat(d.avg_rating||0).toFixed(1);
+  const rate     = parseFloat(d.rate_per_session||0).toFixed(0);
+
+  const t = (k) => (LANG==='km' ? TRANSLATIONS[k]?.km : TRANSLATIONS[k]?.en) || '';
+
+  document.getElementById('dpSidebar').innerHTML = `
+    <div class="dp-avatar-lg" style="background:${fg};">${initials}</div>
+    <div class="dp-name">${d.full_name}</div>
+    <div class="dp-spec">${d.specialty||'—'}</div>
+    ${d.is_verified ? `<div class="dp-verified"><i class="ti ti-shield-check"></i>${t('dp_verified')}</div>` : ''}
+    <div class="dp-stars">${_stars(rating)}<span class="dp-rating-val">${rating}</span><span class="dp-rev-cnt">(${d.total_reviews||0} ${t('dp_reviews_cnt')||'reviews'})</span></div>
+    <div class="dp-meta-list">
+      ${d.license_masked ? `<div class="dp-meta-row"><i class="ti ti-id-badge"></i><span>${t('dp_license')}: <span class="dp-meta-val">${d.license_masked}</span></span></div>` : ''}
+      ${d.hospital       ? `<div class="dp-meta-row"><i class="ti ti-building-hospital"></i><span class="dp-meta-val">${d.hospital}</span></div>` : ''}
+      ${d.university     ? `<div class="dp-meta-row"><i class="ti ti-building-community"></i><span class="dp-meta-val">${d.university}</span></div>` : ''}
+      ${d.experience_years ? `<div class="dp-meta-row"><i class="ti ti-briefcase"></i><span>${t('dp_experience')}: <span class="dp-meta-val">${d.experience_years} ${t('dp_years')}</span></span></div>` : ''}
+      <div class="dp-meta-row"><i class="ti ti-currency-dollar"></i><span>${t('dp_rate')}: <span class="dp-meta-val" style="color:var(--green);font-weight:700;">$${rate} ${t('dp_per_session')}</span></span></div>
+      ${d.availability ? `<div class="dp-meta-row"><i class="ti ti-clock"></i><span class="dp-meta-val">${d.availability}</span></div>` : ''}
+    </div>
+    <a href="/book/${d.id}" class="dp-book-cta"><i class="ti ti-calendar-plus"></i> ${t('dp_book_btn')}</a>
+  `;
+}
+
+function dpRenderRight(d) {
+  const right = document.getElementById('dpRight');
+  right.style.display = 'flex';
+
+  // Bio
+  document.getElementById('dpBio').textContent = d.bio || '—';
+
+  // Available slots — use next 14 days from API
+  dpRenderDateTabs(d.available_slots || []);
+
+  // Reviews
+  dpRenderReviews(d.reviews || []);
+}
+
+function dpRenderDateTabs(slots) {
+  const tabs = document.getElementById('dpDateTabs');
+  if (!slots.length) { tabs.innerHTML = `<span style="font-size:.83rem;color:var(--muted);" data-i18n="dp_no_slots">No slots available</span>`; return; }
+
+  tabs.innerHTML = slots.map((s, i) => {
+    const d = new Date(s.date + 'T00:00:00');
+    const dayName = d.toLocaleDateString(LANG==='km'?'km-KH':'en-US', {weekday:'short'});
+    const dayNum  = d.toLocaleDateString(LANG==='km'?'km-KH':'en-US', {month:'short', day:'numeric'});
+    const avail   = s.slots.filter(sl=>sl.available).length;
+    return `<div class="dp-date-tab ${i===0?'active':''}" data-idx="${i}" onclick="dpSelectDate(this,${i})">
+      <span class="day-name">${dayName}</span>
+      <span class="day-num">${dayNum}</span>
+      <span style="font-size:.7rem;color:${i===0?'rgba(255,255,255,.8)':'var(--muted)'};">${avail} free</span>
+    </div>`;
+  }).join('');
+
+  // Show first day slots
+  dpShowSlots(slots[0], 0);
+}
+
+function dpSelectDate(el, idx) {
+  document.querySelectorAll('.dp-date-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  dpShowSlots(DP_DOC.available_slots[idx], idx);
+}
+
+function dpShowSlots(slotData, idx) {
+  DP_SELECTED_DATE = slotData.date;
+  const grid = document.getElementById('dpSlotGrid');
+  if (!slotData.slots || !slotData.slots.length) {
+    grid.innerHTML = `<span class="dp-slot-none" data-i18n="dp_no_slots">${(LANG==='km'?TRANSLATIONS.dp_no_slots?.km:TRANSLATIONS.dp_no_slots?.en)||'No slots available this day'}</span>`;
+    return;
+  }
+  grid.innerHTML = slotData.slots.map(s => `
+    <div class="dp-slot ${s.available?'':'booked'}" onclick="${s.available?`dpSelectSlot(this,'${slotData.date}','${s.time}')`:''}">${s.time}</div>
+  `).join('');
+}
+
+function dpSelectSlot(el, date, time) {
+  document.querySelectorAll('.dp-slot').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  // Navigate to booking page with pre-filled date/time
+  window.location = `/book/${DP_ID}?date=${date}&time=${time}`;
+}
+
+function dpRenderReviews(reviews) {
+  const wrap = document.getElementById('dpReviews');
+  if (!reviews.length) return;
+
+  const REV_COLORS = [['#6366F1','#EEF2FF'],['#10B981','#ECFDF5'],['#F59E0B','#FEF3C7'],['#EF4444','#FEF2F2']];
+  function rcFor(name) {
+    let h=0; for(let i=0;i<(name||'').length;i++) h=(h*31+name.charCodeAt(i))>>>0;
+    return REV_COLORS[h%REV_COLORS.length];
+  }
+
+  wrap.innerHTML = reviews.map(r => {
+    const [rfg, rbg] = rcFor(r.patient_name||'P');
+    const init = (r.patient_name||'P').charAt(0).toUpperCase();
+    const d = r.created_at ? new Date(r.created_at).toLocaleDateString(LANG==='km'?'km-KH':'en-US',{day:'numeric',month:'long',year:'numeric'}) : '';
+    let stars=''; for(let i=1;i<=5;i++) stars+=`<span class="dp-rev-star ${i<=r.rating?'on':''}"><i class="ti ti-star-filled"></i></span>`;
+    return `
+      <div class="dp-review-card">
+        <div class="dp-review-top">
+          <div class="dp-reviewer">
+            <div class="dp-rev-av" style="background:${rbg};color:${rfg};">${init}</div>
+            <div><div class="dp-rev-name">${r.patient_name||'Patient'}</div><div class="dp-rev-date">${d}</div></div>
+          </div>
+          <div class="dp-rev-stars">${stars}</div>
+        </div>
+        ${r.comment ? `<p class="dp-rev-text">${r.comment}</p>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function dpToast(msg, type='info') {
+  const wrap = document.getElementById('dpToasts');
+  const el   = document.createElement('div');
+  el.className = `dp-toast ${type}`;
+  el.innerHTML = `<i class="ti ti-alert-circle"></i>${msg}`;
+  wrap.appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+function dpToggleLang() {
+  LANG = LANG==='en'?'km':'en';
+  window.LANG = LANG;
+  localStorage.setItem('lang',LANG);
+  document.getElementById('dp-html').setAttribute('lang',LANG==='km'?'km':'en');
+  document.getElementById('dpLangBtn').textContent = LANG==='km'?'English':'ខ្មែរ';
+  if(typeof applyLang==='function') applyLang(LANG);
+  if(DP_DOC) { dpRenderSidebar(DP_DOC); dpRenderDateTabs(DP_DOC.available_slots||[]); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if(LANG==='km') { document.getElementById('dp-html').setAttribute('lang','km'); document.getElementById('dpLangBtn').textContent='English'; if(typeof applyLang==='function') applyLang('km'); }
+  dpLoad();
+});
+</script>
+</body>
+</html>

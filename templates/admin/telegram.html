@@ -1,0 +1,994 @@
+{% extends "admin/base.html" %}
+{% block title %}Telegram Alerts{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_telegram">Telegram Alerts</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_telegram">Telegram Alerts</span>{% endblock %}
+
+{% block content %}
+<style>
+/* ── Telegram Alerts page ────────────────────────────────────────── */
+
+/* Status hero banner */
+.tg-hero {
+  border-radius:14px; padding:22px 24px;
+  display:flex; align-items:center; gap:20px;
+  margin-bottom:24px; position:relative; overflow:hidden;
+}
+.tg-hero.connected {
+  background:linear-gradient(135deg,#0284C7 0%,#0EA5E9 40%,#38BDF8 100%);
+  color:#fff;
+}
+.tg-hero.not-configured {
+  background:linear-gradient(135deg,#B45309 0%,#D97706 100%);
+  color:#fff;
+}
+.tg-hero.token-only {
+  background:linear-gradient(135deg,#6366F1 0%,#8B5CF6 100%);
+  color:#fff;
+}
+.tg-hero::after {
+  content:''; position:absolute; right:-30px; top:-30px;
+  width:160px; height:160px; border-radius:50%;
+  background:rgba(255,255,255,.08);
+}
+.tg-hero-icon {
+  width:56px; height:56px; border-radius:14px;
+  background:rgba(255,255,255,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:26px; flex-shrink:0;
+}
+.tg-hero-title { font-size:1.15rem; font-weight:800; margin:0 0 3px; }
+.tg-hero-sub   { font-size:.82rem; opacity:.88; margin:0; }
+.tg-hero-meta  {
+  display:flex; flex-wrap:wrap; gap:12px; margin-top:10px;
+}
+.tg-meta-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,.2); backdrop-filter:blur(4px);
+  border-radius:8px; padding:.28rem .7rem;
+  font-size:.75rem; font-weight:600;
+}
+.tg-hero-actions {
+  display:flex; gap:8px; margin-top:12px; flex-wrap:wrap;
+}
+.tg-hero-actions .btn-white {
+  background:#fff; color:#0284C7; border:none; border-radius:9px;
+  font-size:.78rem; font-weight:700; padding:.38rem .9rem;
+  cursor:pointer; display:inline-flex; align-items:center; gap:.4rem;
+  transition:opacity .15s;
+}
+.tg-hero-actions .btn-white:hover { opacity:.88; }
+.tg-hero-actions .btn-ghost-white {
+  background:rgba(255,255,255,.18); color:#fff; border:1.5px solid rgba(255,255,255,.35);
+  border-radius:9px; font-size:.78rem; font-weight:600;
+  padding:.38rem .9rem; cursor:pointer;
+  display:inline-flex; align-items:center; gap:.4rem;
+  transition:background .15s;
+}
+.tg-hero-actions .btn-ghost-white:hover { background:rgba(255,255,255,.28); }
+
+/* KPI strip */
+.tg-kpi-strip {
+  display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;
+}
+.tg-kpi {
+  background:#fff; border:1px solid var(--color-border);
+  border-radius:12px; padding:14px 16px;
+  box-shadow:0 1px 4px rgba(0,0,0,.04);
+}
+.tg-kpi-val  { font-size:1.35rem; font-weight:800; color:var(--color-text); }
+.tg-kpi-lbl  { font-size:.72rem; color:var(--color-muted); margin-top:2px; }
+.tg-kpi-icon { font-size:1.1rem; margin-bottom:6px; }
+
+/* Alert settings card */
+.alert-toggle-row {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 0;
+  border-bottom:1px solid var(--color-border);
+}
+.alert-toggle-row:last-child { border-bottom:none; padding-bottom:0; }
+.alert-toggle-icon {
+  width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.alert-toggle-body { flex:1; min-width:0; }
+.alert-toggle-name { font-size:.85rem; font-weight:700; color:var(--color-text); }
+.alert-toggle-desc { font-size:.73rem; color:var(--color-muted); margin-top:2px; }
+.alert-toggle-badge {
+  font-size:.6rem; font-weight:700; padding:.1rem .45rem;
+  border-radius:999px; margin-left:.5rem; vertical-align:middle;
+}
+.badge-teal  { background:#CCFBF1; color:#0D9488; }
+.badge-blue  { background:#DBEAFE; color:#1D4ED8; }
+
+/* Switch  (inherits .switch from admin.css) */
+
+/* Test buttons grid */
+.test-grid {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:2px;
+}
+.test-btn {
+  display:flex; align-items:center; gap:.55rem;
+  padding:.6rem .9rem; border-radius:10px;
+  border:1.5px solid var(--color-border); background:#fff;
+  font-size:.78rem; font-weight:600; cursor:pointer;
+  color:var(--color-text); transition:all .13s;
+}
+.test-btn:hover { border-color:#6366F1; background:#F5F3FF; color:#4338CA; }
+.test-btn:hover .test-btn-icon { color:#4338CA; }
+.test-btn-icon { font-size:1.05rem; }
+.test-btn-label { line-height:1.3; }
+.test-btn-label small { font-size:.67rem; color:var(--color-muted); display:block; font-weight:400; }
+
+/* History table */
+.history-empty {
+  text-align:center; padding:36px; color:var(--color-muted);
+}
+.tg-type-chip {
+  display:inline-flex; align-items:center; gap:.3rem;
+  font-size:.68rem; font-weight:700; padding:.15rem .5rem;
+  border-radius:6px; white-space:nowrap;
+}
+.tc-pneumonia { background:#FEE2E2; color:#991B1B; }
+.tc-auth_fail { background:#FEF3C7; color:#92400E; }
+.tc-critical  { background:#FFEDD5; color:#9A3412; }
+.tc-db_health { background:#EDE9FE; color:#5B21B6; }
+.tc-daily     { background:#D1FAE5; color:#065F46; }
+.tc-test      { background:#EFF6FF; color:#1D4ED8; }
+.tc-other     { background:#F1F5F9; color:#475569; }
+
+/* Message preview bubbles */
+.preview-bubble {
+  background:#EFF6FF; border-left:3px solid #2AABEE;
+  border-radius:0 10px 10px 0; padding:12px 14px;
+  font-size:.75rem; line-height:1.9; font-family:monospace;
+  white-space:pre-wrap; color:#1E293B; margin-top:8px;
+  display:none;
+}
+.preview-bubble.open { display:block; }
+.preview-toggle {
+  width:100%; text-align:left; background:none; border:none;
+  cursor:pointer; padding:.55rem 0; font-size:.82rem; font-weight:600;
+  color:var(--color-text); display:flex; align-items:center; gap:.5rem;
+  border-top:1px solid var(--color-border);
+}
+.preview-toggle:first-child { border-top:none; }
+.preview-toggle i.chevron { transition:transform .15s; font-size:.7rem; color:var(--color-muted); }
+.preview-toggle.open i.chevron { transform:rotate(90deg); }
+
+/* Env setup card */
+.env-row {
+  display:flex; align-items:center; gap:10px;
+  padding:.7rem 0; border-bottom:1px solid var(--color-border);
+}
+.env-row:last-child { border-bottom:none; }
+.env-key {
+  font-family:monospace; font-size:.75rem; font-weight:700;
+  background:#EEF2FF; color:#4338CA; padding:.15rem .45rem;
+  border-radius:5px; white-space:nowrap;
+}
+.env-val {
+  flex:1; font-family:monospace; font-size:.72rem;
+  color:var(--color-muted); word-break:break-all;
+}
+.env-copy {
+  border:none; background:none; cursor:pointer;
+  color:var(--color-muted); font-size:.85rem; padding:.2rem .4rem;
+  border-radius:5px; transition:all .12s;
+}
+.env-copy:hover { background:#EEF2FF; color:#4338CA; }
+
+/* Status dot pulse */
+@keyframes tg-pulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(16,185,129,.45); }
+  50%      { box-shadow:0 0 0 6px rgba(16,185,129,0); }
+}
+.dot-pulse {
+  width:9px; height:9px; border-radius:50%; background:#10B981;
+  display:inline-block; animation:tg-pulse 2s infinite;
+}
+.dot-offline { width:9px; height:9px; border-radius:50%; background:#94A3B8; display:inline-block; }
+</style>
+
+<!-- ── Page header ─────────────────────────────────────────────── -->
+<div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+  <div>
+    <h4 class="fw-bold mb-0" data-i18n="adm_nav_telegram">Telegram Alerts</h4>
+    <p class="text-muted small mb-0 mt-1" data-i18n="adm_tg_page_sub">
+      Real-time notifications for critical medical events
+    </p>
+  </div>
+  <a href="https://t.me/BotFather" target="_blank" rel="noopener"
+     class="btn btn-sm btn-ghost d-flex align-items-center gap-1">
+    <i class="ti ti-brand-telegram" style="color:#2AABEE"></i>
+    <span data-i18n="adm_tg_open_botfather">Open BotFather</span>
+  </a>
+</div>
+
+<!-- ── Hero status banner ─────────────────────────────────────── -->
+<div class="tg-hero not-configured" id="tgHero">
+  <div class="tg-hero-icon" id="tgHeroIcon">
+    <i class="ti ti-brand-telegram"></i>
+  </div>
+  <div style="flex:1; min-width:0">
+    <p class="tg-hero-title" id="tgHeroTitle">Loading…</p>
+    <p class="tg-hero-sub"   id="tgHeroSub">Checking Telegram connection…</p>
+    <div class="tg-hero-meta" id="tgHeroMeta"></div>
+    <div class="tg-hero-actions" id="tgHeroActions"></div>
+  </div>
+</div>
+
+<!-- ── KPI strip ──────────────────────────────────────────────── -->
+<div class="tg-kpi-strip">
+  <div class="tg-kpi">
+    <div class="tg-kpi-icon">📨</div>
+    <div class="tg-kpi-val" id="kpiTotalAlerts">—</div>
+    <div class="tg-kpi-lbl" data-i18n="adm_tg_kpi_total">Total Alerts Sent</div>
+  </div>
+  <div class="tg-kpi">
+    <div class="tg-kpi-icon">📅</div>
+    <div class="tg-kpi-val" id="kpiTodayAlerts">—</div>
+    <div class="tg-kpi-lbl" data-i18n="adm_tg_kpi_today">Sent Today</div>
+  </div>
+  <div class="tg-kpi">
+    <div class="tg-kpi-icon">⏱️</div>
+    <div class="tg-kpi-val" id="kpiLastAlert">—</div>
+    <div class="tg-kpi-lbl" data-i18n="adm_tg_kpi_last">Last Alert</div>
+  </div>
+  <div class="tg-kpi">
+    <div class="tg-kpi-icon" id="kpiStatusIcon">🔘</div>
+    <div class="tg-kpi-val" id="kpiStatus">—</div>
+    <div class="tg-kpi-lbl" data-i18n="adm_tg_kpi_status">Bot Status</div>
+  </div>
+</div>
+
+<!-- ── Main 2-column row ──────────────────────────────────────── -->
+<div class="row g-3 mb-3">
+
+  <!-- Alert Settings -->
+  <div class="col-12 col-lg-7">
+    <div class="panel-card h-100">
+      <div class="panel-card-header">
+        <div class="panel-card-title">
+          <i class="ti ti-bell-ringing" style="color:#6366F1;font-size:15px"></i>
+          <span data-i18n="adm_tg_settings_title">Alert Triggers</span>
+        </div>
+        <button class="btn btn-sm btn-outline" id="saveSettingsBtn"
+                onclick="saveSettings()" style="font-size:12px">
+          <i class="ti ti-device-floppy me-1"></i>
+          <span data-i18n="adm_tg_save">Save Settings</span>
+        </button>
+      </div>
+      <div style="padding:4px 20px 16px">
+
+        <!-- Pneumonia ≥ 80% -->
+        <div class="alert-toggle-row">
+          <div class="alert-toggle-icon" style="background:#FEE2E2">🚨</div>
+          <div class="alert-toggle-body">
+            <div class="alert-toggle-name">
+              <span data-i18n="adm_tg_alert_pneumonia">High-Confidence Pneumonia</span>
+              <span class="alert-toggle-badge badge-teal" data-i18n="adm_tg_badge_live">Live</span>
+            </div>
+            <div class="alert-toggle-desc" data-i18n="adm_tg_alert_pneumonia_desc">
+              Alert when AI detects pneumonia with ≥ 80% confidence
+            </div>
+          </div>
+          <label class="switch" title="Toggle pneumonia alerts">
+            <input type="checkbox" id="tog-pneumonia" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- Auth Failures -->
+        <div class="alert-toggle-row">
+          <div class="alert-toggle-icon" style="background:#FEF3C7">🛡️</div>
+          <div class="alert-toggle-body">
+            <div class="alert-toggle-name" data-i18n="adm_tg_alert_auth">Authentication Failures</div>
+            <div class="alert-toggle-desc" data-i18n="adm_tg_alert_auth_desc">
+              Alert on repeated failed login attempts from the same IP
+            </div>
+          </div>
+          <label class="switch" title="Toggle auth failure alerts">
+            <input type="checkbox" id="tog-auth_fail" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- Critical Errors -->
+        <div class="alert-toggle-row">
+          <div class="alert-toggle-icon" style="background:#FFEDD5">🔴</div>
+          <div class="alert-toggle-body">
+            <div class="alert-toggle-name" data-i18n="adm_tg_alert_critical">Critical System Errors</div>
+            <div class="alert-toggle-desc" data-i18n="adm_tg_alert_critical_desc">
+              Alert on 500 errors and uncaught server exceptions
+            </div>
+          </div>
+          <label class="switch" title="Toggle critical error alerts">
+            <input type="checkbox" id="tog-critical_error" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- DB Health -->
+        <div class="alert-toggle-row">
+          <div class="alert-toggle-icon" style="background:#EDE9FE">🗄️</div>
+          <div class="alert-toggle-body">
+            <div class="alert-toggle-name" data-i18n="adm_tg_alert_db">Database Health</div>
+            <div class="alert-toggle-desc" data-i18n="adm_tg_alert_db_desc">
+              Alert when database health check fails or responds slowly
+            </div>
+          </div>
+          <label class="switch" title="Toggle DB health alerts">
+            <input type="checkbox" id="tog-db_health" checked>
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <!-- Daily Summary -->
+        <div class="alert-toggle-row">
+          <div class="alert-toggle-icon" style="background:#D1FAE5">📊</div>
+          <div class="alert-toggle-body">
+            <div class="alert-toggle-name">
+              <span data-i18n="adm_tg_alert_daily">Daily Summary Report</span>
+              <span class="alert-toggle-badge badge-blue" data-i18n="adm_tg_badge_scheduled">Scheduled</span>
+            </div>
+            <div class="alert-toggle-desc" data-i18n="adm_tg_alert_daily_desc">
+              Automated daily stats digest (requires a cron job or scheduler)
+            </div>
+          </div>
+          <label class="switch" title="Toggle daily summary">
+            <input type="checkbox" id="tog-daily_summary">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Alerts -->
+  <div class="col-12 col-lg-5">
+    <div class="panel-card h-100">
+      <div class="panel-card-header">
+        <div class="panel-card-title">
+          <i class="ti ti-send" style="color:#6366F1;font-size:15px"></i>
+          <span data-i18n="adm_tg_test_title">Send Test Alert</span>
+        </div>
+        <span class="badge" style="background:#EEF2FF;color:#4338CA;font-size:.67rem"
+              data-i18n="adm_tg_test_badge">Manual</span>
+      </div>
+      <div style="padding:10px 18px 18px">
+        <p class="text-muted" style="font-size:.77rem; margin-bottom:12px"
+           data-i18n="adm_tg_test_desc">
+          Trigger a test message for each alert type to verify delivery.
+        </p>
+        <div class="test-grid" id="testGrid">
+          <button class="test-btn" onclick="sendTest('pneumonia')">
+            <span class="test-btn-icon">🚨</span>
+            <span class="test-btn-label">
+              <span data-i18n="adm_tg_alert_pneumonia">Pneumonia</span>
+              <small data-i18n="adm_tg_test_btn_hint">Tap to send test</small>
+            </span>
+          </button>
+          <button class="test-btn" onclick="sendTest('auth_fail')">
+            <span class="test-btn-icon">🛡️</span>
+            <span class="test-btn-label">
+              <span data-i18n="adm_tg_alert_auth">Auth Failure</span>
+              <small data-i18n="adm_tg_test_btn_hint">Tap to send test</small>
+            </span>
+          </button>
+          <button class="test-btn" onclick="sendTest('critical_error')">
+            <span class="test-btn-icon">🔴</span>
+            <span class="test-btn-label">
+              <span data-i18n="adm_tg_alert_critical">Critical Error</span>
+              <small data-i18n="adm_tg_test_btn_hint">Tap to send test</small>
+            </span>
+          </button>
+          <button class="test-btn" onclick="sendTest('db_health')">
+            <span class="test-btn-icon">🗄️</span>
+            <span class="test-btn-label">
+              <span data-i18n="adm_tg_alert_db">DB Health</span>
+              <small data-i18n="adm_tg_test_btn_hint">Tap to send test</small>
+            </span>
+          </button>
+          <button class="test-btn" onclick="sendTest('daily_summary')">
+            <span class="test-btn-icon">📊</span>
+            <span class="test-btn-label">
+              <span data-i18n="adm_tg_alert_daily">Daily Summary</span>
+              <small data-i18n="adm_tg_test_btn_hint">Tap to send test</small>
+            </span>
+          </button>
+          <button class="test-btn" onclick="sendTest('generic')">
+            <span class="test-btn-icon">✅</span>
+            <span class="test-btn-label">
+              <span data-i18n="adm_tg_test_generic">Generic Ping</span>
+              <small data-i18n="adm_tg_test_btn_hint">Tap to send test</small>
+            </span>
+          </button>
+        </div>
+
+        <!-- Test result log -->
+        <div id="testLog" style="margin-top:12px; max-height:120px; overflow-y:auto;
+             font-size:.72rem; display:none">
+          <div class="text-muted fw-semibold mb-1" style="font-size:.68rem">
+            <i class="ti ti-list-check me-1"></i>DELIVERY LOG
+          </div>
+          <div id="testLogEntries"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Alert History + Message Previews row ───────────────────── -->
+<div class="row g-3 mb-3">
+
+  <!-- Alert History -->
+  <div class="col-12 col-lg-8">
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-title">
+          <i class="ti ti-history" style="color:#6366F1;font-size:15px"></i>
+          <span data-i18n="adm_tg_history_title">Alert History</span>
+        </div>
+        <small class="text-muted" id="historyMeta" style="font-size:.72rem">—</small>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="admin-table" style="min-width:580px">
+          <thead>
+            <tr>
+              <th style="width:140px" data-i18n="adm_col_time">Time</th>
+              <th style="width:140px" data-i18n="adm_tg_col_type">Type</th>
+              <th data-i18n="adm_col_message">Message</th>
+              <th style="width:80px" data-i18n="adm_tg_col_status">Delivery</th>
+            </tr>
+          </thead>
+          <tbody id="historyTbody">
+            <tr>
+              <td colspan="4" class="text-center py-4 text-muted">
+                <div class="spinner-border spinner-border-sm"></div>
+                <span class="ms-2" data-i18n="adm_loading">Loading…</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="panel-card-footer">
+        <i class="ti ti-clock" style="font-size:11px"></i>
+        <span id="historyUpdated" data-i18n="adm_last_updated">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Message Previews -->
+  <div class="col-12 col-lg-4">
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <div class="panel-card-title">
+          <i class="ti ti-eye" style="color:#6366F1;font-size:15px"></i>
+          <span data-i18n="adm_tg_preview_title">Message Previews</span>
+        </div>
+      </div>
+      <div style="padding:4px 18px 16px">
+        <p class="text-muted" style="font-size:.73rem; margin-bottom:10px"
+           data-i18n="adm_tg_preview_sub">
+          Exact message format sent to Telegram for each alert type.
+        </p>
+
+        <!-- Pneumonia -->
+        <button class="preview-toggle" onclick="togglePreview('pv-pneumonia',this)">
+          <i class="ti ti-chevron-right chevron"></i>🚨
+          <span data-i18n="adm_tg_alert_pneumonia">High-Confidence Pneumonia</span>
+        </button>
+        <div class="preview-bubble" id="pv-pneumonia">🚨 HIGH-SEVERITY PNEUMONIA DETECTED
+🚨 រកឃើញជំងឺរលាកសួតកម្រិតធ្ងន់
+─────────────────────────
+
+👤 Patient: patient@example.com
+📊 AI Confidence: 92.5%
+🆔 Scan ID: #999
+🕐 Time: 2026-05-24 09:30 UTC
+
+─────────────────────────
+⚠️ Please review this scan immediately.</div>
+
+        <!-- Auth Failure -->
+        <button class="preview-toggle" onclick="togglePreview('pv-auth',this)">
+          <i class="ti ti-chevron-right chevron"></i>🛡️
+          <span data-i18n="adm_tg_alert_auth">Authentication Failures</span>
+        </button>
+        <div class="preview-bubble" id="pv-auth">🛡️ AUTH FAILURE ALERT
+🛡️ ការព្រមាន: Login ច្រើនដងបរាជ័យ
+─────────────────────────
+
+🔢 Failed Attempts: 7
+👤 Target: admin@smartxray.com
+🌐 IP Address: 192.168.1.100
+🕐 Time: 2026-05-24 09:30 UTC
+
+─────────────────────────
+⚠️ Brute-force may be in progress.</div>
+
+        <!-- Critical Error -->
+        <button class="preview-toggle" onclick="togglePreview('pv-critical',this)">
+          <i class="ti ti-chevron-right chevron"></i>🔴
+          <span data-i18n="adm_tg_alert_critical">Critical System Error</span>
+        </button>
+        <div class="preview-bubble" id="pv-critical">🔴 CRITICAL SYSTEM ERROR
+🔴 កំហុសសំខាន់ក្នុងប្រព័ន្ធ
+─────────────────────────
+
+📍 Source: scan_route
+💬 Error: Connection refused [Errno 111]
+🕐 Time: 2026-05-24 09:30 UTC
+
+─────────────────────────
+⚠️ Immediate attention required.</div>
+
+        <!-- DB Health -->
+        <button class="preview-toggle" onclick="togglePreview('pv-db',this)">
+          <i class="ti ti-chevron-right chevron"></i>🗄️
+          <span data-i18n="adm_tg_alert_db">Database Health</span>
+        </button>
+        <div class="preview-bubble" id="pv-db">⚠️ DATABASE HEALTH ALERT
+⚠️ ការព្រមាន: បញ្ហាមូលដ្ឋានទិន្នន័យ
+─────────────────────────
+
+📊 Status: degraded
+🔍 Detail: Connection pool exhausted
+🕐 Time: 2026-05-24 09:30 UTC
+
+─────────────────────────
+⚠️ Check the database connection immediately.</div>
+
+        <!-- Daily Summary -->
+        <button class="preview-toggle" onclick="togglePreview('pv-daily',this)">
+          <i class="ti ti-chevron-right chevron"></i>📊
+          <span data-i18n="adm_tg_alert_daily">Daily Summary</span>
+        </button>
+        <div class="preview-bubble" id="pv-daily">📊 SmartX-Ray — Daily Report 24 May 2026
+📊 SmartX-Ray — របាយការណ៍ប្រចាំថ្ងៃ
+─────────────────────────
+
+🔬 Scans Today: 24
+🫁 Pneumonia: 6 (25%)
+✅ Normal: 18
+
+👥 Total Users: 142
+🆕 New Today: 3
+⭐ Pro Subscribers: 28
+
+─────────────────────────
+SmartX-Ray Admin Panel — Automated Daily Report</div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Setup guide ────────────────────────────────────────────── -->
+<div class="panel-card mb-3">
+  <div class="panel-card-header" style="cursor:pointer" onclick="toggleSetup()">
+    <div class="panel-card-title">
+      <i class="ti ti-book-2" style="color:#6366F1;font-size:15px"></i>
+      <span data-i18n="adm_tg_setup_title">Setup Guide</span>
+    </div>
+    <i class="ti ti-chevron-down" id="setupChevron"
+       style="transition:transform .2s; color:var(--color-muted)"></i>
+  </div>
+  <div id="setupBody" style="display:none; padding:16px 22px 20px">
+
+    <div class="row g-4">
+      <!-- Steps -->
+      <div class="col-12 col-md-7">
+        <div style="font-size:.78rem; font-weight:700; color:var(--color-muted);
+                    letter-spacing:.05em; text-transform:uppercase; margin-bottom:12px"
+             data-i18n="adm_tg_setup_steps">Setup Steps</div>
+        <ol style="padding-left:18px; font-size:.82rem; line-height:2; color:var(--color-text)">
+          <li>
+            Open Telegram → search
+            <a href="https://t.me/BotFather" target="_blank" style="color:#2AABEE;font-weight:600">@BotFather</a>
+            → send <code>/newbot</code>
+          </li>
+          <li>Follow the prompts — copy your <strong>Bot Token</strong></li>
+          <li>Message your new bot (any message) — this creates the chat</li>
+          <li>Click <strong>"Discover Chat ID"</strong> above (or add it manually to <code>.env</code>)</li>
+          <li>Click <strong>"Send Test Alert"</strong> to confirm delivery</li>
+        </ol>
+        <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:9px;
+                    padding:10px 14px; font-size:.76rem; color:#166534; margin-top:8px">
+          <i class="ti ti-shield-check me-1"></i>
+          <span data-i18n="adm_tg_setup_note">
+            Alerts fire automatically — no page needs to be open.
+            The bot sends directly to your Telegram chat 24/7.
+          </span>
+        </div>
+      </div>
+      <!-- .env variables -->
+      <div class="col-12 col-md-5">
+        <div style="font-size:.78rem; font-weight:700; color:var(--color-muted);
+                    letter-spacing:.05em; text-transform:uppercase; margin-bottom:12px"
+             data-i18n="adm_tg_env_vars">.env Variables</div>
+        <div style="background:#F8FAFC; border:1px solid var(--color-border);
+                    border-radius:10px; padding:8px 14px">
+          <div class="env-row">
+            <span class="env-key">TELEGRAM_BOT_TOKEN</span>
+            <span class="env-val">123456789:ABC-your-token</span>
+            <button class="env-copy" onclick="copyEnv('TELEGRAM_BOT_TOKEN=123456789:ABC-your-token')"
+                    title="Copy">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+          <div class="env-row">
+            <span class="env-key">TELEGRAM_CHAT_ID</span>
+            <span class="env-val" id="envChatIdVal">your_chat_id</span>
+            <button class="env-copy" id="envChatIdCopy"
+                    onclick="copyEnv('TELEGRAM_CHAT_ID=' + document.getElementById('envChatIdVal').textContent)"
+                    title="Copy">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+          <div class="env-row">
+            <span class="env-key">TELEGRAM_ALERT_PNEUMONIA</span>
+            <span class="env-val">true</span>
+            <button class="env-copy" onclick="copyEnv('TELEGRAM_ALERT_PNEUMONIA=true')" title="Copy">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+          <div class="env-row">
+            <span class="env-key">TELEGRAM_ALERT_AUTH_FAIL</span>
+            <span class="env-val">true</span>
+            <button class="env-copy" onclick="copyEnv('TELEGRAM_ALERT_AUTH_FAIL=true')" title="Copy">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+          <div class="env-row">
+            <span class="env-key">TELEGRAM_ALERT_DAILY_SUMMARY</span>
+            <span class="env-val">false</span>
+            <button class="env-copy" onclick="copyEnv('TELEGRAM_ALERT_DAILY_SUMMARY=false')" title="Copy">
+              <i class="ti ti-copy"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+// ── i18n ───────────────────────────────────────────────────────────────────
+Object.assign(TRANSLATIONS, {
+  adm_tg_page_sub:         { en: 'Real-time notifications for critical medical events',
+                             km: 'ការជូនដំណឹងភ្លាមៗសម្រាប់ព្រឹត្តិការណ៍វេជ្ជសាស្ត្រ' },
+  adm_tg_open_botfather:   { en: 'Open BotFather',         km: 'បើក BotFather' },
+  adm_tg_kpi_total:        { en: 'Total Alerts Sent',       km: 'ការជូនដំណឹងសរុប' },
+  adm_tg_kpi_today:        { en: 'Sent Today',              km: 'ផ្ញើថ្ងៃនេះ' },
+  adm_tg_kpi_last:         { en: 'Last Alert',              km: 'ការជូនដំណឹងចុងក្រោយ' },
+  adm_tg_kpi_status:       { en: 'Bot Status',              km: 'ស្ថានភាព Bot' },
+  adm_tg_settings_title:   { en: 'Alert Triggers',          km: 'ការគ្រប់គ្រងការជូនដំណឹង' },
+  adm_tg_save:             { en: 'Save Settings',           km: 'រក្សាទុក' },
+  adm_tg_alert_pneumonia:  { en: 'High-Confidence Pneumonia', km: 'ជំងឺរលាកសួតខ្ពស់' },
+  adm_tg_alert_pneumonia_desc: { en: 'Alert when AI detects pneumonia with ≥ 80% confidence',
+                                  km: 'ជូនដំណឹងនៅពេល AI រកឃើញ ≥ 80%' },
+  adm_tg_alert_auth:       { en: 'Authentication Failures', km: 'Login បរាជ័យ' },
+  adm_tg_alert_auth_desc:  { en: 'Alert on repeated failed login attempts from the same IP',
+                             km: 'ជូនដំណឹងនៅពេល Login បរាជ័យច្រើនដងពី IP តែមួយ' },
+  adm_tg_alert_critical:   { en: 'Critical System Errors',  km: 'កំហុសសំខាន់ប្រព័ន្ធ' },
+  adm_tg_alert_critical_desc: { en: 'Alert on 500 errors and uncaught server exceptions',
+                                  km: 'ជូនដំណឹងលើ 500 errors' },
+  adm_tg_alert_db:         { en: 'Database Health',         km: 'សុខភាព Database' },
+  adm_tg_alert_db_desc:    { en: 'Alert when database health check fails',
+                             km: 'ជូនដំណឹងនៅពេល DB ពិនិត្យសុខភាពបរាជ័យ' },
+  adm_tg_alert_daily:      { en: 'Daily Summary Report',    km: 'របាយការណ៍ប្រចាំថ្ងៃ' },
+  adm_tg_alert_daily_desc: { en: 'Automated daily stats digest (requires a scheduler)',
+                             km: 'សង្ខេបស្ថិតិប្រចាំថ្ងៃ (ត្រូវការ scheduler)' },
+  adm_tg_badge_live:       { en: 'Live',                    km: 'ផ្ទាល់' },
+  adm_tg_badge_scheduled:  { en: 'Scheduled',               km: 'ដំណើរការតាមកាលវិភាគ' },
+  adm_tg_test_title:       { en: 'Send Test Alert',         km: 'ផ្ញើការជូនដំណឹងសាកល្បង' },
+  adm_tg_test_badge:       { en: 'Manual',                  km: 'ដោយដៃ' },
+  adm_tg_test_desc:        { en: 'Trigger a test message for each alert type to verify delivery.',
+                             km: 'ផ្ញើសារសាកល្បងសម្រាប់ប្រភេទនីមួយ ដើម្បីផ្ទៀងផ្ទាត់ការបញ្ជូន។' },
+  adm_tg_test_generic:     { en: 'Generic Ping',            km: 'Ping ទូទៅ' },
+  adm_tg_test_btn_hint:    { en: 'Tap to send test',        km: 'ចុចផ្ញើ' },
+  adm_tg_history_title:    { en: 'Alert History',           km: 'ប្រវត្តិការជូនដំណឹង' },
+  adm_tg_col_type:         { en: 'Type',                    km: 'ប្រភេទ' },
+  adm_tg_col_status:       { en: 'Delivery',                km: 'ការបញ្ជូន' },
+  adm_tg_preview_title:    { en: 'Message Previews',        km: 'មើលសារ' },
+  adm_tg_preview_sub:      { en: 'Exact message format sent to Telegram for each alert type.',
+                             km: 'ទំរង់សារពិតដែលផ្ញើទៅ Telegram' },
+  adm_tg_setup_title:      { en: 'Setup Guide',             km: 'ការណែនាំដំឡើង' },
+  adm_tg_setup_steps:      { en: 'Setup Steps',             km: 'ជំហានដំឡើង' },
+  adm_tg_setup_note:       { en: 'Alerts fire automatically — no page needs to be open.',
+                             km: 'ការជូនដំណឹងដំណើរការស្វ័យប្រវត្តិ — មិនចាំបាច់여erboden page ។' },
+  adm_tg_env_vars:         { en: '.env Variables',          km: 'អថេរ .env' },
+  adm_tg_connected:        { en: 'Bot Connected',           km: 'Bot ភ្ជាប់រួច' },
+  adm_tg_not_configured:   { en: 'Not Configured',          km: 'មិនទាន់កំណត់' },
+  adm_tg_token_only:       { en: 'Awaiting Chat ID',        km: 'រង់ចាំ Chat ID' },
+  adm_tg_status_online:    { en: 'Online',                  km: 'អនឡាញ' },
+  adm_tg_status_offline:   { en: 'Offline',                 km: 'ក្រៅបណ្តាញ' },
+  adm_tg_discover:         { en: 'Discover Chat ID',        km: 'រកចំណុចភ្ជាប់' },
+  adm_tg_copy_link:        { en: 'Open Bot',                km: 'បើក Bot' },
+  adm_tg_history_empty:    { en: 'No alerts sent yet.',     km: 'មិនទាន់ផ្ញើការជូនដំណឹង។' },
+  adm_tg_ago:              { en: 'ago',                     km: 'មុន' },
+});
+if (typeof I18n !== 'undefined') I18n.applyAll();
+
+function _T(k) { return (typeof I18n !== 'undefined') ? I18n.t(k) : k; }
+
+// ── Type → display label + CSS class ──────────────────────────────────────
+const TYPE_META = {
+  pneumonia:       { lbl: 'Pneumonia 🚨',    cls: 'tc-pneumonia', icon: '🚨' },
+  auth_fail:       { lbl: 'Auth Failure 🛡️', cls: 'tc-auth_fail', icon: '🛡️' },
+  critical_error:  { lbl: 'Critical Error 🔴', cls: 'tc-critical', icon: '🔴' },
+  db_health:       { lbl: 'DB Health 🗄️',    cls: 'tc-db_health', icon: '🗄️' },
+  daily_summary:   { lbl: 'Daily Summary 📊', cls: 'tc-daily',    icon: '📊' },
+  test:            { lbl: 'Test ✅',           cls: 'tc-test',     icon: '✅' },
+};
+
+function _typeMeta(msg) {
+  // Try to infer type from message text
+  if (!msg) return { lbl: 'Alert', cls: 'tc-other', icon: '📨' };
+  const m = msg.toLowerCase();
+  if (m.includes('pneumonia'))      return TYPE_META.pneumonia;
+  if (m.includes('auth') || m.includes('login')) return TYPE_META.auth_fail;
+  if (m.includes('critical') || m.includes('error')) return TYPE_META.critical_error;
+  if (m.includes('db') || m.includes('database') || m.includes('health')) return TYPE_META.db_health;
+  if (m.includes('daily') || m.includes('summary')) return TYPE_META.daily_summary;
+  if (m.includes('test'))           return TYPE_META.test;
+  return { lbl: 'Alert', cls: 'tc-other', icon: '📨' };
+}
+
+// ── Load Telegram status ───────────────────────────────────────────────────
+async function loadStatus() {
+  const r = await apiFetch('/api/admin/telegram/status');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+
+  // ── Hero banner ──────────────────────────────────────────────────────────
+  const hero      = document.getElementById('tgHero');
+  const heroTitle = document.getElementById('tgHeroTitle');
+  const heroSub   = document.getElementById('tgHeroSub');
+  const heroMeta  = document.getElementById('tgHeroMeta');
+  const heroActs  = document.getElementById('tgHeroActions');
+  const heroIcon  = document.getElementById('tgHeroIcon');
+
+  let heroCls, title, sub, meta = '', actions = '';
+
+  if (d.configured && d.reachable) {
+    heroCls = 'connected';
+    title   = `<span class="dot-pulse me-2"></span>${_T('adm_tg_connected')}`;
+    sub     = d.bot_username ? `@${d.bot_username}${d.bot_name ? ' — ' + d.bot_name : ''}` : 'Bot is live';
+    if (d.chat_id_preview) {
+      meta += `<span class="tg-meta-chip"><i class="ti ti-hash" style="font-size:12px"></i>Chat ${d.chat_id_preview}</span>`;
+    }
+    meta += `<span class="tg-meta-chip"><i class="ti ti-check" style="font-size:12px"></i>${_T('adm_tg_status_online')}</span>`;
+    actions = `
+      <button class="btn-white" onclick="discoverChatId()">
+        <i class="ti ti-radar"></i>${_T('adm_tg_discover')}
+      </button>
+      ${d.bot_username ? `<a class="btn-ghost-white" href="https://t.me/${d.bot_username}" target="_blank" rel="noopener">
+        <i class="ti ti-external-link"></i>${_T('adm_tg_copy_link')}
+      </a>` : ''}`;
+
+    // KPI status
+    document.getElementById('kpiStatusIcon').textContent = '✅';
+    document.getElementById('kpiStatus').textContent     = _T('adm_tg_status_online');
+
+    // Fill in chat ID for .env guide
+    if (d.chat_id_preview) {
+      document.getElementById('envChatIdVal').textContent = d.chat_id_preview + ' (***masked)';
+    }
+
+  } else if (d.token_only) {
+    heroCls = 'token-only';
+    title   = _T('adm_tg_token_only');
+    sub     = d.bot_username
+      ? `@${d.bot_username} is online — send it any message on Telegram, then click Discover`
+      : 'Token is set — send a message to your bot, then click Discover';
+    meta   = `<span class="tg-meta-chip"><i class="ti ti-brand-telegram" style="font-size:12px"></i>Token OK</span>`;
+    if (!d.reachable) meta += `<span class="tg-meta-chip">⚠️ Bot unreachable</span>`;
+    actions = `<button class="btn-white" onclick="discoverChatId()">
+      <i class="ti ti-radar"></i>${_T('adm_tg_discover')}
+    </button>`;
+    document.getElementById('kpiStatusIcon').textContent = '🟡';
+    document.getElementById('kpiStatus').textContent     = 'Token Only';
+
+  } else {
+    heroCls = 'not-configured';
+    title   = _T('adm_tg_not_configured');
+    sub     = 'Add TELEGRAM_BOT_TOKEN to your .env file to get started';
+    meta   = `<span class="tg-meta-chip">⚠️ No token set</span>`;
+    actions = '';
+    document.getElementById('kpiStatusIcon').textContent = '🔴';
+    document.getElementById('kpiStatus').textContent     = _T('adm_tg_status_offline');
+    // Auto-open setup guide if not configured
+    openSetup();
+  }
+
+  hero.className  = `tg-hero ${heroCls}`;
+  heroTitle.innerHTML = title;
+  heroSub.textContent = sub;
+  heroMeta.innerHTML  = meta;
+  heroActs.innerHTML  = actions;
+
+  // Cache for modal
+  window._tgStatus = d;
+}
+
+// ── Load alert history ─────────────────────────────────────────────────────
+async function loadHistory() {
+  const r = await apiFetch('/api/admin/telegram/history?limit=20');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+
+  // KPIs
+  document.getElementById('kpiTotalAlerts').textContent = (d.total || 0).toLocaleString();
+  document.getElementById('kpiTodayAlerts').textContent = (d.today || 0).toLocaleString();
+
+  const history = d.history || [];
+  if (history.length) {
+    const last = history[0];
+    document.getElementById('kpiLastAlert').textContent = last.created_at
+      ? timeAgo(last.created_at) : '—';
+  } else {
+    document.getElementById('kpiLastAlert').textContent = 'Never';
+  }
+
+  document.getElementById('historyMeta').textContent =
+    `${(d.total || 0).toLocaleString()} total · ${(d.today || 0)} today`;
+
+  const tbody = document.getElementById('historyTbody');
+  if (!history.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="history-empty">
+      <i class="ti ti-bell-off d-block mb-2 opacity-25" style="font-size:2rem"></i>
+      ${_T('adm_tg_history_empty')}</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = history.map(l => {
+    const meta = _typeMeta(l.message);
+    const isTest = (l.extra && l.extra.test) || (l.message || '').toLowerCase().includes('test');
+    const ts    = l.created_at ? fmtDateTime(l.created_at) : '—';
+    const msgShort = (l.message || '').slice(0, 80) + ((l.message || '').length > 80 ? '…' : '');
+    const cls   = isTest ? 'tc-test' : meta.cls;
+    const lbl   = isTest ? 'Test ✅' : meta.lbl;
+
+    return `<tr>
+      <td style="font-size:.74rem; color:#64748B; white-space:nowrap">${ts}</td>
+      <td><span class="tg-type-chip ${cls}">${lbl}</span></td>
+      <td style="font-size:.75rem; color:#334155; max-width:280px;
+                 overflow:hidden; text-overflow:ellipsis; white-space:nowrap"
+          title="${(l.message || '').replace(/"/g,'&quot;')}">${msgShort}</td>
+      <td class="text-center">
+        <span style="font-size:.72rem; color:#059669; font-weight:700">
+          <i class="ti ti-check" style="font-size:.8rem"></i> Sent
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('historyUpdated').textContent =
+    'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ── Load alert settings toggles ────────────────────────────────────────────
+async function loadSettings() {
+  const r = await apiFetch('/api/admin/telegram/settings');
+  if (!r || !r.ok) return;
+  const d = await r.json();
+  ['pneumonia', 'auth_fail', 'critical_error', 'db_health', 'daily_summary'].forEach(k => {
+    const el = document.getElementById(`tog-${k}`);
+    if (el && k in d) el.checked = d[k];
+  });
+}
+
+// ── Save settings ──────────────────────────────────────────────────────────
+async function saveSettings() {
+  const btn = document.getElementById('saveSettingsBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ti ti-loader-2 me-1"></i>Saving…'; }
+
+  const payload = {};
+  ['pneumonia', 'auth_fail', 'critical_error', 'db_health', 'daily_summary'].forEach(k => {
+    const el = document.getElementById(`tog-${k}`);
+    if (el) payload[k] = el.checked;
+  });
+
+  const r = await apiFetch('/api/admin/telegram/settings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-device-floppy me-1"></i>' + _T('adm_tg_save');
+    if (typeof I18n !== 'undefined') I18n.applyAll();
+  }
+
+  if (r && r.ok) toast(_T('adm_tg_save') + ' ✓', 'success');
+  else toast('Failed to save settings.', 'error');
+}
+
+// ── Discover Chat ID ───────────────────────────────────────────────────────
+async function discoverChatId() {
+  const r = await apiFetch('/api/admin/telegram/discover', { method: 'POST' });
+  if (!r) return;
+  const d = await r.json();
+  if (d.ok) {
+    toast(d.message || 'Chat ID discovered!', 'success');
+    window._tgStatus = null;
+    loadStatus();
+  } else {
+    toast(d.message || 'No messages found — send your bot any message first.', 'warning');
+  }
+}
+
+// ── Test specific alert type ───────────────────────────────────────────────
+async function sendTest(type) {
+  const btns = document.querySelectorAll('.test-btn');
+  btns.forEach(b => b.disabled = true);
+
+  const r = await apiFetch(`/api/admin/telegram/test/${type}`, { method: 'POST' });
+
+  btns.forEach(b => b.disabled = false);
+
+  const log = document.getElementById('testLog');
+  const entries = document.getElementById('testLogEntries');
+  if (log && entries) {
+    log.style.display = '';
+    const meta = _typeMeta(type === 'generic' ? 'test' : type);
+    const now  = new Date().toLocaleTimeString();
+    const ok   = r && r.ok;
+    const entry = document.createElement('div');
+    entry.style.cssText = 'padding:3px 0; border-bottom:1px solid #EEF2FF; color:' +
+      (ok ? '#059669' : '#DC2626');
+    entry.innerHTML = `${ok ? '✅' : '❌'} <strong>${type}</strong> — ${now}`;
+    entries.prepend(entry);
+  }
+
+  if (r) {
+    const d = await r.json();
+    toast(d.message || (r.ok ? 'Sent!' : 'Failed.'), r.ok ? 'success' : 'error');
+    if (r.ok) setTimeout(loadHistory, 1200);
+  }
+}
+
+// ── Message preview accordion ──────────────────────────────────────────────
+function togglePreview(id, btn) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  const open = box.classList.toggle('open');
+  btn.classList.toggle('open', open);
+}
+
+// ── Setup guide ───────────────────────────────────────────────────────────
+function openSetup() {
+  document.getElementById('setupBody').style.display = '';
+  document.getElementById('setupChevron').style.transform = 'rotate(180deg)';
+}
+function toggleSetup() {
+  const body = document.getElementById('setupBody');
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  document.getElementById('setupChevron').style.transform = open ? 'rotate(180deg)' : '';
+}
+
+// ── Copy .env line ─────────────────────────────────────────────────────────
+function copyEnv(text) {
+  navigator.clipboard?.writeText(text).then(() =>
+    toast(`Copied: ${text.split('=')[0]}`, 'success')
+  ).catch(() => {});
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+loadStatus();
+loadHistory();
+loadSettings();
+// Auto-refresh history every 60 s
+setInterval(() => { loadHistory(); loadStatus(); }, 60_000);
+</script>
+{% endblock %}

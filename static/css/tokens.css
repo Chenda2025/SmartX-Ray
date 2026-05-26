@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Google Fonts ────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+Khmer:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@600;700&family=DM+Sans:wght@400;500;600&family=Inter:wght@300;400;500;600;700;800&family=Hanuman:wght@400;700&family=Noto+Sans+Khmer:wght@400;600;700&display=swap');
 
 /* ── Design Tokens ───────────────────────────────────────────────────────── */
 :root {
@@ -101,6 +101,12 @@
   --transition-fast   : 0.15s ease;
   --transition-base   : 0.2s ease;
   --transition-slow   : 0.3s ease;
+
+  /* Typography — Figma Design System */
+  --font-display      : 'Space Grotesk', system-ui, sans-serif;
+  --font-body         : 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-mono         : 'Inter', system-ui, -apple-system, sans-serif;
+  --font-km           : 'Hanuman', 'Noto Sans Khmer', sans-serif;
 }
 
 /* ── CSS Reset & Base ────────────────────────────────────────────────────── */
@@ -119,7 +125,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 400;
   line-height: 1.6;
@@ -140,7 +146,7 @@ body {
 
 /* Page / section title */
 .t-title {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
   color: var(--color-navy);
@@ -150,7 +156,7 @@ body {
 
 /* Section subtitle */
 .t-subtitle {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 400;
   color: var(--color-muted);
@@ -159,9 +165,9 @@ body {
 
 /* KPI / big number */
 .t-kpi {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-display);
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--color-navy);
   letter-spacing: -0.03em;
   line-height: 1.1;
@@ -169,7 +175,7 @@ body {
 
 /* Table cell text */
 .t-table {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 13px;
   font-weight: 400;
   color: var(--color-text);
@@ -177,7 +183,7 @@ body {
 
 /* Badge text */
 .t-badge {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 11px;
   font-weight: 600;
   line-height: 1;
@@ -185,7 +191,7 @@ body {
 
 /* Button text */
 .t-btn {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   line-height: 1;
@@ -193,7 +199,7 @@ body {
 
 /* Body text */
 .t-body {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 400;
   color: #475569;
@@ -202,7 +208,7 @@ body {
 
 /* Label / caption */
 .t-label {
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   color: var(--color-muted);
@@ -251,7 +257,7 @@ body {
   border-radius: var(--radius-badge);
   font-size: 11px;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   line-height: 1.4;
   white-space: nowrap;
   border: 1px solid transparent;
@@ -327,7 +333,7 @@ body {
   border-radius: var(--radius-btn);
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   line-height: 1;
   border: 1px solid transparent;
   cursor: pointer;
@@ -453,7 +459,7 @@ body {
   width: 100%;
   padding: 8px 12px;
   font-size: 13px;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-body);
   color: var(--color-text);
   background: var(--color-card-bg);
   border: 1px solid var(--color-border);
@@ -575,7 +581,7 @@ body {
   justify-content: center;
   border-radius: 50%;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-display);
   flex-shrink: 0;
   overflow: hidden;
   text-transform: uppercase;
