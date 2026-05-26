@@ -5,7 +5,7 @@ services:
     runtime: python
     region: singapore
     plan: free
-    buildCommand: pip install -r requirements.txt && python scripts/download_model.py && flask db upgrade
+    buildCommand: pip install -r requirements.txt && python scripts/download_model.py && flask db upgrade && python scripts/create_admin.py
     startCommand: gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /health
     envVars:
