@@ -1311,7 +1311,7 @@ async function udExecuteDeleteScan() {
   let failed = 0;
   for (const id of ids) {
     try {
-      const res = await api.delete(`/api/scan/${id}`);
+      const res = await api.delete(`/scan/${id}`);
       if (!res.ok) failed++;
     } catch { failed++; }
   }
