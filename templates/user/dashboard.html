@@ -309,7 +309,31 @@
   <section class="ud-card ud-history-card" id="history-section">
     <div class="ud-history-header">
       <div class="ud-history-title" data-i18n="history_title">My Scan History</div>
-      <a href="javascript:void(0)" class="ud-history-view-all" data-i18n="history_view_all" onclick="udScrollTo('history-section')">View all →</a>
+      <div class="ud-history-header-actions">
+        <!-- Bulk-select toggle (shown once ≥1 scan exists) -->
+        <button class="ud-hist-select-btn ud-hidden" id="udSelectToggleBtn"
+                onclick="udToggleSelectMode()">
+          <i class="ti ti-checkbox"></i>
+          <span data-i18n="hist_select">Select</span>
+        </button>
+        <a href="javascript:void(0)" class="ud-history-view-all" data-i18n="history_view_all"
+           onclick="udScrollTo('history-section')">View all →</a>
+      </div>
+    </div>
+
+    <!-- Bulk-action bar (appears when ≥1 row is checked) -->
+    <div class="ud-bulk-bar ud-hidden" id="udBulkBar">
+      <span class="ud-bulk-count" id="udBulkCount">0 selected</span>
+      <div class="ud-bulk-actions">
+        <button class="ud-bulk-select-all" onclick="udSelectAll()" data-i18n="hist_select_all">Select all</button>
+        <button class="ud-bulk-delete-btn" onclick="udConfirmBulkDelete()">
+          <i class="ti ti-trash"></i>
+          <span data-i18n="hist_delete_selected">Delete selected</span>
+        </button>
+        <button class="ud-bulk-cancel" onclick="udExitSelectMode()">
+          <i class="ti ti-x"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Desktop/Tablet: table -->
@@ -317,6 +341,12 @@
       <table class="ud-table">
         <thead>
           <tr>
+            <th class="ud-th-check ud-hidden" id="udThCheck">
+              <label class="ud-cb-wrap" title="Select all">
+                <input type="checkbox" id="udSelectAllChk" onchange="udToggleSelectAll(this)" />
+                <span class="ud-cb"></span>
+              </label>
+            </th>
             <th data-i18n="hist_col_date">Date</th>
             <th data-i18n="hist_col_id">Scan ID</th>
             <th data-i18n="hist_col_result">Result</th>
@@ -327,7 +357,7 @@
         </thead>
         <tbody id="udHistoryBody">
           <tr>
-            <td colspan="6">
+            <td colspan="7">
               <div class="ud-empty">
                 <i class="ti ti-loader-2" style="animation:spin 1s linear infinite;"></i>
                 <span class="ud-empty-h" data-i18n="history_loading">Loading scans…</span>
@@ -603,6 +633,27 @@
 <!-- Toast container -->
 <div class="ud-toast-container" id="udToastContainer"></div>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     DELETE SCAN CONFIRM MODAL
+     ══════════════════════════════════════════════════════════════════════════ -->
+<div class="ud-del-modal-overlay" id="udDeleteModal"
+     onclick="if(event.target===this) udCloseDeleteModal()">
+  <div class="ud-del-modal">
+    <div class="ud-del-modal-icon"><i class="ti ti-trash"></i></div>
+    <div class="ud-del-modal-title" data-i18n="hist_delete_title">Delete this scan?</div>
+    <div class="ud-del-modal-sub"   data-i18n="hist_delete_sub">
+      This will permanently remove the scan record and its image. This action cannot be undone.
+    </div>
+    <div class="ud-del-modal-btns">
+      <button class="ud-del-modal-cancel" onclick="udCloseDeleteModal()" data-i18n="modal_cancel">Cancel</button>
+      <button class="ud-del-modal-confirm" id="udDeleteConfirmBtn" onclick="udExecuteDeleteScan()">
+        <i class="ti ti-trash" style="font-size:13px;"></i>
+        <span data-i18n="hist_delete_confirm">Delete</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- CSS spin animation -->
 <style>
   @keyframes spin { to { transform: rotate(360deg); } }
@@ -666,6 +717,19 @@ Object.assign(TRANSLATIONS, {
   hist_pill_pneumonia:     { en: "PNEUMONIA",                             km: "ជំង" },
   hist_pill_normal:        { en: "NORMAL",                                km: "ធម្មតា" },
   hist_view:               { en: "View",                                  km: "មើល" },
+  hist_delete:             { en: "Delete scan",                           km: "លុបស្កែន" },
+  hist_delete_title:       { en: "Delete this scan?",                     km: "លុបស្កែននេះ?" },
+  hist_delete_sub:         { en: "This will permanently remove the scan record and its image. This action cannot be undone.", km: "វានឹងលុបកំណត់ត្រាស្កែននិងរូបភាពជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។" },
+  hist_delete_confirm:     { en: "Delete",                                km: "លុប" },
+  hist_delete_ok:          { en: "Scan deleted.",                         km: "ស្កែនត្រូវបានលុប។" },
+  hist_delete_n_ok:        { en: "scans deleted.",                        km: "ស្កែនត្រូវបានលុប។" },
+  hist_delete_n_sub:       { en: "scans will be permanently deleted. This cannot be undone.", km: "ស្កែននឹងត្រូវបានលុបជាអចិន្ត្រៃយ៍។ មិនអាចត្រឡប់វិញបានទេ។" },
+  hist_select:             { en: "Select",                                km: "ជ្រើស" },
+  hist_cancel_select:      { en: "Cancel",                                km: "បោះបង់" },
+  hist_select_all:         { en: "Select all",                            km: "ជ្រើសទាំងអស់" },
+  hist_delete_selected:    { en: "Delete selected",                       km: "លុបដែលបានជ្រើស" },
+  hist_selected_one:       { en: "scan selected",                         km: "ស្កែនបានជ្រើស" },
+  hist_selected_n:         { en: "scans selected",                        km: "ស្កែនបានជ្រើស" },
   hist_dl_locked:          { en: "Upgrade to Pro",                        km: "ដំឡើងដើម្បី Pro" },
   doctor_title:            { en: "Find a Verified Doctor",                km: "រកវេជ្ជបណ្ឌិតបានផ្ទៀង" },
   doctor_subtitle:         { en: "Powered by SmartX-Ray Marketplace",     km: "ដំណើរការដោយ SmartX-Ray" },

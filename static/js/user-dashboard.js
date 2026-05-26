@@ -518,6 +518,10 @@ function udRenderHistory(scans) {
   }
   empty.classList.add('ud-hidden');
 
+  /* Reveal the "Select" toggle button now that we have rows */
+  const selectBtn = document.getElementById('udSelectToggleBtn');
+  if (selectBtn) selectBtn.classList.remove('ud-hidden');
+
   /* Table rows */
   tbody.innerHTML = scans.map(s => {
     const isPneu  = s.prediction === 'PNEUMONIA';
@@ -549,7 +553,13 @@ function udRenderHistory(scans) {
            <i class="ti ti-lock"></i>
          </button>`;
     return `
-      <tr>
+      <tr data-scan-id="${s.id}">
+        <td class="ud-td-check ud-hidden">
+          <label class="ud-cb-wrap">
+            <input type="checkbox" class="ud-row-chk" value="${s.id}" onchange="udRowCheckChange()" />
+            <span class="ud-cb"></span>
+          </label>
+        </td>
         <td>
           <div class="ud-hist-date">${dateStr}</div>
           <div class="ud-hist-time">${timeStr}</div>
@@ -573,6 +583,10 @@ function udRenderHistory(scans) {
               <span>${I18n.t('hist_view')||'View'}</span>
             </button>
             ${pdfHtml}
+            <button class="ud-hist-del-btn" onclick="udConfirmDeleteScan(${s.id})"
+                    title="${I18n.t('hist_delete')||'Delete scan'}">
+              <i class="ti ti-trash"></i>
+            </button>
           </div>
         </td>
       </tr>`;
@@ -601,9 +615,13 @@ function udRenderHistory(scans) {
            <i class="ti ti-lock"></i> PDF
          </button>`;
     return `
-      <div class="ud-scan-card">
-        <!-- Card head: ID + pill -->
+      <div class="ud-scan-card" data-scan-id="${s.id}">
+        <!-- Card head: ID + pill + checkbox -->
         <div class="ud-scan-card-head">
+          <label class="ud-cb-wrap ud-card-chk ud-hidden">
+            <input type="checkbox" class="ud-row-chk" value="${s.id}" onchange="udRowCheckChange()" />
+            <span class="ud-cb"></span>
+          </label>
           <span class="ud-hist-id">${scanId}</span>
           <span class="ud-result-pill ${pillCls}">${pillLbl}</span>
         </div>
@@ -632,6 +650,10 @@ function udRenderHistory(scans) {
             <i class="ti ti-eye"></i> ${I18n.t('hist_view')||'View Details'}
           </button>
           ${pdfHtml}
+          <button class="ud-hist-del-btn" onclick="udConfirmDeleteScan(${s.id})"
+                  title="${I18n.t('hist_delete')||'Delete scan'}">
+            <i class="ti ti-trash"></i>
+          </button>
         </div>
       </div>`;
   }).join('');
@@ -1140,10 +1162,175 @@ function sdmDownloadXray() {
   a.href = SDM.imageUrl; a.download = 'xray.jpg'; a.click();
 }
 
-/* Keyboard: Esc closes the drawer */
+/* Keyboard: Esc closes the drawer or delete-confirm modal */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') udCloseScanDetailModal();
+  if (e.key === 'Escape') {
+    udCloseDeleteModal();
+    udCloseScanDetailModal();
+  }
 });
+
+/* ════════════════════════════════════════════════════════════════════════════
+   DELETE SCAN  (single + multi-select)
+   ════════════════════════════════════════════════════════════════════════════ */
+let _udDeleteIds    = [];   // ids queued for deletion
+let _udSelectMode   = false;
+
+/* ── Single-row delete (trash icon button) ───────────────────────────────── */
+function udConfirmDeleteScan(scanId) {
+  _udDeleteIds = [scanId];
+  _udOpenDeleteModal();
+}
+
+/* ── Select-mode toggle ──────────────────────────────────────────────────── */
+function udToggleSelectMode() {
+  _udSelectMode ? udExitSelectMode() : udEnterSelectMode();
+}
+
+function udEnterSelectMode() {
+  _udSelectMode = true;
+
+  /* Show checkbox column (table) */
+  document.querySelectorAll('.ud-th-check, .ud-td-check').forEach(el => el.classList.remove('ud-hidden'));
+  /* Show checkbox on mobile cards */
+  document.querySelectorAll('.ud-card-chk').forEach(el => el.classList.remove('ud-hidden'));
+
+  /* Update toggle button label */
+  const btn = document.getElementById('udSelectToggleBtn');
+  if (btn) btn.innerHTML = `<i class="ti ti-x"></i> <span data-i18n="hist_cancel_select">${I18n.t('hist_cancel_select')||'Cancel'}</span>`;
+
+  /* Show bulk bar */
+  _udUpdateBulkBar();
+}
+
+function udExitSelectMode() {
+  _udSelectMode = false;
+
+  /* Uncheck all */
+  document.querySelectorAll('.ud-row-chk').forEach(c => c.checked = false);
+  const allChk = document.getElementById('udSelectAllChk');
+  if (allChk) allChk.checked = false;
+
+  /* Hide checkbox column */
+  document.querySelectorAll('.ud-th-check, .ud-td-check').forEach(el => el.classList.add('ud-hidden'));
+  document.querySelectorAll('.ud-card-chk').forEach(el => el.classList.add('ud-hidden'));
+
+  /* Restore toggle button */
+  const btn = document.getElementById('udSelectToggleBtn');
+  if (btn) btn.innerHTML = `<i class="ti ti-checkbox"></i> <span data-i18n="hist_select">${I18n.t('hist_select')||'Select'}</span>`;
+
+  /* Hide bulk bar */
+  const bar = document.getElementById('udBulkBar');
+  if (bar) bar.classList.add('ud-hidden');
+}
+
+function udRowCheckChange() {
+  /* Highlight selected rows */
+  document.querySelectorAll('.ud-row-chk').forEach(c => {
+    const row = c.closest('tr') || c.closest('.ud-scan-card');
+    if (row) row.classList.toggle('ud-row-selected', c.checked);
+  });
+
+  _udUpdateBulkBar();
+  /* Sync "select all" checkbox state */
+  const all  = document.querySelectorAll('.ud-row-chk');
+  const chkd = document.querySelectorAll('.ud-row-chk:checked');
+  const allChk = document.getElementById('udSelectAllChk');
+  if (allChk) {
+    allChk.checked       = chkd.length === all.length && all.length > 0;
+    allChk.indeterminate = chkd.length > 0 && chkd.length < all.length;
+  }
+}
+
+function udToggleSelectAll(chk) {
+  document.querySelectorAll('.ud-row-chk').forEach(c => c.checked = chk.checked);
+  _udUpdateBulkBar();
+}
+
+function udSelectAll() {
+  document.querySelectorAll('.ud-row-chk').forEach(c => c.checked = true);
+  const allChk = document.getElementById('udSelectAllChk');
+  if (allChk) allChk.checked = true;
+  _udUpdateBulkBar();
+}
+
+function _udUpdateBulkBar() {
+  const checked = document.querySelectorAll('.ud-row-chk:checked');
+  const bar     = document.getElementById('udBulkBar');
+  const count   = document.getElementById('udBulkCount');
+  if (!bar) return;
+
+  if (checked.length > 0) {
+    bar.classList.remove('ud-hidden');
+    const n = checked.length;
+    if (count) count.textContent = `${n} ${n === 1 ? (I18n.t('hist_selected_one')||'scan selected') : (I18n.t('hist_selected_n')||'scans selected')}`;
+  } else {
+    bar.classList.add('ud-hidden');
+  }
+}
+
+/* ── Bulk delete ─────────────────────────────────────────────────────────── */
+function udConfirmBulkDelete() {
+  const checked = document.querySelectorAll('.ud-row-chk:checked');
+  if (!checked.length) return;
+  _udDeleteIds = Array.from(checked).map(c => parseInt(c.value));
+  _udOpenDeleteModal();
+}
+
+/* ── Shared confirm modal ────────────────────────────────────────────────── */
+function _udOpenDeleteModal() {
+  const overlay = document.getElementById('udDeleteModal');
+  if (!overlay) return;
+
+  /* Update subtitle with count */
+  const sub = overlay.querySelector('.ud-del-modal-sub');
+  if (sub && _udDeleteIds.length > 1) {
+    sub.textContent = `${_udDeleteIds.length} ${I18n.t('hist_delete_n_sub') || 'scans will be permanently deleted. This cannot be undone.'}`;
+  } else if (sub) {
+    sub.setAttribute('data-i18n', 'hist_delete_sub');
+    sub.textContent = I18n.t('hist_delete_sub') || 'This will permanently remove the scan record and its image. This action cannot be undone.';
+  }
+
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function udCloseDeleteModal() {
+  const overlay = document.getElementById('udDeleteModal');
+  if (overlay) { overlay.classList.remove('open'); document.body.style.overflow = ''; }
+  _udDeleteIds = [];
+}
+
+async function udExecuteDeleteScan() {
+  if (!_udDeleteIds.length) return;
+  const ids = [..._udDeleteIds];
+
+  const btn = document.getElementById('udDeleteConfirmBtn');
+  if (btn) { btn.classList.add('loading'); btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i>'; }
+
+  let failed = 0;
+  for (const id of ids) {
+    try {
+      const res = await api.delete(`/api/scan/${id}`);
+      if (!res.ok) failed++;
+    } catch { failed++; }
+  }
+
+  udCloseDeleteModal();
+  udExitSelectMode();
+
+  const ok = ids.length - failed;
+  if (ok > 0) {
+    const msg = ok === 1
+      ? (I18n.t('hist_delete_ok')   || 'Scan deleted.')
+      : `${ok} ${I18n.t('hist_delete_n_ok') || 'scans deleted.'}`;
+    udShowToast(msg, 'success');
+  }
+  if (failed > 0) udShowToast(`${failed} scan(s) could not be deleted.`, 'error');
+
+  /* Reload history */
+  await udLoadHistory();
+}
 
 /* ════════════════════════════════════════════════════════════════════════════
    PDF REPORT DOWNLOAD  (uses api.get so the JWT header is sent)

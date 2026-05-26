@@ -1124,6 +1124,236 @@ table.ud-table td {
   cursor: not-allowed;
 }
 
+/* ── History header with actions ──────────────────────────────────────────── */
+.ud-history-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* "Select" toggle button */
+.ud-hist-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-pill);
+  background: white;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.ud-hist-select-btn:hover { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-light); }
+
+/* Bulk-action bar */
+.ud-bulk-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 2px;
+  background: #EEF2FF;
+  border-radius: 10px;
+  border: 1.5px solid #C7D2FE;
+  animation: ud-slide-in .15s ease;
+}
+@keyframes ud-slide-in { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:none; } }
+.ud-bulk-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--indigo);
+  white-space: nowrap;
+}
+.ud-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ud-bulk-select-all {
+  padding: 5px 12px;
+  border: 1.5px solid var(--indigo);
+  border-radius: var(--r-pill);
+  background: white;
+  color: var(--indigo);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+  white-space: nowrap;
+}
+.ud-bulk-select-all:hover { background: var(--indigo-light); }
+.ud-bulk-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: #EF4444;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  white-space: nowrap;
+}
+.ud-bulk-delete-btn:hover  { background: #DC2626; }
+.ud-bulk-delete-btn:active { transform: scale(.97); }
+.ud-bulk-cancel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border: 1.5px solid #CBD5E1;
+  border-radius: 8px;
+  background: white;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ud-bulk-cancel:hover { background: #F1F5F9; }
+
+/* Checkbox column */
+.ud-th-check { width: 36px; padding-left: 14px !important; }
+.ud-td-check { width: 36px; padding-left: 14px !important; }
+
+/* Custom checkbox */
+.ud-cb-wrap {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+.ud-cb-wrap input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0; height: 0;
+}
+.ud-cb {
+  width: 17px; height: 17px;
+  border: 2px solid #CBD5E1;
+  border-radius: 5px;
+  background: white;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.ud-cb-wrap input:checked + .ud-cb {
+  background: var(--indigo);
+  border-color: var(--indigo);
+}
+.ud-cb-wrap input:checked + .ud-cb::after {
+  content: '';
+  width: 5px; height: 9px;
+  border: 2px solid white;
+  border-top: none; border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+}
+.ud-cb-wrap input:indeterminate + .ud-cb {
+  background: var(--indigo);
+  border-color: var(--indigo);
+}
+.ud-cb-wrap input:indeterminate + .ud-cb::after {
+  content: '';
+  width: 8px; height: 2px;
+  background: white;
+  border: none;
+}
+
+/* Mobile card checkbox */
+.ud-card-chk { margin-right: 4px; }
+
+/* Selected row highlight */
+tr.ud-row-selected { background: #EEF2FF !important; }
+
+/* Delete button — icon-only, red ghost */
+.ud-hist-del-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  border: 1.5px solid #FECACA;
+  background: #FFF5F5;
+  color: #EF4444;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, transform .1s;
+  flex-shrink: 0;
+}
+.ud-hist-del-btn:hover  { background: #FEE2E2; border-color: #FCA5A5; transform: translateY(-1px); }
+.ud-hist-del-btn:active { transform: translateY(0); }
+
+/* Delete-confirm mini-modal */
+.ud-del-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9100;
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s;
+}
+.ud-del-modal-overlay.open { opacity: 1; pointer-events: auto; }
+.ud-del-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 28px 28px 22px;
+  width: min(360px, 92vw);
+  box-shadow: 0 20px 60px rgba(15,23,42,.18);
+  text-align: center;
+  transform: translateY(12px) scale(.97);
+  transition: transform .22s;
+}
+.ud-del-modal-overlay.open .ud-del-modal { transform: translateY(0) scale(1); }
+.ud-del-modal-icon {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: #FEF2F2;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 14px;
+  font-size: 26px; color: #EF4444;
+}
+.ud-del-modal-title {
+  font-size: 16px; font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+.ud-del-modal-sub {
+  font-size: 13px; color: var(--text-muted);
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+.ud-del-modal-btns {
+  display: flex; gap: 10px;
+}
+.ud-del-modal-cancel {
+  flex: 1; padding: 10px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--r-pill);
+  background: white; color: var(--text-primary);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ud-del-modal-cancel:hover { background: #F8FAFC; }
+.ud-del-modal-confirm {
+  flex: 1; padding: 10px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: #EF4444; color: white;
+  font-size: 13px; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+}
+.ud-del-modal-confirm:hover  { background: #DC2626; }
+.ud-del-modal-confirm:active { transform: scale(.98); }
+.ud-del-modal-confirm.loading { opacity: .7; pointer-events: none; }
+
 /* ── Mobile scan cards ────────────────────────────────────────────────────── */
 .ud-scan-cards { display: none; padding: 14px; gap: 12px; flex-direction: column; }
 
