@@ -12,6 +12,9 @@ Run during deploy (after flask db upgrade):
 import os
 import sys
 
+# Add project root to path so 'app' module is importable
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 ADMIN_EMAIL    = os.environ.get("ADMIN_EMAIL", "").strip().lower()
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "").strip()
 ADMIN_NAME     = os.environ.get("ADMIN_NAME", "Admin").strip()
