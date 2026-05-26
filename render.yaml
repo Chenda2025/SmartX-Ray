@@ -5,43 +5,67 @@ services:
     runtime: python
     region: singapore
     plan: free
-    buildCommand: pip install -r requirements.txt
+    buildCommand: pip install -r requirements.txt && python scripts/download_model.py
     startCommand: flask db upgrade && gunicorn "app:create_app()" --bind 0.0.0.0:$PORT --workers 2 --timeout 120
     healthCheckPath: /health
     envVars:
       - key: FLASK_ENV
         value: production
+
+      # ── Database (auto-filled from the DB below) ──────────────────────────
       - key: DATABASE_URL
         fromDatabase:
           name: smartxray-db
           property: connectionString
+
+      # ── Auto-generated secrets ────────────────────────────────────────────
       - key: SECRET_KEY
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
-      - key: REDIS_URL
-        value: ""           # leave blank — Render free tier has no Redis; background tasks disabled
-      # ── Optional: fill these in the Render dashboard ────────────────────────
-      # - key: MAIL_SERVER
-      #   value: smtp.gmail.com
-      # - key: MAIL_PORT
-      #   value: "587"
-      # - key: MAIL_USERNAME
-      #   sync: false
-      # - key: MAIL_PASSWORD
-      #   sync: false
-      # - key: TELEGRAM_BOT_TOKEN
-      #   sync: false
-      # - key: TELEGRAM_CHAT_ID
-      #   sync: false
-      # - key: STRIPE_SECRET_KEY
-      #   sync: false
-      # - key: STRIPE_PRICE_MONTHLY
-      #   sync: false
-      # - key: STRIPE_PRICE_YEARLY
-      #   sync: false
 
-  # ── PostgreSQL Database ─────────────────────────────────────────────────────
+      # ── AI Model ──────────────────────────────────────────────────────────
+      # Set MODEL_URL to the direct download link of best_model.h5.
+      # Recommended hosts:
+      #   GitHub Releases → https://github.com/USER/REPO/releases/download/v1.0/best_model.h5
+      #   Hugging Face    → https://huggingface.co/USER/REPO/resolve/main/best_model.h5
+      - key: MODEL_URL
+        sync: false       # fill in the Render dashboard — do NOT commit the URL here
+      # Optional: SHA-256 checksum for integrity verification (leave blank to skip)
+      - key: MODEL_SHA256
+        sync: false
+
+      # ── Redis (no free tier on Render — leave blank, background tasks off) ─
+      - key: REDIS_URL
+        value: ""
+
+      # ── Email ─────────────────────────────────────────────────────────────
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_DEFAULT_SENDER
+        value: noreply@smartxray.com
+
+      # ── Telegram alerts ───────────────────────────────────────────────────
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+
+      # ── Stripe (leave blank to disable payments) ──────────────────────────
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_MONTHLY
+        sync: false
+      - key: STRIPE_PRICE_YEARLY
+        sync: false
+
+# ── PostgreSQL Database ─────────────────────────────────────────────────────
 databases:
   - name: smartxray-db
     databaseName: smartxray
