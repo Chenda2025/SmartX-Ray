@@ -1,0 +1,487 @@
+/**
+ * system_flow.css
+ * Scoped component styles for /admin/system-flow
+ *
+ * Design tokens used (defined in tokens.css):
+ *   --color-surface         page / card backgrounds
+ *   --color-bg-secondary    muted fill (chips, badges, dots)
+ *   --color-border          default border (1px solid)
+ *   --color-border-light    hairline separator inside cards
+ *   --color-text-primary    headings / values
+ *   --color-text-secondary  labels / subtitles
+ *   --color-text-tertiary   muted / metadata text
+ *
+ * Hard-coded accent palette:
+ *   Indigo  #6366F1 / light #EEEDFE / dark #4F46E5
+ *   Green   #10B981 / light #E1F5EE
+ *   Amber   #F59E0B / light #FAEEDA
+ *   Red     #EF4444 / light #FCEBEB
+ */
+
+/* ════════════════════════════════════════════════════════════════
+   1. HEADER PILLS
+   ════════════════════════════════════════════════════════════════ */
+.sf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--color-bg-secondary, #F8FAFC);
+  border: 1px solid var(--color-border, #e2e8f0);
+  color: var(--color-text-secondary, #64748b);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2. ACTOR TAGS  (inline role badges on stage headers)
+   ════════════════════════════════════════════════════════════════ */
+.actor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 4px;
+}
+.actor-tag.admin   { background: #EEEDFE; color: #3C3489; }
+.actor-tag.doctor  { background: #E1F5EE; color: #085041; }
+.actor-tag.patient { background: #FAEEDA; color: #633806; }
+.actor-tag.system  {
+  background: var(--color-bg-secondary, #F8FAFC);
+  color: var(--color-text-secondary, #64748b);
+  border: 1px solid var(--color-border, #e2e8f0);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3. ACTOR LEGEND CARDS  (Section B grid)
+   ════════════════════════════════════════════════════════════════ */
+.actor-legend-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.actor-card {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 16px 18px;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Coloured left-border accent per actor */
+.actor-border-admin   { border-left: 4px solid #6366F1; }
+.actor-border-doctor  { border-left: 4px solid #10B981; }
+.actor-border-patient { border-left: 4px solid #F59E0B; }
+
+/* Icon tile */
+.actor-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+  margin-bottom: 10px;
+}
+.actor-icon.indigo { background: #EEEDFE; color: #6366F1; }
+.actor-icon.green  { background: #E1F5EE; color: #10B981; }
+.actor-icon.amber  { background: #FAEEDA; color: #F59E0B; }
+
+/* Stat chip row */
+.actor-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.actor-stat-chip {
+  background: var(--color-bg-secondary, #F8FAFC);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 3px 9px;
+  font-size: 11px;
+  color: var(--color-text-secondary, #64748b);
+}
+.actor-stat-chip strong {
+  color: var(--color-text-primary, #0f172a);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4. STEPPER DOT NAVIGATION  (Section C top bar)
+   ════════════════════════════════════════════════════════════════ */
+.stepper-nav {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  overflow-x: auto;
+  padding: 0 2px;
+  margin-bottom: 20px;
+  /* hide scrollbar on narrow screens while keeping scroll */
+  scrollbar-width: none;
+}
+.stepper-nav::-webkit-scrollbar { display: none; }
+
+.stage-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  background: var(--color-bg-secondary, #F8FAFC);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary, #64748b);
+  cursor: pointer;
+  transition: all 0.15s;
+  flex-shrink: 0;
+  position: relative;
+  user-select: none;
+}
+.stage-dot:hover {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+.stage-dot.active {
+  background: #6366F1;
+  border-color: #6366F1;
+  color: #fff;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+.stage-dot.done {
+  background: #E1F5EE;
+  border-color: #10B981;
+  color: #10B981;
+}
+.stage-dot.done::after {
+  content: '✓';
+  font-size: 13px;
+  font-weight: 700;
+}
+/* Hide the number when done — checkmark shows via ::after */
+.stage-dot.done span { display: none; }
+
+/* Connector line between dots */
+.stage-line {
+  flex: 1;
+  height: 1px;
+  min-width: 6px;
+  background: var(--color-border, #e2e8f0);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   5. STAGE PANELS
+   ════════════════════════════════════════════════════════════════ */
+.stage-panel         { display: none; }
+.stage-panel.sf-active { display: block; }
+
+/* Outer card */
+.stage-card {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Header ── */
+.stage-card-header {
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid var(--color-border, #e2e8f0);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.stage-badge {
+  background: #6366F1;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.stage-title-en {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  margin: 0;
+}
+.stage-title-kh {
+  font-size: 13px;
+  color: var(--color-text-secondary, #64748b);
+  margin: 2px 0 0;
+}
+.stage-actors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+/* ── Body ── */
+.stage-card-body { padding: 16px 20px; }
+
+/* ── Footer ── */
+.stage-card-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stage-counter {
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+  font-weight: 500;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   6. NAVIGATION BUTTONS  (Prev / Next)
+   ════════════════════════════════════════════════════════════════ */
+.sf-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #fff);
+  color: var(--color-text-primary, #0f172a);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+.sf-nav-btn:hover:not(:disabled) {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+.sf-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.sf-nav-btn.primary {
+  background: #6366F1;
+  border-color: #6366F1;
+  color: #fff;
+}
+.sf-nav-btn.primary:hover:not(:disabled) {
+  background: #4F46E5;
+  border-color: #4F46E5;
+  color: #fff;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   7. EVENT CARDS  (list items inside each stage body)
+   ════════════════════════════════════════════════════════════════ */
+.event-card {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--color-border-light, #f1f5f9);
+}
+.event-card:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+
+/* Colour-coded icon tile */
+.event-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.event-icon.purple { background: #EEEDFE; color: #534AB7; }
+.event-icon.teal   { background: #E1F5EE; color: #0F6E56; }
+.event-icon.amber  { background: #FAEEDA; color: #854F0B; }
+.event-icon.green  { background: #EAF3DE; color: #3B6D11; }
+.event-icon.red    { background: #FCEBEB; color: #A32D2D; }
+.event-icon.gray   {
+  background: var(--color-bg-secondary, #F8FAFC);
+  color: var(--color-text-secondary, #64748b);
+}
+
+/* Text body */
+.event-body  { flex: 1; min-width: 0; }
+.event-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  margin: 0 0 2px;
+}
+.event-sub {
+  font-size: 12px;
+  color: var(--color-text-secondary, #64748b);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Monospace data badge */
+.data-badge {
+  display: inline-block;
+  font-size: 10.5px;
+  font-family: ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  color: var(--color-text-tertiary, #94a3b8);
+  background: var(--color-bg-secondary, #F8FAFC);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 6px;
+  padding: 2px 8px;
+  margin-top: 5px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   8. DECISION SPLIT  (approve / reject two-column grid)
+   ════════════════════════════════════════════════════════════════ */
+.decision-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 8px 0 4px;
+}
+.decision-card {
+  border-radius: 9px;
+  padding: 11px 14px;
+  border: 1.5px solid;
+}
+.decision-card.approve { background: #F0FDF4; border-color: #bbf7d0; }
+.decision-card.reject  { background: #FEF2F2; border-color: #fecaca; }
+
+.decision-card-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+.decision-card.approve .decision-card-header { color: #166534; }
+.decision-card.reject  .decision-card-header { color: #991b1b; }
+.decision-card p {
+  font-size: 11.5px;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0 0 5px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   9. KPI MINI GRID  (2×2 stat tiles inside stage bodies)
+   ════════════════════════════════════════════════════════════════ */
+.kpi-mini-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 9px;
+  margin: 12px 0 4px;
+}
+.kpi-mini-card {
+  background: var(--color-bg-secondary, #F8FAFC);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+.kpi-mini-label {
+  font-size: 10.5px;
+  color: var(--color-text-secondary, #64748b);
+  margin-bottom: 3px;
+}
+.kpi-mini-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+  line-height: 1.1;
+}
+.kpi-mini-sub {
+  font-size: 10px;
+  color: var(--color-text-tertiary, #94a3b8);
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   10. SUMMARY METRIC CARDS  (Section D — 4-up grid)
+   ════════════════════════════════════════════════════════════════ */
+.sf-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-top: 24px;
+}
+.sf-metric-card {
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.sf-metric-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.sf-metric-icon.indigo { background: #EEEDFE; color: #6366F1; }
+.sf-metric-icon.green  { background: #E1F5EE; color: #10B981; }
+.sf-metric-icon.amber  { background: #FAEEDA; color: #F59E0B; }
+.sf-metric-icon.red    { background: #FCEBEB; color: #EF4444; }
+
+.sf-metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary, #0f172a);
+  line-height: 1.1;
+}
+.sf-metric-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  margin: 4px 0 1px;
+}
+.sf-metric-sub {
+  font-size: 11px;
+  color: var(--color-text-secondary, #64748b);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   11. RESPONSIVE BREAKPOINTS
+   ════════════════════════════════════════════════════════════════ */
+
+/* Actor legend: 3-col → 1-col */
+@media (max-width: 680px) {
+  .actor-legend-row { grid-template-columns: 1fr; }
+}
+
+/* Summary metrics: 4-col → 2-col → 1-col */
+@media (max-width: 900px) {
+  .sf-metric-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 540px) {
+  .sf-metric-grid { grid-template-columns: 1fr; }
+}
+
+/* Decision split + KPI grid: 2-col → 1-col */
+@media (max-width: 540px) {
+  .decision-split { grid-template-columns: 1fr; }
+  .kpi-mini-grid  { grid-template-columns: 1fr; }
+}
