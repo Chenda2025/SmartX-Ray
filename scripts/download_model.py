@@ -21,9 +21,9 @@ from pathlib import Path
 
 # ── Config ─────────────────────────────────────────────────────────────────
 MODEL_URL    = os.environ.get("MODEL_URL", "").strip()
-# Auto-detect filename from URL (supports .tflite and .h5)
-_url_filename = MODEL_URL.split("?")[0].split("/")[-1] if MODEL_URL else "best_model.tflite"
-MODEL_PATH   = Path("models") / (_url_filename if _url_filename.endswith((".h5", ".tflite")) else "best_model.tflite")
+# Auto-detect filename from URL (supports .onnx, .tflite, and .h5)
+_url_filename = MODEL_URL.split("?")[0].split("/")[-1] if MODEL_URL else "best_model.onnx"
+MODEL_PATH   = Path("models") / (_url_filename if _url_filename.endswith((".h5", ".tflite", ".onnx")) else "best_model.onnx")
 MODEL_SHA256 = os.environ.get("MODEL_SHA256", "").strip().lower()  # optional checksum
 MIN_BYTES    = 10 * 1024 * 1024   # anything < 10 MB is probably a placeholder/corrupt
 
@@ -133,7 +133,7 @@ def main() -> int:
 
     # ── 3. Download ─────────────────────────────────────────────────────────
     MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
-    tmp = MODEL_PATH.with_suffix(".h5.tmp")
+    tmp = MODEL_PATH.parent / (MODEL_PATH.name + ".tmp")
 
     print(f"⬇  Downloading from:\n   {MODEL_URL}\n")
     try:

@@ -93,6 +93,13 @@ def _load():
             _backend = "keras"
             logger.info("Keras model loaded — input shape: %s", model.input_shape)
             return model
+        except ImportError:
+            # TensorFlow is not installed (expected when using ONNX/TFLite backends).
+            # Fall through so FileNotFoundError is raised below with a helpful message.
+            logger.warning(
+                "TensorFlow not installed — Keras (.h5) backend unavailable. "
+                "Set MODEL_URL to a .onnx file and redeploy."
+            )
         except Exception as exc:
             logger.error("Keras load failed: %s", exc)
             raise

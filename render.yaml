@@ -25,10 +25,11 @@ services:
         generateValue: true
 
       # ── AI Model ──────────────────────────────────────────────────────────
-      # Set MODEL_URL to the direct download link of best_model.h5.
+      # Set MODEL_URL to the direct download link of best_model.onnx  ← PREFERRED (lowest RAM)
+      # Falls back to .tflite then .h5 if ONNX is unavailable.
       # Recommended hosts:
-      #   GitHub Releases → https://github.com/USER/REPO/releases/download/v1.0/best_model.h5
-      #   Hugging Face    → https://huggingface.co/USER/REPO/resolve/main/best_model.h5
+      #   GitHub Releases → https://github.com/USER/REPO/releases/download/v1.0/best_model.onnx
+      #   Hugging Face    → https://huggingface.co/USER/REPO/resolve/main/best_model.onnx
       - key: MODEL_URL
         sync: false       # fill in the Render dashboard — do NOT commit the URL here
       # Optional: SHA-256 checksum for integrity verification (leave blank to skip)
