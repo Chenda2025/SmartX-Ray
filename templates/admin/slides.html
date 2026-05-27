@@ -1,0 +1,838 @@
+{% extends "admin/base.html" %}
+{% block title %}Slides{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_slides">Slides</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_slides">Slides</span>{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="/static/css/slides.css">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+{# ── Toolbar ─────────────────────────────────────────────────── #}
+<div class="slides-toolbar">
+  <div class="slides-toolbar-title">
+    <i class="ti ti-slideshow" style="color:#6366F1;font-size:16px"></i>
+    SmartX-Ray — Final Project Presentation
+    <span style="font-weight:400;color:var(--color-text-secondary,#64748b);font-size:12px;">· 12 slides</span>
+  </div>
+  <div style="display:flex;gap:6px;">
+    <button class="slides-toolbar-btn" onclick="window.print()">
+      <i class="ti ti-printer" style="font-size:13px"></i> Print
+    </button>
+    <button class="slides-toolbar-btn primary" id="fs-btn" onclick="toggleFullscreen()">
+      <i class="ti ti-arrows-maximize" style="font-size:13px"></i> Fullscreen
+    </button>
+  </div>
+</div>
+
+{# ── Slide canvas ────────────────────────────────────────────── #}
+<div id="slide-wrap" class="slide-wrap" style="font-family:'Sora','Inter',sans-serif;">
+  <div class="slide-grid-bg"></div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 1 — COVER
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide active" id="slide-1">
+    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;text-align:center;gap:0;">
+      {# Badge #}
+      <div style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:#818CF8;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 16px;border-radius:20px;margin-bottom:22px;">
+        Final Project Presentation
+      </div>
+      {# Lung icon #}
+      <div style="width:68px;height:68px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:34px;color:#818CF8;margin-bottom:18px;">
+        <i class="ti ti-lungs"></i>
+      </div>
+      {# Main title #}
+      <h1 style="font-size:52px;font-weight:800;margin:0 0 10px;letter-spacing:-.03em;line-height:1;">
+        <span style="color:#fff;">SmartX</span><span style="color:#818CF8;">Ray Web</span>
+      </h1>
+      {# EN subtitle #}
+      <p style="font-size:16px;color:#94A3B8;margin:0 0 5px;font-weight:400;">Medical AI Platform — Cambodia</p>
+      {# KH subtitle #}
+      <p style="font-size:17px;color:#818CF8;margin:0 0 28px;font-family:'Noto Sans Khmer','Hanuman',sans-serif;">ប្រព័ន្ធ AI វេជ្ជសាស្ត្រ — លំហូរប្រព័ន្ធ</p>
+      {# Actor chips #}
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <span style="background:rgba(99,102,241,.18);border:1px solid rgba(99,102,241,.35);color:#818CF8;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-shield"></i> Admin
+        </span>
+        <span style="background:rgba(13,148,136,.18);border:1px solid rgba(13,148,136,.35);color:#99F6E4;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-stethoscope"></i> Doctor
+        </span>
+        <span style="background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.35);color:#F59E0B;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px;">
+          <i class="ti ti-user"></i> Patient
+        </span>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 2 — TEACHER
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-2">
+    <div style="height:100%;display:grid;grid-template-columns:42% 58%;">
+      {# Left: teacher image #}
+      <div style="position:relative;overflow:hidden;">
+        <img src="/static/img/teacher_eagle.jpg" alt="Teacher"
+             style="width:100%;height:100%;object-fit:cover;object-position:center top;"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+        <div style="display:none;width:100%;height:100%;background:linear-gradient(135deg,#1e1b4b,#312e81);align-items:center;justify-content:center;font-size:64px;color:#818CF8;">
+          <i class="ti ti-school"></i>
+        </div>
+        {# Right-edge gradient #}
+        <div style="position:absolute;inset:0;background:linear-gradient(to right,transparent 40%,#0A0E1A 100%);pointer-events:none;"></div>
+        {# Bottom gradient #}
+        <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(10,14,26,.7) 0%,transparent 50%);pointer-events:none;"></div>
+      </div>
+      {# Right: info panel #}
+      <div style="padding:32px 40px 32px 28px;display:flex;flex-direction:column;justify-content:center;gap:0;">
+        {# Badge #}
+        <div style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#818CF8;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:4px 14px;border-radius:20px;display:inline-flex;align-items:center;gap:6px;width:fit-content;margin-bottom:16px;">
+          <i class="ti ti-school"></i> Subject Teacher
+        </div>
+        {# Name #}
+        <div style="font-size:34px;font-weight:800;color:#fff;letter-spacing:-.03em;margin-bottom:4px;">Sovann Chen</div>
+        <div style="font-size:14px;color:#818CF8;font-family:'Noto Sans Khmer','Hanuman',sans-serif;margin-bottom:14px;">សុវណ្ណ ចែន</div>
+        {# Accent bar #}
+        <div style="width:48px;height:3px;background:linear-gradient(to right,#6366F1,#818CF8);border-radius:2px;margin-bottom:20px;"></div>
+        {# Info rows #}
+        <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px;">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:rgba(99,102,241,.18);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#818CF8;flex-shrink:0;"><i class="ti ti-book"></i></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;">Advanced AI — Final Project Supervisor</div>
+              <div style="font-size:11px;color:#64748B;font-family:'Noto Sans Khmer','Hanuman',sans-serif;">ស្មាតអ៊ិចរ៉េ Web — SmartX-Ray Cambodia</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:rgba(16,185,129,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#10B981;flex-shrink:0;"><i class="ti ti-brain"></i></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;">AI &amp; Machine Learning</div>
+              <div style="font-size:11px;color:#64748B;">CNN · ANN · Hybrid Architecture · Grad-CAM</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <div style="width:32px;height:32px;background:rgba(245,158,11,.15);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#F59E0B;flex-shrink:0;"><i class="ti ti-award"></i></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:2px;">Project requirements defined</div>
+              <div style="font-size:11px;color:#64748B;">5 business models · Bilingual · Cambodia context</div>
+            </div>
+          </div>
+        </div>
+        {# Thank-you card #}
+        <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:12px 14px;display:flex;gap:8px;align-items:flex-start;">
+          <i class="ti ti-quote" style="color:#6366F1;font-size:16px;flex-shrink:0;margin-top:2px;"></i>
+          <div>
+            <div style="font-size:12px;color:#94A3B8;line-height:1.55;">"Thank you for your guidance throughout this final project."</div>
+            <div style="font-size:11px;color:#6366F1;font-family:'Noto Sans Khmer','Hanuman',sans-serif;margin-top:4px;">សូមអរគុណចំពោះការណែនាំ Project នេះ</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 3 — TEAM WORK  (moved from slide 12)
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-3">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Team Work</div>
+        <div class="sh-title">Our team</div>
+        <div class="sh-kh">ក្រុមការងាររបស់យើង</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-final">Final Project</span>
+        <span class="actor-tag at-system">Week 6</span>
+      </div>
+    </div>
+    <div class="slide-body" style="align-items:center;justify-content:center;">
+      {# Left: Chenda #}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0;">
+        <div class="team-photo-wrap">
+          <img src="/static/img/team_chenda.jpg" alt="Tob Chenda"
+               class="team-photo"
+               style="border:3px solid #6366F1;box-shadow:0 0 0 6px rgba(99,102,241,.15);"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="team-photo-fallback" style="display:none;background:rgba(99,102,241,.25);border:3px solid #6366F1;box-shadow:0 0 0 6px rgba(99,102,241,.15);">TC</div>
+          <div class="team-photo-badge" style="background:#6366F1;">
+            <i class="ti ti-code" style="font-size:13px;color:#fff;"></i>
+          </div>
+        </div>
+        <div style="font-size:18px;font-weight:700;color:#fff;text-align:center;margin-bottom:3px;">Tob Chenda</div>
+        <div style="font-size:12px;color:#818CF8;font-family:'Noto Sans Khmer','Hanuman',sans-serif;text-align:center;margin-bottom:12px;">ទប់ចិន្តា</div>
+        <div class="resp-card" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);width:100%;max-width:220px;">
+          <div class="resp-title" style="color:#818CF8;">Responsibilities</div>
+          <div class="resp-item"><span class="resp-check" style="color:#6366F1;">✓</span> Backend development (Flask)</div>
+          <div class="resp-item"><span class="resp-check" style="color:#6366F1;">✓</span> AI model training (CNN+ANN)</div>
+          <div class="resp-item"><span class="resp-check" style="color:#6366F1;">✓</span> Database schema design</div>
+          <div class="resp-item"><span class="resp-check" style="color:#6366F1;">✓</span> Frontend UI implementation</div>
+          <div class="resp-item"><span class="resp-check" style="color:#6366F1;">✓</span> System architecture</div>
+        </div>
+      </div>
+
+      {# Center divider #}
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding:0 10px;flex-shrink:0;">
+        <div style="width:1px;height:80px;background:rgba(255,255,255,.1);"></div>
+        <div style="width:36px;height:36px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:8px 0;">
+          <i class="ti ti-users" style="color:#64748B;font-size:16px;"></i>
+        </div>
+        <div style="width:1px;height:80px;background:rgba(255,255,255,.1);"></div>
+      </div>
+
+      {# Right: Heang #}
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:0;">
+        <div class="team-photo-wrap">
+          <img src="/static/img/team_heang.jpg" alt="Ly Heang"
+               class="team-photo"
+               style="border:3px solid #10B981;box-shadow:0 0 0 6px rgba(16,185,129,.15);"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+          <div class="team-photo-fallback" style="display:none;background:rgba(16,185,129,.2);border:3px solid #10B981;box-shadow:0 0 0 6px rgba(16,185,129,.15);">LH</div>
+          <div class="team-photo-badge" style="background:#10B981;">
+            <i class="ti ti-test-pipe" style="font-size:13px;color:#fff;"></i>
+          </div>
+        </div>
+        <div style="font-size:18px;font-weight:700;color:#fff;text-align:center;margin-bottom:3px;">Ly Heang</div>
+        <div style="font-size:12px;color:#99F6E4;font-family:'Noto Sans Khmer','Hanuman',sans-serif;text-align:center;margin-bottom:12px;">លី ហៀង</div>
+        <div class="resp-card" style="background:rgba(16,185,129,.10);border:1px solid rgba(16,185,129,.25);width:100%;max-width:220px;">
+          <div class="resp-title" style="color:#10B981;">Responsibilities</div>
+          <div class="resp-item"><span class="resp-check" style="color:#10B981;">✓</span> Project resources provision</div>
+          <div class="resp-item"><span class="resp-check" style="color:#10B981;">✓</span> System testing &amp; QA</div>
+          <div class="resp-item"><span class="resp-check" style="color:#10B981;">✓</span> X-ray dataset collection</div>
+          <div class="resp-item"><span class="resp-check" style="color:#10B981;">✓</span> Feature validation testing</div>
+          <div class="resp-item"><span class="resp-check" style="color:#10B981;">✓</span> Presentation preparation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 4 — SYSTEM ARCHITECTURE
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-4">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Overview</div>
+        <div class="sh-title">System architecture</div>
+        <div class="sh-kh">រចនាសម្ព័ន្ធប្រព័ន្ធ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-admin">Admin</span>
+        <span class="actor-tag at-doctor">Doctor</span>
+        <span class="actor-tag at-patient">Patient</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      {# 3 actor architecture cards #}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;flex:1;">
+        {# Admin card #}
+        <div class="arch-card">
+          <div class="arch-icon" style="background:rgba(99,102,241,.18);color:#818CF8;"><i class="ti ti-shield"></i></div>
+          <div style="font-size:16px;font-weight:700;color:#818CF8;margin-bottom:2px;">Admin</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px;">Full system control</div>
+          <div class="div-line"></div>
+          <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> User management</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Doctor verification</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Ad manager + revenue</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> System logs + Telegram</div>
+        </div>
+        {# Doctor card #}
+        <div class="arch-card">
+          <div class="arch-icon" style="background:rgba(13,148,136,.18);color:#99F6E4;"><i class="ti ti-stethoscope"></i></div>
+          <div style="font-size:16px;font-weight:700;color:#99F6E4;margin-bottom:2px;">Doctor</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px;">Approved by admin first</div>
+          <div class="div-line"></div>
+          <div class="arch-item"><div class="arch-dot" style="background:#99F6E4;"></div> Self-registers profile</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#99F6E4;"></div> Admin approves license</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#99F6E4;"></div> Manages appointments</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#99F6E4;"></div> Earns per consultation</div>
+        </div>
+        {# Patient card #}
+        <div class="arch-card">
+          <div class="arch-icon" style="background:rgba(245,158,11,.15);color:#F59E0B;"><i class="ti ti-user"></i></div>
+          <div style="font-size:16px;font-weight:700;color:#F59E0B;margin-bottom:2px;">Patient</div>
+          <div style="font-size:11px;color:#64748B;margin-bottom:8px;">Free or Pro tier</div>
+          <div class="div-line"></div>
+          <div class="arch-item"><div class="arch-dot" style="background:#F59E0B;"></div> Upload X-ray</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#F59E0B;"></div> AI diagnosis + Grad-CAM</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#F59E0B;"></div> Find + book doctor</div>
+          <div class="arch-item"><div class="arch-dot" style="background:#F59E0B;"></div> Free → Pro upgrade</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 5 — STAGE 1: PLATFORM SETUP
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-5">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Stage 1</div>
+        <div class="sh-title">Platform setup</div>
+        <div class="sh-kh">រៀបចំវេទិកា — Admin កំណត់ប្រព័ន្ធ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-admin">Admin</span>
+        <span class="actor-tag at-system">System</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="col-main">
+        <div class="event">
+          <div class="ev-icon ev-i"><i class="ti ti-database"></i></div>
+          <div>
+            <div class="ev-label">PostgreSQL database — 9 tables</div>
+            <div class="ev-sub">users · doctors · scans · appointments · reviews · subscriptions · ads · system_logs · telegram_configs</div>
+            <span class="ev-badge">schema.sql → db/seed.py</span>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-i"><i class="ti ti-brand-telegram"></i></div>
+          <div>
+            <div class="ev-label">Telegram bot configured</div>
+            <div class="ev-sub">Alerts fire when pneumonia &gt; 85% confidence</div>
+            <span class="ev-badge">threshold=85% | @SmartXRayBot</span>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-i"><i class="ti ti-speakerphone"></i></div>
+          <div>
+            <div class="ev-label">Ad placements created</div>
+            <div class="ev-sub">Banner ads for free-tier — 4 placement zones</div>
+            <span class="ev-badge">ads: is_active=true</span>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-s"><i class="ti ti-settings"></i></div>
+          <div>
+            <div class="ev-label">5 business models activated</div>
+            <div class="ev-sub">Advertising · Freemium · Subscription · Marketplace · On-Demand Ecosystem</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-side">
+        <div class="visual-card">
+          <div class="vc-title">Tech Stack</div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div class="flow-node fn-purple">Python Flask — backend</div>
+            <div class="flow-node fn-teal">PostgreSQL — database</div>
+            <div class="flow-node fn-amber">HTML + JS — frontend</div>
+            <div class="flow-node fn-gray">CNN+ANN — AI model (97%)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 6 — STAGE 2: DOCTOR REGISTRATION
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-6">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Stage 2</div>
+        <div class="sh-title">Doctor registration + admin approval</div>
+        <div class="sh-kh">Doctor ចុះឈ្មោះ — Admin សម្រេច</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-doctor">Doctor</span>
+        <span class="actor-tag at-admin">Admin</span>
+      </div>
+    </div>
+    <div class="slide-body" style="flex-direction:column;gap:10px;">
+      {# Flow row #}
+      <div class="flow-row">
+        <div class="flow-node fn-teal">Doctor fills form</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-amber">status: pending</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-purple">Admin reviews</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-green">Approved ✓</div>
+      </div>
+      {# Main content #}
+      <div style="display:flex;gap:20px;flex:1;overflow:hidden;">
+        <div class="col-main">
+          <div class="event">
+            <div class="ev-icon ev-t"><i class="ti ti-user-plus"></i></div>
+            <div>
+              <div class="ev-label">Doctor self-registers</div>
+              <div class="ev-sub">Name · specialty · Cambodia license · university · rate · bio · availability</div>
+              <span class="ev-badge">POST /api/doctor/register</span>
+            </div>
+          </div>
+          <div class="div-line"></div>
+          <div class="event">
+            <div class="ev-icon ev-s"><i class="ti ti-clock"></i></div>
+            <div>
+              <div class="ev-label">Profile saved as pending — login blocked</div>
+              <div class="ev-sub">users.is_active=FALSE until admin approves</div>
+              <span class="ev-badge">doctors: status='pending'</span>
+            </div>
+          </div>
+          <div class="div-line"></div>
+          <div class="event">
+            <div class="ev-icon ev-i"><i class="ti ti-eye"></i></div>
+            <div>
+              <div class="ev-label">Admin reviews license document</div>
+              <div class="ev-sub">Checks Ministry of Health — approves or rejects with written reason</div>
+              <span class="ev-badge">PATCH /api/admin/doctors/id/approve</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-side">
+          <div class="visual-card">
+            <div class="vc-title">Status Flow</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div class="flow-node fn-amber">Pending — awaiting admin</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                <div class="flow-node fn-green" style="font-size:10px;">✓ Approved</div>
+                <div class="flow-node fn-red" style="font-size:10px;">✗ Rejected</div>
+              </div>
+            </div>
+            <div class="div-line" style="margin:10px 0;"></div>
+            <div class="vc-title">After approval</div>
+            <div style="display:flex;flex-direction:column;gap:5px;">
+              <div class="arch-item"><div class="arch-dot" style="background:#10B981;"></div> Login enabled</div>
+              <div class="arch-item"><div class="arch-dot" style="background:#10B981;"></div> Dashboard live</div>
+              <div class="arch-item"><div class="arch-dot" style="background:#10B981;"></div> Visible to patients</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 7 — STAGE 3-4: AI DIAGNOSIS
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-7">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Stage 3–4</div>
+        <div class="sh-title">Patient uploads X-ray — CNN+ANN diagnoses</div>
+        <div class="sh-kh">អ្នកជំងឺបញ្ចូល X-Ray — AI CNN+ANN វិភាគ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-patient">Patient</span>
+        <span class="actor-tag at-ai">AI Engine</span>
+      </div>
+    </div>
+    <div class="slide-body" style="flex-direction:column;gap:10px;">
+      {# Flow row #}
+      <div class="flow-row">
+        <div class="flow-node fn-amber" style="font-size:10px;">Upload X-ray</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-purple" style="font-size:10px;">CNN layers</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-purple" style="font-size:10px;">Flatten</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-purple" style="font-size:10px;">ANN layers</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-green" style="font-size:10px;">Result %</div>
+      </div>
+      <div style="display:flex;gap:20px;flex:1;overflow:hidden;">
+        <div class="col-main">
+          <div class="event">
+            <div class="ev-icon ev-s"><i class="ti ti-brain"></i></div>
+            <div>
+              <div class="ev-label">Hybrid CNN + ANN architecture</div>
+              <div class="ev-sub">Conv2D → Activation(relu) × 4 blocks → Flatten → Dense → sigmoid → %</div>
+              <span class="ev-badge">best_model.h5 | Val accuracy: 97.03%</span>
+            </div>
+          </div>
+          <div class="div-line"></div>
+          <div class="event">
+            <div class="ev-icon ev-r"><i class="ti ti-scan"></i></div>
+            <div>
+              <div class="ev-label">Grad-CAM heatmap generated</div>
+              <div class="ev-sub">Highlights exact lung region AI focused on — overlaid on X-ray image for patient</div>
+              <span class="ev-badge">layer: last_conv | ~1,100ms</span>
+            </div>
+          </div>
+          <div class="div-line"></div>
+          <div class="event">
+            <div class="ev-icon ev-i"><i class="ti ti-brand-telegram"></i></div>
+            <div>
+              <div class="ev-label">Telegram alert fires if severe</div>
+              <div class="ev-sub">Confidence &gt; 85% → admin notified on phone immediately</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-side">
+          <div class="visual-card">
+            <div class="vc-title">AI Stats</div>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:11px;color:#94A3B8;">Val accuracy</span>
+                  <span style="font-size:11px;font-weight:700;color:#10B981;">97.03%</span>
+                </div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:97%;background:#10B981;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+                  <span style="font-size:11px;color:#94A3B8;">Test accuracy</span>
+                  <span style="font-size:11px;font-weight:700;color:#F59E0B;">83.01%</span>
+                </div>
+                <div class="prog-wrap"><div class="prog-fill" style="width:83%;background:#F59E0B;"></div></div>
+              </div>
+              <div class="div-line"></div>
+              <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Training epochs: 18 / 20</div>
+              <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Avg processing: 1.2s / scan</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 8 — STAGE 5: BOOKING
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-8">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Stage 5</div>
+        <div class="sh-title">Patient finds doctor and books</div>
+        <div class="sh-kh">អ្នកជំងឺរក Doctor និងកក់ការពិគ្រោះ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-patient">Patient</span>
+        <span class="actor-tag at-doctor">Doctor</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="col-main">
+        <div class="event">
+          <div class="ev-icon ev-a"><i class="ti ti-stethoscope"></i></div>
+          <div>
+            <div class="ev-label">Patient browses verified doctors</div>
+            <div class="ev-sub">Only approved doctors shown. Filter by specialty + rating.</div>
+            <span class="ev-badge">GET /api/doctors?status=approved</span>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-a"><i class="ti ti-calendar-plus"></i></div>
+          <div>
+            <div class="ev-label">Patient books consultation</div>
+            <div class="ev-sub">Date + time + note. Payment via ABA KHQR mock.</div>
+            <span class="ev-badge">POST /api/appointments/book | fee=$15</span>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-s"><i class="ti ti-video"></i></div>
+          <div>
+            <div class="ev-label">Meeting link auto-generated</div>
+            <div class="ev-sub">https://meet.google.com/smx-{id} — Status set to confirmed.</div>
+            <span class="ev-badge">appointments: status='confirmed'</span>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-t"><i class="ti ti-bell"></i></div>
+          <div>
+            <div class="ev-label">Doctor notified instantly</div>
+            <div class="ev-sub">Email sent. Appears in today's schedule.</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-side">
+        <div class="visual-card">
+          <div class="vc-title">Marketplace Model</div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div class="flow-node fn-amber">Patient pays $15</div>
+            <div style="text-align:center;color:#475569;font-size:11px;">ABA KHQR ↓</div>
+            <div class="flow-node fn-teal">Doctor earns $15</div>
+            <div style="text-align:center;color:#475569;font-size:11px;">↓</div>
+            <div class="flow-node fn-purple">Admin tracks revenue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 9 — STAGE 6-7: CONSULTATION + REVIEW
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-9">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Stage 6–7</div>
+        <div class="sh-title">Consultation + review cycle</div>
+        <div class="sh-kh">ការពិគ្រោះ + វដ្តការវាយតម្លៃ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-patient">Patient</span>
+        <span class="actor-tag at-doctor">Doctor</span>
+        <span class="actor-tag at-system">System</span>
+      </div>
+    </div>
+    <div class="slide-body" style="flex-direction:column;gap:10px;">
+      <div class="flow-row">
+        <div class="flow-node fn-green" style="font-size:10px;">Join meeting</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-teal" style="font-size:10px;">Complete</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-amber" style="font-size:10px;">Review</div>
+        <span class="flow-arr">→</span>
+        <div class="flow-node fn-purple" style="font-size:10px;">Rating updates</div>
+      </div>
+      <div style="display:flex;gap:20px;flex:1;overflow:hidden;">
+        <div class="col-main">
+          <div class="event">
+            <div class="ev-icon ev-g"><i class="ti ti-video"></i></div>
+            <div>
+              <div class="ev-label">Join button activates 15 min before</div>
+              <div class="ev-sub">Both click Join Meeting. Opens video consultation link.</div>
+              <span class="ev-badge">GET /api/appointments/id/join</span>
+            </div>
+          </div>
+          <div class="div-line"></div>
+          <div class="event">
+            <div class="ev-icon ev-t"><i class="ti ti-circle-check"></i></div>
+            <div>
+              <div class="ev-label">Doctor marks consultation complete</div>
+              <div class="ev-sub">Status → completed. Fee $15 added to earnings.</div>
+              <span class="ev-badge">PATCH /api/appointments/id/complete</span>
+            </div>
+          </div>
+          <div class="div-line"></div>
+          <div class="event">
+            <div class="ev-icon ev-a"><i class="ti ti-star"></i></div>
+            <div>
+              <div class="ev-label">Patient leaves review</div>
+              <div class="ev-sub">1–5 stars + comment. avg_rating recalculated automatically.</div>
+              <span class="ev-badge">POST /api/appointments/id/review</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-side">
+          <div class="visual-card">
+            <div class="vc-title">Doctor Live Stats</div>
+            <div class="stat-card" style="margin-bottom:8px;">
+              <div class="sc-label">Earnings this month</div>
+              <div class="sc-val" style="color:#10B981;">$270</div>
+            </div>
+            <div class="stat-card" style="margin-bottom:8px;">
+              <div class="sc-label">Average rating</div>
+              <div class="sc-val" style="color:#F59E0B;">4.8 ★</div>
+            </div>
+            <div class="stat-card">
+              <div class="sc-label">Total patients</div>
+              <div class="sc-val" style="color:#818CF8;">18</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 10 — STAGE 8: ADMIN MONITORING
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-10">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Stage 8</div>
+        <div class="sh-title">Admin monitors the full ecosystem</div>
+        <div class="sh-kh">Admin តាមដាន គ្រប់គ្រង ប្រព័ន្ធ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-admin">Admin</span>
+        <span class="actor-tag at-system">System</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="col-main">
+        {# 2×2 live stat grid #}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:2px;">
+          <div class="stat-card" style="background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.25);">
+            <div class="sc-label">Total users</div>
+            <div class="sc-val" style="color:#818CF8;">{{ stats.total_patients }}</div>
+          </div>
+          <div class="stat-card" style="background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);">
+            <div class="sc-label">Monthly revenue</div>
+            <div class="sc-val" style="color:#10B981;">${{ stats.revenue }}</div>
+          </div>
+          <div class="stat-card" style="background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25);">
+            <div class="sc-label">Total scans</div>
+            <div class="sc-val" style="color:#F59E0B;">{{ stats.total_scans }}</div>
+          </div>
+          <div class="stat-card" style="background:rgba(13,148,136,.08);border-color:rgba(13,148,136,.25);">
+            <div class="sc-label">Active doctors</div>
+            <div class="sc-val" style="color:#99F6E4;">{{ stats.approved_doctors }}</div>
+          </div>
+        </div>
+        <div class="event">
+          <div class="ev-icon ev-i"><i class="ti ti-activity"></i></div>
+          <div>
+            <div class="ev-label">System logs — every scan tracked</div>
+            <div class="ev-sub">Scan ID, user, result, confidence, AI ms, severity. Soft-delete supported.</div>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-i"><i class="ti ti-credit-card"></i></div>
+          <div>
+            <div class="ev-label">Subscription management</div>
+            <div class="ev-sub">$9.99/mo · $79.99/yr · Free vs Pro split</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-side">
+        <div class="visual-card">
+          <div class="vc-title">5 Business Models</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div class="flow-node fn-purple" style="font-size:10px;">Advertising — free user banners</div>
+            <div class="flow-node fn-amber" style="font-size:10px;">Freemium — PDF locked for free</div>
+            <div class="flow-node fn-green" style="font-size:10px;">Subscription — $9.99 / $79.99</div>
+            <div class="flow-node fn-teal" style="font-size:10px;">Marketplace — verified doctors</div>
+            <div class="flow-node fn-gray" style="font-size:10px;">On-Demand — unified dashboard</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 11 — BILINGUAL FEATURE
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-11">
+    <div class="slide-header">
+      <div>
+        <div class="sh-stage">Feature Highlight</div>
+        <div class="sh-title">Bilingual system — EN + Khmer</div>
+        <div class="sh-kh">ភាសាពីរ — អង់គ្លេស + ខ្មែរ</div>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <span class="actor-tag at-admin">Admin</span>
+        <span class="actor-tag at-doctor">Doctor</span>
+        <span class="actor-tag at-patient">Patient</span>
+      </div>
+    </div>
+    <div class="slide-body">
+      <div class="col-main">
+        {# EN/KH mini grid #}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden;margin-bottom:2px;">
+          <div style="padding:8px 12px;background:rgba(99,102,241,.1);font-size:11px;font-weight:600;color:#818CF8;border-bottom:1px solid rgba(255,255,255,.06);border-right:1px solid rgba(255,255,255,.06);">EN</div>
+          <div style="padding:8px 12px;background:rgba(99,102,241,.06);font-size:11px;font-weight:600;color:#818CF8;border-bottom:1px solid rgba(255,255,255,.06);">KH</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-bottom:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);">User Management</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Noto Sans Khmer',sans-serif;">គ្រប់គ្រងអ្នកប្រើ</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-bottom:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);">Find a Doctor</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Noto Sans Khmer',sans-serif;">រកវេជ្ជបណ្ឌិត</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-bottom:1px solid rgba(255,255,255,.04);border-right:1px solid rgba(255,255,255,.04);">My Appointments</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-bottom:1px solid rgba(255,255,255,.04);font-family:'Noto Sans Khmer',sans-serif;">ការណាត់ជួបខ្ញុំ</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;border-right:1px solid rgba(255,255,255,.04);">System Logs</div>
+          <div style="padding:7px 12px;font-size:11px;color:#94A3B8;font-family:'Noto Sans Khmer',sans-serif;">កំណត់ហេតុប្រព័ន្ធ</div>
+        </div>
+        <div class="event">
+          <div class="ev-icon ev-i"><i class="ti ti-language"></i></div>
+          <div>
+            <div class="ev-label">One-click language toggle [EN | KH]</div>
+            <div class="ev-sub">Fonts: DM Sans (EN) + Hanuman (KH). PDF reports bilingual.</div>
+          </div>
+        </div>
+        <div class="div-line"></div>
+        <div class="event">
+          <div class="ev-icon ev-s"><i class="ti ti-building"></i></div>
+          <div>
+            <div class="ev-label">Cambodia-specific context</div>
+            <div class="ev-sub">RUPP · IU · NUM · AUSF · UHS · ABA KHQR payment · KH-MED licenses</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-side">
+        <div class="visual-card">
+          <div class="vc-title">PDF Fonts</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Header: KhmerOS Muol Light</div>
+            <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Title: KhmerOS Battambang</div>
+            <div class="arch-item"><div class="arch-dot" style="background:#818CF8;"></div> Body: KhmerOS Siemreap</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ════════════════════════════════════════════════════════════
+       SLIDE 12 — SUMMARY
+     ════════════════════════════════════════════════════════════ #}
+  <div class="slide" id="slide-12">
+    <div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 40px;text-align:center;gap:0;">
+      {# Badge #}
+      <div style="background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.35);color:#818CF8;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;padding:5px 16px;border-radius:20px;margin-bottom:18px;">
+        Project Summary
+      </div>
+      {# Title #}
+      <h2 style="font-size:32px;font-weight:800;margin:0 0 22px;letter-spacing:-.02em;">
+        <span style="color:#fff;">SmartX</span> <span style="color:#818CF8;">Ray Web</span>
+      </h2>
+      {# 4-card grid #}
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:100%;max-width:760px;margin-bottom:24px;">
+        <div class="stat-card" style="text-align:center;background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.3);">
+          <div style="font-size:30px;margin-bottom:6px;"><i class="ti ti-brain" style="color:#818CF8;"></i></div>
+          <div class="sc-val" style="font-size:28px;color:#818CF8;">97%</div>
+          <div class="sc-sub" style="font-size:10px;margin-top:4px;line-height:1.4;">AI val accuracy<br>CNN+ANN hybrid</div>
+        </div>
+        <div class="stat-card" style="text-align:center;background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.25);">
+          <div style="font-size:30px;margin-bottom:6px;"><i class="ti ti-users" style="color:#10B981;"></i></div>
+          <div class="sc-val" style="font-size:28px;color:#10B981;">3</div>
+          <div class="sc-sub" style="font-size:10px;margin-top:4px;line-height:1.4;">Actor types<br>Admin · Doctor · Patient</div>
+        </div>
+        <div class="stat-card" style="text-align:center;background:rgba(245,158,11,.08);border-color:rgba(245,158,11,.25);">
+          <div style="font-size:30px;margin-bottom:6px;"><i class="ti ti-building-store" style="color:#F59E0B;"></i></div>
+          <div class="sc-val" style="font-size:28px;color:#F59E0B;">5</div>
+          <div class="sc-sub" style="font-size:10px;margin-top:4px;line-height:1.4;">Business models<br>Freemium to Marketplace</div>
+        </div>
+        <div class="stat-card" style="text-align:center;background:rgba(13,148,136,.08);border-color:rgba(13,148,136,.25);">
+          <div style="font-size:30px;margin-bottom:6px;"><i class="ti ti-language" style="color:#99F6E4;"></i></div>
+          <div class="sc-val" style="font-size:28px;color:#99F6E4;">2</div>
+          <div class="sc-sub" style="font-size:10px;margin-top:4px;line-height:1.4;">Languages<br>English + Khmer</div>
+        </div>
+      </div>
+      {# Tech stack chips #}
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <span style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#818CF8;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;">
+          <i class="ti ti-code"></i> Python Flask
+        </span>
+        <span style="background:rgba(13,148,136,.12);border:1px solid rgba(13,148,136,.3);color:#99F6E4;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;">
+          <i class="ti ti-database"></i> PostgreSQL
+        </span>
+        <span style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#F59E0B;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;">
+          <i class="ti ti-scan"></i> CNN+ANN + Grad-CAM
+        </span>
+        <span style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#818CF8;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;">
+          <i class="ti ti-brand-telegram"></i> Telegram Alerts
+        </span>
+      </div>
+    </div>
+  </div>
+
+</div>{# /.slide-wrap #}
+
+{# ── Nav dots ───────────────────────────────────────────────── #}
+<div class="nav-dots" id="nav-dots"></div>
+<span id="slide-counter">Slide 1 of 12</span>
+
+{# ── Controls ────────────────────────────────────────────────── #}
+<div class="controls">
+  <button class="ctrl-btn" id="btn-prev" onclick="prevSlide()" disabled>
+    <i class="ti ti-chevron-left"></i> Prev
+  </button>
+  <span class="slide-num" id="slide-num">1 / 12</span>
+  <button class="ctrl-btn" id="btn-next" onclick="nextSlide()">
+    Next <i class="ti ti-chevron-right"></i>
+  </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/slides.js"></script>
+{% endblock %}

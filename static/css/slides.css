@@ -1,0 +1,215 @@
+/**
+ * slides.css — Dark navy 12-slide presentation deck
+ * /admin/slides
+ */
+
+/* ── Page override ───────────────────────────────────────────────── */
+body:has(#slide-wrap) .admin-content {
+  padding: 10px 14px !important;
+}
+
+/* ── Fullscreen ─────────────────────────────────────────────────── */
+:fullscreen #sidebar, :-webkit-full-screen #sidebar { display: none !important; }
+:fullscreen #topbar,  :-webkit-full-screen #topbar  { display: none !important; }
+:fullscreen #main,    :-webkit-full-screen #main    { margin-left: 0 !important; }
+:fullscreen .admin-content, :-webkit-full-screen .admin-content {
+  padding: 0 !important;
+  height: 100vh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #0A0E1A !important;
+}
+:fullscreen .slides-toolbar, :-webkit-full-screen .slides-toolbar { display: none !important; }
+:fullscreen #slide-wrap, :-webkit-full-screen #slide-wrap {
+  border-radius: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+}
+
+/* ── Slide wrap ─────────────────────────────────────────────────── */
+.slide-wrap {
+  width: 100%;
+  aspect-ratio: 16/9;
+  background: #0A0E1A;
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 40px 80px rgba(0,0,0,.6);
+  display: block;
+}
+
+/* ── Grid pattern overlay ───────────────────────────────────────── */
+.slide-grid-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(99,102,241,.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(99,102,241,.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Individual slide ───────────────────────────────────────────── */
+.slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .35s ease;
+  z-index: 1;
+}
+.slide.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* ── Slide header ───────────────────────────────────────────────── */
+.slide-header {
+  padding: 18px 36px 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+/* ── Slide body ─────────────────────────────────────────────────── */
+.slide-body {
+  flex: 1;
+  padding: 12px 36px 18px;
+  display: flex;
+  gap: 20px;
+  overflow: hidden;
+}
+.col-main { flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.col-side  { width: 240px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+
+/* ── Header text ────────────────────────────────────────────────── */
+.sh-stage { font-size: 11px; font-weight: 600; color: #818CF8; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px; }
+.sh-title { font-size: 21px; font-weight: 700; letter-spacing: -.02em; color: #fff; margin: 0 0 3px; line-height: 1.2; }
+.sh-kh    { font-size: 12px; color: #64748B; font-family: 'Noto Sans Khmer', 'Hanuman', sans-serif; }
+
+/* ── Actor tags ─────────────────────────────────────────────────── */
+.actor-tag  { font-size: 10px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: .04em; text-transform: uppercase; }
+.at-admin   { background: rgba(99,102,241,.18);  color: #818CF8; }
+.at-doctor  { background: rgba(13,148,136,.18);  color: #99F6E4; }
+.at-patient { background: rgba(245,158,11,.15);  color: #F59E0B; }
+.at-system  { background: rgba(148,163,184,.12); color: #94A3B8; }
+.at-ai      { background: rgba(16,185,129,.15);  color: #10B981; }
+.at-final   { background: rgba(99,102,241,.18);  color: #818CF8; }
+
+/* ── Event item ─────────────────────────────────────────────────── */
+.event     { display: flex; gap: 10px; align-items: flex-start; }
+.ev-icon   { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+.ev-i  { background: rgba(99,102,241,.18);  color: #818CF8; }
+.ev-t  { background: rgba(13,148,136,.18);  color: #99F6E4; }
+.ev-a  { background: rgba(245,158,11,.15);  color: #F59E0B; }
+.ev-g  { background: rgba(16,185,129,.15);  color: #10B981; }
+.ev-r  { background: rgba(239,68,68,.15);   color: #EF4444; }
+.ev-s  { background: rgba(148,163,184,.10); color: #94A3B8; }
+.ev-label { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+.ev-sub   { font-size: 11px; color: #94A3B8; line-height: 1.5; }
+.ev-badge { display: inline-block; font-size: 10px; font-family: monospace; color: #64748B; background: rgba(255,255,255,.05); border-radius: 4px; padding: 2px 7px; margin-top: 3px; }
+
+/* ── Flow nodes ─────────────────────────────────────────────────── */
+.flow-row  { display: flex; gap: 6px; align-items: center; }
+.flow-node { flex: 1; min-width: 0; padding: 7px 10px; border-radius: 8px; font-size: 11px; font-weight: 600; text-align: center; border: 1px solid; line-height: 1.3; }
+.flow-arr  { color: #475569; font-size: 14px; flex-shrink: 0; }
+.fn-purple { background: rgba(99,102,241,.15);  border-color: rgba(99,102,241,.4);  color: #818CF8; }
+.fn-teal   { background: rgba(13,148,136,.15);  border-color: rgba(13,148,136,.4);  color: #99F6E4; }
+.fn-amber  { background: rgba(245,158,11,.12);  border-color: rgba(245,158,11,.4);  color: #F59E0B; }
+.fn-green  { background: rgba(16,185,129,.12);  border-color: rgba(16,185,129,.4);  color: #10B981; }
+.fn-red    { background: rgba(239,68,68,.12);   border-color: rgba(239,68,68,.4);   color: #EF4444; }
+.fn-gray   { background: rgba(148,163,184,.08); border-color: rgba(148,163,184,.2); color: #94A3B8; }
+
+/* ── Visual card ────────────────────────────────────────────────── */
+.visual-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 14px; flex: 1; display: flex; flex-direction: column; }
+.vc-title    { font-size: 11px; font-weight: 600; color: #94A3B8; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 10px; }
+
+/* ── Stat card ──────────────────────────────────────────────────── */
+.stat-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 12px; }
+.sc-label  { font-size: 10px; color: #94A3B8; margin-bottom: 4px; }
+.sc-val    { font-size: 22px; font-weight: 700; color: #fff; }
+.sc-sub    { font-size: 10px; color: #64748B; margin-top: 2px; }
+
+/* ── Progress bar ───────────────────────────────────────────────── */
+.prog-wrap { background: rgba(255,255,255,.06); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 4px; }
+.prog-fill { height: 100%; border-radius: 4px; }
+
+/* ── Divider ────────────────────────────────────────────────────── */
+.div-line  { height: 1px; background: rgba(255,255,255,.06); margin: 4px 0; }
+
+/* ── Architecture card ──────────────────────────────────────────── */
+.arch-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.arch-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 4px; }
+.arch-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #94A3B8; line-height: 1.5; }
+.arch-dot  { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+/* ── Nav dots ───────────────────────────────────────────────────── */
+.nav-dots { display: flex; justify-content: center; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.dot { width: 8px; height: 8px; border-radius: 50%; background: #1E293B; border: 1.5px solid #64748B; cursor: pointer; transition: all .2s; }
+.dot.active { background: #6366F1; border-color: #6366F1; width: 24px; border-radius: 4px; }
+.dot:hover:not(.active) { border-color: #818CF8; }
+
+/* ── Controls ───────────────────────────────────────────────────── */
+.controls { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+.ctrl-btn { background: #1E293B; border: 1px solid #2D3748; color: #fff; padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 6px; }
+.ctrl-btn:hover:not(:disabled) { background: #6366F1; border-color: #6366F1; }
+.ctrl-btn:disabled { opacity: .3; cursor: default; }
+.slide-num { font-size: 13px; color: #94A3B8; min-width: 64px; text-align: center; }
+
+/* ── Toolbar ────────────────────────────────────────────────────── */
+.slides-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 14px; margin-bottom: 10px;
+  background: var(--color-surface,#fff);
+  border: 1px solid var(--color-border,#e2e8f0);
+  border-radius: 10px; gap: 10px;
+}
+.slides-toolbar-title { font-size: 13px; font-weight: 600; color: var(--color-text-primary,#0f172a); display: flex; align-items: center; gap: 7px; }
+.slides-toolbar-btn {
+  display: inline-flex; align-items: center; gap: 5px; padding: 5px 14px;
+  border-radius: 7px; font-size: 12px; font-weight: 500;
+  border: 1.5px solid var(--color-border,#e2e8f0);
+  background: var(--color-surface,#fff); color: var(--color-text-primary,#0f172a);
+  cursor: pointer; transition: all .12s;
+}
+.slides-toolbar-btn:hover { border-color: #6366F1; color: #6366F1; }
+.slides-toolbar-btn.primary { background: #6366F1; border-color: #6366F1; color: #fff; }
+.slides-toolbar-btn.primary:hover { background: #4F46E5; border-color: #4F46E5; }
+
+/* ── Slide counter ──────────────────────────────────────────────── */
+#slide-counter { display: block; text-align: center; font-size: 11px; color: #94A3B8; margin-top: 6px; }
+
+/* ── Team photo circle ──────────────────────────────────────────── */
+.team-photo {
+  width: 130px; height: 130px; border-radius: 50%;
+  object-fit: cover; object-position: center top;
+  display: block;
+}
+.team-photo-wrap {
+  position: relative; display: inline-block;
+  margin: 0 auto 12px;
+}
+.team-photo-badge {
+  position: absolute; bottom: 2px; right: 2px;
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: #fff;
+}
+.team-photo-fallback {
+  width: 130px; height: 130px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; font-weight: 800; color: #fff;
+}
+
+/* ── Responsibility card ────────────────────────────────────────── */
+.resp-card { border-radius: 10px; padding: 12px 14px; }
+.resp-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.resp-item { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: #94A3B8; margin-bottom: 5px; line-height: 1.4; }
+.resp-check { flex-shrink: 0; margin-top: 1px; }
