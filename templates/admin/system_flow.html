@@ -1,0 +1,1260 @@
+{% extends "admin/base.html" %}
+{% block title %}System Flow{% endblock %}
+{% block topbar_title %}<span data-i18n="adm_nav_sysflow">System Flow</span>{% endblock %}
+{% block breadcrumb %}<span data-i18n="adm_nav_sysflow">System Flow</span>{% endblock %}
+
+{% block content %}
+<style>
+/* ════════════════════════════════════════════════════════════════
+   SYSTEM FLOW PAGE — scoped styles
+   ════════════════════════════════════════════════════════════════ */
+
+/* ── Actor tags ──────────────────────────────────────────────── */
+.actor-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; margin-right: 4px;
+}
+.actor-tag.admin   { background:#EEEDFE; color:#3C3489; }
+.actor-tag.doctor  { background:#E1F5EE; color:#085041; }
+.actor-tag.patient { background:#FAEEDA; color:#633806; }
+.actor-tag.system  { background:var(--color-bg-secondary,#F8FAFC);
+                     color:var(--color-text-secondary,#64748b);
+                     border:1px solid var(--color-border,#e2e8f0); }
+
+/* ── Actor legend cards ──────────────────────────────────────── */
+.actor-card {
+  background:var(--color-surface,#fff);
+  border:1px solid var(--color-border,#e2e8f0);
+  border-radius:12px; padding:16px 18px;
+  flex:1; min-width:0;
+}
+.actor-border-admin   { border-left:4px solid #6366F1; }
+.actor-border-doctor  { border-left:4px solid #10B981; }
+.actor-border-patient { border-left:4px solid #F59E0B; }
+
+.actor-icon {
+  width:40px; height:40px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0; margin-bottom:10px;
+}
+.actor-icon.indigo { background:#EEEDFE; color:#6366F1; }
+.actor-icon.green  { background:#E1F5EE; color:#10B981; }
+.actor-icon.amber  { background:#FAEEDA; color:#F59E0B; }
+
+.actor-stat-row {
+  display:flex; flex-wrap:wrap; gap:6px; margin-top:10px;
+}
+.actor-stat-chip {
+  background:var(--color-bg-secondary,#F8FAFC);
+  border:1px solid var(--color-border,#e2e8f0);
+  border-radius:6px; padding:3px 9px;
+  font-size:11px; color:var(--color-text-secondary,#64748b);
+}
+.actor-stat-chip strong {
+  color:var(--color-text-primary,#0f172a);
+}
+
+/* ── Stage stepper dots ──────────────────────────────────────── */
+.stepper-nav {
+  display:flex; align-items:center; gap:0;
+  overflow-x:auto; padding:0 2px; margin-bottom:20px;
+}
+.stage-dot {
+  width:32px; height:32px; border-radius:50%;
+  border:1.5px solid var(--color-border,#e2e8f0);
+  background:var(--color-bg-secondary,#F8FAFC);
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600;
+  color:var(--color-text-secondary,#64748b);
+  cursor:pointer; transition:all 0.15s; flex-shrink:0;
+  position:relative;
+}
+.stage-dot:hover { border-color:#6366F1; color:#6366F1; }
+.stage-dot.active {
+  background:#6366F1; border-color:#6366F1; color:#fff;
+  box-shadow:0 0 0 3px rgba(99,102,241,.18);
+}
+.stage-dot.done {
+  background:#E1F5EE; border-color:#10B981; color:#10B981;
+}
+.stage-dot.done::after {
+  content:'✓'; font-size:13px; font-weight:700;
+}
+.stage-dot.done span { display:none; }
+.stage-line {
+  flex:1; height:1px; min-width:6px;
+  background:var(--color-border,#e2e8f0);
+}
+
+/* ── Stage panel card ────────────────────────────────────────── */
+.stage-panel { display:none; }
+.stage-panel.sf-active { display:block; }
+
+.stage-card {
+  background:var(--color-surface,#fff);
+  border:1px solid var(--color-border,#e2e8f0);
+  border-radius:12px; overflow:hidden;
+}
+.stage-card-header {
+  padding:16px 20px 14px;
+  border-bottom:1px solid var(--color-border,#e2e8f0);
+  display:flex; align-items:flex-start; gap:12px;
+}
+.stage-badge {
+  background:#6366F1; color:#fff;
+  font-size:11px; font-weight:700;
+  padding:2px 9px; border-radius:20px;
+  white-space:nowrap; flex-shrink:0; margin-top:2px;
+}
+.stage-title-en {
+  font-size:15px; font-weight:600;
+  color:var(--color-text-primary,#0f172a); margin:0;
+}
+.stage-title-kh {
+  font-size:13px;
+  color:var(--color-text-secondary,#64748b); margin:2px 0 0;
+}
+.stage-actors { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+
+.stage-card-body { padding:16px 20px; }
+
+/* ── Event cards ─────────────────────────────────────────────── */
+.event-card {
+  display:flex; gap:12px; align-items:flex-start;
+  padding:11px 0;
+  border-bottom:1px solid var(--color-border-light,#f1f5f9);
+}
+.event-card:last-child { border-bottom:none; padding-bottom:4px; }
+
+.event-icon {
+  width:34px; height:34px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:16px; flex-shrink:0;
+}
+.event-icon.purple { background:#EEEDFE; color:#534AB7; }
+.event-icon.teal   { background:#E1F5EE; color:#0F6E56; }
+.event-icon.amber  { background:#FAEEDA; color:#854F0B; }
+.event-icon.green  { background:#EAF3DE; color:#3B6D11; }
+.event-icon.red    { background:#FCEBEB; color:#A32D2D; }
+.event-icon.gray   { background:var(--color-bg-secondary,#F8FAFC);
+                     color:var(--color-text-secondary,#64748b); }
+
+.event-body { flex:1; min-width:0; }
+.event-title {
+  font-size:13px; font-weight:600;
+  color:var(--color-text-primary,#0f172a); margin:0 0 2px;
+}
+.event-sub {
+  font-size:12px; color:var(--color-text-secondary,#64748b);
+  line-height:1.5; margin:0;
+}
+.data-badge {
+  display:inline-block; font-size:10.5px;
+  font-family:ui-monospace,'SFMono-Regular',monospace;
+  color:var(--color-text-tertiary,#94a3b8);
+  background:var(--color-bg-secondary,#F8FAFC);
+  border:1px solid var(--color-border,#e2e8f0);
+  border-radius:6px; padding:2px 8px; margin-top:5px;
+}
+
+/* ── Decision split (approve / reject) ───────────────────────── */
+.decision-split {
+  display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  margin:8px 0 4px;
+}
+.decision-card {
+  border-radius:9px; padding:11px 14px;
+  border:1.5px solid;
+}
+.decision-card.approve { background:#F0FDF4; border-color:#bbf7d0; }
+.decision-card.reject  { background:#FEF2F2; border-color:#fecaca; }
+.decision-card-header {
+  display:flex; align-items:center; gap:7px;
+  font-size:12px; font-weight:700; margin-bottom:5px;
+}
+.decision-card.approve .decision-card-header { color:#166534; }
+.decision-card.reject  .decision-card-header { color:#991b1b; }
+.decision-card p { font-size:11.5px; color:var(--color-text-secondary,#64748b); margin:0 0 5px; }
+
+/* ── KPI mini grid ───────────────────────────────────────────── */
+.kpi-mini-grid {
+  display:grid; grid-template-columns:repeat(2,1fr);
+  gap:9px; margin:12px 0 4px;
+}
+.kpi-mini-card {
+  background:var(--color-bg-secondary,#F8FAFC);
+  border:1px solid var(--color-border,#e2e8f0);
+  border-radius:9px; padding:10px 12px;
+}
+.kpi-mini-label {
+  font-size:10.5px; color:var(--color-text-secondary,#64748b);
+  margin-bottom:3px;
+}
+.kpi-mini-value {
+  font-size:20px; font-weight:700;
+  color:var(--color-text-primary,#0f172a); line-height:1.1;
+}
+.kpi-mini-sub {
+  font-size:10px; color:var(--color-text-tertiary,#94a3b8);
+  margin-top:2px;
+}
+
+/* ── Stage footer ────────────────────────────────────────────── */
+.stage-card-footer {
+  padding:12px 20px;
+  border-top:1px solid var(--color-border,#e2e8f0);
+  display:flex; align-items:center; justify-content:space-between;
+  gap:10px;
+}
+.sf-nav-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:7px 18px; border-radius:8px; font-size:13px; font-weight:500;
+  border:1.5px solid var(--color-border,#e2e8f0);
+  background:var(--color-surface,#fff);
+  color:var(--color-text-primary,#0f172a);
+  cursor:pointer; transition:all 0.12s;
+}
+.sf-nav-btn:hover:not(:disabled) {
+  border-color:#6366F1; color:#6366F1;
+}
+.sf-nav-btn:disabled { opacity:.4; cursor:not-allowed; }
+.sf-nav-btn.primary {
+  background:#6366F1; border-color:#6366F1; color:#fff;
+}
+.sf-nav-btn.primary:hover:not(:disabled) {
+  background:#4F46E5; border-color:#4F46E5; color:#fff;
+}
+.stage-counter {
+  font-size:12px; color:var(--color-text-secondary,#64748b); font-weight:500;
+}
+
+/* ── Summary metric cards ────────────────────────────────────── */
+.sf-metric-grid {
+  display:grid; grid-template-columns:repeat(4,1fr);
+  gap:14px; margin-top:24px;
+}
+@media (max-width:900px)  { .sf-metric-grid { grid-template-columns:repeat(2,1fr); } }
+@media (max-width:540px)  { .sf-metric-grid { grid-template-columns:1fr; } }
+
+.sf-metric-card {
+  background:var(--color-surface,#fff);
+  border:1px solid var(--color-border,#e2e8f0);
+  border-radius:12px; padding:18px 20px;
+  display:flex; gap:14px; align-items:flex-start;
+}
+.sf-metric-icon {
+  width:42px; height:42px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+.sf-metric-icon.indigo { background:#EEEDFE; color:#6366F1; }
+.sf-metric-icon.green  { background:#E1F5EE; color:#10B981; }
+.sf-metric-icon.amber  { background:#FAEEDA; color:#F59E0B; }
+.sf-metric-icon.red    { background:#FCEBEB; color:#EF4444; }
+.sf-metric-value {
+  font-size:24px; font-weight:700;
+  color:var(--color-text-primary,#0f172a); line-height:1.1;
+}
+.sf-metric-label {
+  font-size:12px; font-weight:600;
+  color:var(--color-text-primary,#0f172a); margin:4px 0 1px;
+}
+.sf-metric-sub {
+  font-size:11px; color:var(--color-text-secondary,#64748b);
+}
+
+/* ── Stats pills (header) ────────────────────────────────────── */
+.sf-pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:5px 12px; border-radius:20px; font-size:12px;
+  font-weight:500;
+  background:var(--color-bg-secondary,#F8FAFC);
+  border:1px solid var(--color-border,#e2e8f0);
+  color:var(--color-text-secondary,#64748b);
+}
+
+/* ── Actor row (legend row) ──────────────────────────────────── */
+.actor-legend-row {
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px;
+  margin-bottom:20px;
+}
+@media (max-width:680px) { .actor-legend-row { grid-template-columns:1fr; } }
+
+/* Decision split responsive */
+@media (max-width:540px) {
+  .decision-split { grid-template-columns:1fr; }
+  .kpi-mini-grid  { grid-template-columns:1fr; }
+}
+</style>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION A — PAGE HEADER
+     ══════════════════════════════════════════════════════════════ -->
+<div style="display:flex; align-items:flex-start; justify-content:space-between;
+            gap:16px; flex-wrap:wrap; margin-bottom:20px;">
+
+  <!-- Left: title + subtitle -->
+  <div>
+    <h1 style="font-size:20px; font-weight:600; margin:0 0 4px;
+               color:var(--color-text-primary,#0f172a);">
+      <i class="ti ti-sitemap" style="font-size:18px; color:#6366F1; margin-right:6px; vertical-align:-2px"></i>
+      <span data-i18n="sf_title">System Flow</span>
+    </h1>
+    <p style="font-size:13px; color:var(--color-text-secondary,#64748b); margin:0;">
+      <span data-i18n="sf_subtitle">Complete real-world interaction between Admin, Doctor and Patient</span>
+    </p>
+  </div>
+
+  <!-- Right: live stats pills -->
+  <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+    <span class="sf-pill">
+      <i class="ti ti-users" style="font-size:13px; color:#6366F1"></i>
+      <strong>{{ stats.total_patients }}</strong>&nbsp;<span data-i18n="sf_patients">patients</span>
+    </span>
+    <span class="sf-pill">
+      <i class="ti ti-stethoscope" style="font-size:13px; color:#10B981"></i>
+      <strong>{{ stats.approved_doctors }}</strong>&nbsp;<span data-i18n="sf_doctors">doctors</span>
+    </span>
+    <span class="sf-pill">
+      <i class="ti ti-scan" style="font-size:13px; color:#F59E0B"></i>
+      <strong>{{ stats.total_scans }}</strong>&nbsp;<span data-i18n="sf_scans">scans</span>
+    </span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION B — ACTOR LEGEND ROW
+     ══════════════════════════════════════════════════════════════ -->
+<div class="actor-legend-row">
+
+  <!-- Admin -->
+  <div class="actor-card actor-border-admin">
+    <div class="actor-icon indigo"><i class="ti ti-shield"></i></div>
+    <div style="font-size:15px; font-weight:700; color:var(--color-text-primary,#0f172a)">
+      <span data-i18n="sf_actor_admin">Admin</span>
+    </div>
+    <div style="font-size:12px; color:var(--color-text-secondary,#64748b); margin-top:2px;">
+      <span data-i18n="sf_admin_sub">Full system control</span>
+    </div>
+    <div class="actor-stat-row">
+      <span class="actor-stat-chip"><strong>{{ stats.high_alerts }}</strong> <span data-i18n="sf_high_alerts">high alerts</span></span>
+      <span class="actor-stat-chip"><strong>{{ stats.active_subscriptions }}</strong> <span data-i18n="sf_active_subs">active subs</span></span>
+    </div>
+  </div>
+
+  <!-- Doctor -->
+  <div class="actor-card actor-border-doctor">
+    <div class="actor-icon green"><i class="ti ti-stethoscope"></i></div>
+    <div style="font-size:15px; font-weight:700; color:var(--color-text-primary,#0f172a)">
+      <span data-i18n="sf_actor_doctor">Doctor</span>
+    </div>
+    <div style="font-size:12px; color:var(--color-text-secondary,#64748b); margin-top:2px;">
+      <span data-i18n="sf_doctor_sub">Approved by admin first</span>
+    </div>
+    <div class="actor-stat-row">
+      <span class="actor-stat-chip" style="color:#085041; border-color:#10B981; background:#E1F5EE">
+        <strong>{{ stats.approved_doctors }}</strong> <span data-i18n="sf_approved">approved</span>
+      </span>
+      <span class="actor-stat-chip"><strong>{{ stats.pending_doctors }}</strong> <span data-i18n="sf_pending">pending</span></span>
+      <span class="actor-stat-chip"><strong>{{ stats.rejected_doctors }}</strong> <span data-i18n="sf_rejected">rejected</span></span>
+    </div>
+  </div>
+
+  <!-- Patient -->
+  <div class="actor-card actor-border-patient">
+    <div class="actor-icon amber"><i class="ti ti-user"></i></div>
+    <div style="font-size:15px; font-weight:700; color:var(--color-text-primary,#0f172a)">
+      <span data-i18n="sf_actor_patient">Patient</span>
+    </div>
+    <div style="font-size:12px; color:var(--color-text-secondary,#64748b); margin-top:2px;">
+      <span data-i18n="sf_patient_sub">Free or Pro tier</span>
+    </div>
+    <div class="actor-stat-row">
+      <span class="actor-stat-chip"><strong>{{ stats.free_patients }}</strong> <span data-i18n="sf_free">free</span></span>
+      <span class="actor-stat-chip" style="color:#633806; border-color:#F59E0B; background:#FAEEDA">
+        <strong>{{ stats.pro_patients }}</strong> <span data-i18n="sf_pro">Pro</span>
+      </span>
+    </div>
+  </div>
+
+</div><!-- /.actor-legend-row -->
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION C — 8-STAGE INTERACTIVE STEPPER
+     ══════════════════════════════════════════════════════════════ -->
+
+<!-- Dot navigation -->
+<div class="stepper-nav" id="stepperNav">
+  {% for n in range(1, 9) %}
+  <div class="stage-dot {% if n == 1 %}active{% endif %}" data-stage="{{ n - 1 }}" onclick="goToStage({{ n - 1 }})">
+    <span>{{ n }}</span>
+  </div>
+  {% if n < 8 %}<div class="stage-line"></div>{% endif %}
+  {% endfor %}
+</div>
+
+<!-- ─────────────────────── STAGE 1 ─────────────────────────── -->
+<div class="stage-panel sf-active" id="stage-0">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 1</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s1_title">Platform setup — admin configures system</div>
+      <div class="stage-title-kh" data-i18n="sf_s1_title_kh">រៀបចំវេទិកា — Admin កំណត់ប្រព័ន្ធ</div>
+      <div class="stage-actors">
+        <span class="actor-tag admin"><i class="ti ti-shield" style="font-size:10px"></i> Admin</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-settings"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s1_e1">Admin account created</p>
+        <p class="event-sub" data-i18n="sf_s1_e1s">Superuser seeded with role=admin, is_admin=TRUE</p>
+        <span class="data-badge">users: role='admin'</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-brand-telegram"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s1_e2">Telegram bot configured</p>
+        <p class="event-sub" data-i18n="sf_s1_e2s">Alerts fire when pneumonia ≥ 85% confidence</p>
+        <span class="data-badge">{{ stats.high_alerts }} alerts fired to date</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-speakerphone"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s1_e3">Ad placements created</p>
+        <p class="event-sub" data-i18n="sf_s1_e3s">Banner ads for free-tier users — 4 placement zones</p>
+        <span class="data-badge">ads: is_active=true</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon gray"><i class="ti ti-database"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s1_e4">PostgreSQL schema live</p>
+        <p class="event-sub" data-i18n="sf_s1_e4s">9 tables: users, doctors, scans, appointments, reviews, subscriptions, ads, system_logs, telegram_configs</p>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" id="btn-prev" disabled onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter" id="stage-counter">Stage 1 of 8</span>
+    <button class="sf-nav-btn primary" id="btn-next" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 2 ─────────────────────────── -->
+<div class="stage-panel" id="stage-1">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 2</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s2_title">Doctor self-registers — admin decides</div>
+      <div class="stage-title-kh" data-i18n="sf_s2_title_kh">Doctor ចុះឈ្មោះ — Admin សម្រេច</div>
+      <div class="stage-actors">
+        <span class="actor-tag doctor"><i class="ti ti-stethoscope" style="font-size:10px"></i> Doctor</span>
+        <span class="actor-tag admin"><i class="ti ti-shield" style="font-size:10px"></i> Admin</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-user-plus"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s2_e1">Doctor fills registration form</p>
+        <p class="event-sub" data-i18n="sf_s2_e1s">Name, specialty, license, university, rate, bio, availability</p>
+        <span class="data-badge">POST /api/doctor/register</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon gray"><i class="ti ti-file-certificate"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s2_e2">Profile saved as pending</p>
+        <p class="event-sub" data-i18n="sf_s2_e2s">is_active=FALSE, is_verified=FALSE — login blocked until approved</p>
+        <span class="data-badge">doctors: status='pending' — {{ stats.pending_doctors }} now</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-bell"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s2_e3">Admin notified instantly</p>
+        <p class="event-sub" data-i18n="sf_s2_e3s">Dashboard queue + Telegram message fires immediately</p>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-eye"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s2_e4">Admin reviews credentials</p>
+        <p class="event-sub" data-i18n="sf_s2_e4s">Views license, qualifications, checks Ministry database</p>
+      </div>
+    </div>
+
+    <!-- Decision split -->
+    <div class="decision-split" style="margin-top:14px;">
+      <div class="decision-card approve">
+        <div class="decision-card-header">
+          <i class="ti ti-circle-check" style="font-size:16px"></i>
+          <span data-i18n="sf_s2_approve">Approve</span>
+        </div>
+        <p data-i18n="sf_s2_approve_sub">status=approved, is_active=TRUE. Email sent with login link.</p>
+        <span class="data-badge">PATCH /api/admin/doctors/&lt;id&gt;/approve</span>
+        <div style="margin-top:8px; font-size:12px; color:#166534; font-weight:600">
+          ✓ {{ stats.approved_doctors }} <span data-i18n="sf_approved">approved</span>
+        </div>
+      </div>
+      <div class="decision-card reject">
+        <div class="decision-card-header">
+          <i class="ti ti-x-circle" style="font-size:16px"></i>
+          <span data-i18n="sf_s2_reject">Reject</span>
+        </div>
+        <p data-i18n="sf_s2_reject_sub">status=rejected, reason saved. Email sent with rejection reason.</p>
+        <span class="data-badge">PATCH /api/admin/doctors/&lt;id&gt;/reject</span>
+        <div style="margin-top:8px; font-size:12px; color:#991b1b; font-weight:600">
+          ✗ {{ stats.rejected_doctors }} <span data-i18n="sf_rejected">rejected</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 2 of 8</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 3 ─────────────────────────── -->
+<div class="stage-panel" id="stage-2">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 3</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s3_title">Doctor logs in and activates dashboard</div>
+      <div class="stage-title-kh" data-i18n="sf_s3_title_kh">Doctor Login និងដំណើរការ Dashboard</div>
+      <div class="stage-actors">
+        <span class="actor-tag doctor"><i class="ti ti-stethoscope" style="font-size:10px"></i> Doctor</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-login"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s3_e1">Doctor logs in for first time</p>
+        <p class="event-sub" data-i18n="sf_s3_e1s">System checks: status=approved + is_active=TRUE. JWT issued for 8h.</p>
+        <span class="data-badge">POST /api/doctor/login → JWT 8h</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-layout-dashboard"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s3_e2">Dashboard loads live data</p>
+        <p class="event-sub" data-i18n="sf_s3_e2s">All KPI cards query database in real time</p>
+        <div class="kpi-mini-grid">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_total_apts">Total appointments</div>
+            <div class="kpi-mini-value">{{ stats.total_appointments }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_confirmed">Today schedule</div>
+            <div class="kpi-mini-value">{{ stats.confirmed_appointments }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_total_patients">Total patients</div>
+            <div class="kpi-mini-value">{{ stats.total_patients }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_reviews">Reviews</div>
+            <div class="kpi-mini-value">{{ stats.total_reviews }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-shield-check"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s3_e3">Doctor profile live in marketplace</p>
+        <p class="event-sub" data-i18n="sf_s3_e3s">Patients can now find, view, and book this doctor</p>
+        <span class="data-badge">GET /api/doctors (status=approved)</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 3 of 8</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 4 ─────────────────────────── -->
+<div class="stage-panel" id="stage-3">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 4</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s4_title">Patient uploads X-ray — AI engine diagnoses</div>
+      <div class="stage-title-kh" data-i18n="sf_s4_title_kh">អ្នកជំងឺបញ្ចូល X-Ray — AI វិភាគ</div>
+      <div class="stage-actors">
+        <span class="actor-tag patient"><i class="ti ti-user" style="font-size:10px"></i> Patient</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-user-plus"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s4_e1">Patient registers</p>
+        <p class="event-sub" data-i18n="sf_s4_e1s">role=patient, tier=free. Ad banner visible until Pro upgrade.</p>
+        <span class="data-badge">users: tier='free' — {{ stats.free_patients }} free / {{ stats.pro_patients }} pro</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-upload"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s4_e2">Patient uploads X-ray</p>
+        <p class="event-sub" data-i18n="sf_s4_e2s">PNG/JPG dropped into upload zone. 3 scans/day limit for free tier.</p>
+        <span class="data-badge">POST /api/scan/upload</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon gray"><i class="ti ti-brain"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s4_e3">CNN+ANN hybrid AI processes scan</p>
+        <p class="event-sub" data-i18n="sf_s4_e3s">Conv2D → Flatten → Dense → sigmoid. Occlusion heatmap generated.</p>
+        <span class="data-badge">ONNX Runtime — ~1,100ms avg</span>
+      </div>
+    </div>
+
+    <!-- Result split -->
+    <div class="decision-split" style="margin-top:14px;">
+      <div class="decision-card reject">
+        <div class="decision-card-header">
+          <i class="ti ti-alert-triangle" style="font-size:16px"></i>
+          <span data-i18n="sf_pneumonia">PNEUMONIA DETECTED</span>
+        </div>
+        <p data-i18n="sf_pneumonia_sub">Heatmap highlights affected region. Telegram alert fires if ≥ 85%.</p>
+        <span class="data-badge">{{ stats.high_severity_scans }} high-severity total</span>
+      </div>
+      <div class="decision-card approve">
+        <div class="decision-card-header">
+          <i class="ti ti-circle-check" style="font-size:16px"></i>
+          <span data-i18n="sf_normal">NORMAL</span>
+        </div>
+        <p data-i18n="sf_normal_sub">Green result badge. Scan saved to history.</p>
+        <span class="data-badge">Total scans: {{ stats.total_scans }}</span>
+      </div>
+    </div>
+
+    <div class="event-card" style="margin-top:10px;">
+      <div class="event-icon purple"><i class="ti ti-brand-telegram"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s4_e5">Telegram alert fires</p>
+        <p class="event-sub" data-i18n="sf_s4_e5s">If confidence ≥ 85% → admin notified instantly with bilingual message</p>
+        <span class="data-badge">threshold=85% — {{ stats.high_alerts }} triggered</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon gray"><i class="ti ti-device-floppy"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s4_e6">Scan saved to system log</p>
+        <p class="event-sub" data-i18n="sf_s4_e6s">Admin sees in /admin/logs with severity level, AI time, and IP</p>
+        <span class="data-badge">system_logs: total={{ stats.total_scans }} scans logged</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 4 of 8</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 5 ─────────────────────────── -->
+<div class="stage-panel" id="stage-4">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 5</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s5_title">Patient finds doctor and books consultation</div>
+      <div class="stage-title-kh" data-i18n="sf_s5_title_kh">អ្នកជំងឺរក Doctor និងកក់ការពិគ្រោះ</div>
+      <div class="stage-actors">
+        <span class="actor-tag patient"><i class="ti ti-user" style="font-size:10px"></i> Patient</span>
+        <span class="actor-tag doctor"><i class="ti ti-stethoscope" style="font-size:10px"></i> Doctor</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-stethoscope"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s5_e1">Patient opens Find a Doctor</p>
+        <p class="event-sub" data-i18n="sf_s5_e1s">Returns only approved doctors. Filter by specialty, rating, city.</p>
+        <span class="data-badge">GET /api/doctors (status=approved) — {{ stats.approved_doctors }} listed</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-user-search"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s5_e2">Patient views doctor profile</p>
+        <p class="event-sub" data-i18n="sf_s5_e2s">Full bio, license (masked), availability, reviews list, avg rating</p>
+        <span class="data-badge">GET /api/doctors/&lt;id&gt;</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-calendar-plus"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s5_e3">Patient books consultation</p>
+        <p class="event-sub" data-i18n="sf_s5_e3s">Selects date + time + note. Payment via ABA KHQR. Fee recorded.</p>
+        <span class="data-badge">POST /api/appointments/book</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon gray"><i class="ti ti-video"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s5_e4">System generates meeting link</p>
+        <p class="event-sub" data-i18n="sf_s5_e4s">https://meet.google.com/smx-{id} generated. Status → confirmed.</p>
+        <span class="data-badge">appointments: status='confirmed' — {{ stats.confirmed_appointments }} now</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-bell"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s5_e5">Doctor notified of new booking</p>
+        <p class="event-sub" data-i18n="sf_s5_e5s">Email sent with patient note, date, fee. Appears in today's schedule.</p>
+        <span class="data-badge">Total appointments: {{ stats.total_appointments }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 5 of 8</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 6 ─────────────────────────── -->
+<div class="stage-panel" id="stage-5">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 6</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s6_title">Both parties join and complete the meeting</div>
+      <div class="stage-title-kh" data-i18n="sf_s6_title_kh">ភាគីទាំងសងខាងចូលរួម និងបញ្ចប់ប្រជុំ</div>
+      <div class="stage-actors">
+        <span class="actor-tag patient"><i class="ti ti-user" style="font-size:10px"></i> Patient</span>
+        <span class="actor-tag doctor"><i class="ti ti-stethoscope" style="font-size:10px"></i> Doctor</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-clock"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s6_e1">Join button activates 15 min before</p>
+        <p class="event-sub" data-i18n="sf_s6_e1s">Before window: shows countdown. After start: opens meeting link.</p>
+        <span class="data-badge">GET /api/appointments/&lt;id&gt;/join</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon green"><i class="ti ti-video"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s6_e2">Both join the video meeting</p>
+        <p class="event-sub" data-i18n="sf_s6_e2s">Patient + doctor connect via meeting link. ~30 min consultation.</p>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-circle-check"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s6_e3">Doctor marks appointment complete</p>
+        <p class="event-sub" data-i18n="sf_s6_e3s">Status → completed. Fee added to doctor total earnings.</p>
+        <span class="data-badge">PATCH /api/appointments/&lt;id&gt;/complete</span>
+        <div class="kpi-mini-grid" style="margin-top:10px;">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_completed">Completed</div>
+            <div class="kpi-mini-value">{{ stats.completed_appointments }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_confirmed">Confirmed</div>
+            <div class="kpi-mini-value">{{ stats.confirmed_appointments }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_revenue">Consultation Revenue</div>
+            <div class="kpi-mini-value">${{ "%.2f"|format(stats.total_revenue) }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_total_apts">Total Appointments</div>
+            <div class="kpi-mini-value">{{ stats.total_appointments }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 6 of 8</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 7 ─────────────────────────── -->
+<div class="stage-panel" id="stage-6">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 7</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s7_title">Patient leaves review — rating recalculates</div>
+      <div class="stage-title-kh" data-i18n="sf_s7_title_kh">អ្នកជំងឺប្រគល់មតិ — ការវាយតម្លៃគណនាឡើងវិញ</div>
+      <div class="stage-actors">
+        <span class="actor-tag patient"><i class="ti ti-user" style="font-size:10px"></i> Patient</span>
+        <span class="actor-tag doctor"><i class="ti ti-stethoscope" style="font-size:10px"></i> Doctor</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-mail"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s7_e1">Patient receives review email</p>
+        <p class="event-sub" data-i18n="sf_s7_e1s">System sends link to leave review after appointment completes</p>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-star"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s7_e2">Patient submits star rating + comment</p>
+        <p class="event-sub" data-i18n="sf_s7_e2s">1–5 stars + text comment recorded in reviews table</p>
+        <span class="data-badge">POST /api/appointments/&lt;id&gt;/review</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon gray"><i class="ti ti-calculator"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s7_e3">System recalculates avg rating</p>
+        <p class="event-sub" data-i18n="sf_s7_e3s">avg_rating = AVG(rating) WHERE doctor_id=X — total_reviews incremented</p>
+        <span class="data-badge">{{ stats.total_reviews }} reviews — avg {{ stats.avg_rating }}★</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon teal"><i class="ti ti-trending-up"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s7_e4">Doctor ranking improves</p>
+        <p class="event-sub" data-i18n="sf_s7_e4s">Higher rating = better position in patient search results</p>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon amber"><i class="ti ti-history"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s7_e5">Full history saved</p>
+        <p class="event-sub" data-i18n="sf_s7_e5s">Patient sees: scan, result, appointment, doctor, cost, review in one place</p>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 7 of 8</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 8 ─────────────────────────── -->
+<div class="stage-panel" id="stage-7">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 8</span>
+    <div style="flex:1">
+      <div class="stage-title-en" data-i18n="sf_s8_title">Admin monitors, manages and grows system</div>
+      <div class="stage-title-kh" data-i18n="sf_s8_title_kh">Admin តាមដាន គ្រប់គ្រង និងអភិវឌ្ឍប្រព័ន្ធ</div>
+      <div class="stage-actors">
+        <span class="actor-tag admin"><i class="ti ti-shield" style="font-size:10px"></i> Admin</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-chart-bar"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s8_e1">Live KPI dashboard</p>
+        <p class="event-sub" data-i18n="sf_s8_e1s">All metrics update from real database queries on every page load</p>
+        <div class="kpi-mini-grid" style="margin-top:10px;">
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_total_users">Total users</div>
+            <div class="kpi-mini-value">{{ stats.total_patients }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_sub_revenue">Sub revenue</div>
+            <div class="kpi-mini-value">${{ "%.2f"|format(stats.subscription_revenue) }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_scans">Total scans</div>
+            <div class="kpi-mini-value">{{ stats.total_scans }}</div>
+          </div>
+          <div class="kpi-mini-card">
+            <div class="kpi-mini-label" data-i18n="sf_doctors_live">Doctors live</div>
+            <div class="kpi-mini-value">{{ stats.approved_doctors }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-activity"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s8_e2">System logs — every scan tracked</p>
+        <p class="event-sub" data-i18n="sf_s8_e2s">Scan ID, user, result, confidence, AI time, severity. Soft-delete supported.</p>
+        <span class="data-badge">High severity: {{ stats.high_alerts }}</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-credit-card"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s8_e3">Subscription management</p>
+        <p class="event-sub" data-i18n="sf_s8_e3s">Free vs Pro split, revenue by plan, expiry dates, manual revoke/extend</p>
+        <span class="data-badge">Active: {{ stats.active_subscriptions }}</span>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-speakerphone"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s8_e4">Ad performance tracking</p>
+        <p class="event-sub" data-i18n="sf_s8_e4s">CTR per ad, views, clicks. Pause underperforming ads instantly.</p>
+      </div>
+    </div>
+    <div class="event-card">
+      <div class="event-icon purple"><i class="ti ti-stethoscope"></i></div>
+      <div class="event-body">
+        <p class="event-title" data-i18n="sf_s8_e5">Doctor queue — continuous review cycle</p>
+        <p class="event-sub" data-i18n="sf_s8_e5s">New doctors submit daily. Admin reviews each within 24h.</p>
+        <span class="data-badge">Pending now: {{ stats.pending_doctors }}</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 8 of 8</span>
+    <button class="sf-nav-btn primary" disabled onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     SECTION D — SUMMARY METRICS ROW
+     ══════════════════════════════════════════════════════════════ -->
+<div class="sf-metric-grid">
+
+  <div class="sf-metric-card">
+    <div class="sf-metric-icon indigo"><i class="ti ti-activity"></i></div>
+    <div>
+      <div class="sf-metric-value">{{ stats.total_scans + stats.total_appointments + stats.total_reviews }}</div>
+      <div class="sf-metric-label" data-i18n="sf_m1_label">Total system interactions</div>
+      <div class="sf-metric-sub" data-i18n="sf_m1_sub">scans + appointments + reviews</div>
+    </div>
+  </div>
+
+  <div class="sf-metric-card">
+    <div class="sf-metric-icon green"><i class="ti ti-cash"></i></div>
+    <div>
+      <div class="sf-metric-value">${{ "%.2f"|format(stats.total_revenue + stats.subscription_revenue) }}</div>
+      <div class="sf-metric-label" data-i18n="sf_m2_label">Platform revenue</div>
+      <div class="sf-metric-sub" data-i18n="sf_m2_sub">subscriptions + consultations</div>
+    </div>
+  </div>
+
+  <div class="sf-metric-card">
+    <div class="sf-metric-icon amber"><i class="ti ti-star"></i></div>
+    <div>
+      <div class="sf-metric-value">{{ stats.avg_rating }}★</div>
+      <div class="sf-metric-label" data-i18n="sf_m3_label">Avg doctor rating</div>
+      <div class="sf-metric-sub">
+        <span data-i18n="sf_m3_sub_from">from</span> {{ stats.total_reviews }} <span data-i18n="sf_reviews">reviews</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sf-metric-card">
+    <div class="sf-metric-icon red"><i class="ti ti-alert-triangle"></i></div>
+    <div>
+      <div class="sf-metric-value">{{ stats.high_alerts }}</div>
+      <div class="sf-metric-label" data-i18n="sf_m4_label">High severity alerts</div>
+      <div class="sf-metric-sub" data-i18n="sf_m4_sub">PNEUMONIA ≥ 85% confidence</div>
+    </div>
+  </div>
+
+</div><!-- /.sf-metric-grid -->
+
+{% endblock %}
+
+
+{% block scripts %}
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   SYSTEM FLOW — i18n translations
+   ═══════════════════════════════════════════════════════════════ */
+Object.assign(TRANSLATIONS, {
+  /* Page header */
+  sf_title:          { en: 'System Flow',                                km: 'លំហូរប្រព័ន្ធ' },
+  sf_subtitle:       { en: 'Complete real-world interaction between Admin, Doctor and Patient',
+                       km: 'អន្តរកម្មពិតប្រាកដរវាង Admin Doctor និង Patient' },
+  sf_patients:       { en: 'patients',        km: 'អ្នកជំងឺ' },
+  sf_doctors:        { en: 'doctors',         km: 'វេជ្ជបណ្ឌិត' },
+  sf_scans:          { en: 'scans',           km: 'ការស្កែន' },
+  /* Actor legend */
+  sf_actor_admin:    { en: 'Admin',           km: 'អ្នកគ្រប់គ្រង' },
+  sf_admin_sub:      { en: 'Full system control', km: 'គ្រប់គ្រងប្រព័ន្ធទាំងអស់' },
+  sf_high_alerts:    { en: 'high alerts',     km: 'ការព្រមានខ្ពស់' },
+  sf_active_subs:    { en: 'active subs',     km: 'ការជាវសកម្ម' },
+  sf_actor_doctor:   { en: 'Doctor',          km: 'វេជ្ជបណ្ឌិត' },
+  sf_doctor_sub:     { en: 'Approved by admin first', km: 'ត្រូវអនុម័តដោយ Admin' },
+  sf_approved:       { en: 'approved',        km: 'អនុម័ត' },
+  sf_pending:        { en: 'pending',         km: 'រង់ចាំ' },
+  sf_rejected:       { en: 'rejected',        km: 'បដិសេធ' },
+  sf_actor_patient:  { en: 'Patient',         km: 'អ្នកជំងឺ' },
+  sf_patient_sub:    { en: 'Free or Pro tier', km: 'ឥតគិតថ្លៃ ឬ Pro' },
+  sf_free:           { en: 'free',            km: 'ឥតគិតថ្លៃ' },
+  sf_pro:            { en: 'Pro',             km: 'Pro' },
+  /* Navigation */
+  sf_prev:           { en: 'Previous',        km: 'មុន' },
+  sf_next:           { en: 'Next',            km: 'បន្ទាប់' },
+  /* Stage titles */
+  sf_s1_title:       { en: 'Platform setup — admin configures system',   km: 'រៀបចំវេទិកា — Admin កំណត់ប្រព័ន្ធ' },
+  sf_s1_title_kh:    { en: 'Platform setup — admin configures system',   km: 'រៀបចំវេទិកា — Admin កំណត់ប្រព័ន្ធ' },
+  sf_s2_title:       { en: 'Doctor self-registers — admin decides',      km: 'Doctor ចុះឈ្មោះ — Admin សម្រេច' },
+  sf_s2_title_kh:    { en: 'Doctor self-registers — admin decides',      km: 'Doctor ចុះឈ្មោះ — Admin សម្រេច' },
+  sf_s3_title:       { en: 'Doctor logs in and activates dashboard',     km: 'Doctor Login និងដំណើរការ Dashboard' },
+  sf_s3_title_kh:    { en: 'Doctor logs in and activates dashboard',     km: 'Doctor Login និងដំណើរការ Dashboard' },
+  sf_s4_title:       { en: 'Patient uploads X-ray — AI engine diagnoses', km: 'អ្នកជំងឺបញ្ចូល X-Ray — AI វិភាគ' },
+  sf_s4_title_kh:    { en: 'Patient uploads X-ray — AI engine diagnoses', km: 'អ្នកជំងឺបញ្ចូល X-Ray — AI វិភាគ' },
+  sf_s5_title:       { en: 'Patient finds doctor and books consultation', km: 'អ្នកជំងឺរក Doctor និងកក់ការពិគ្រោះ' },
+  sf_s5_title_kh:    { en: 'Patient finds doctor and books consultation', km: 'អ្នកជំងឺរក Doctor និងកក់ការពិគ្រោះ' },
+  sf_s6_title:       { en: 'Both parties join and complete the meeting',  km: 'ភាគីទាំងសងខាងចូលរួម និងបញ្ចប់ប្រជុំ' },
+  sf_s6_title_kh:    { en: 'Both parties join and complete the meeting',  km: 'ភាគីទាំងសងខាងចូលរួម និងបញ្ចប់ប្រជុំ' },
+  sf_s7_title:       { en: 'Patient leaves review — rating recalculates', km: 'អ្នកជំងឺប្រគល់មតិ — ការវាយតម្លៃគណនាឡើងវិញ' },
+  sf_s7_title_kh:    { en: 'Patient leaves review — rating recalculates', km: 'អ្នកជំងឺប្រគល់មតិ — ការវាយតម្លៃគណនាឡើងវិញ' },
+  sf_s8_title:       { en: 'Admin monitors, manages and grows system',   km: 'Admin តាមដាន គ្រប់គ្រង និងអភិវឌ្ឍប្រព័ន្ធ' },
+  sf_s8_title_kh:    { en: 'Admin monitors, manages and grows system',   km: 'Admin តាមដាន គ្រប់គ្រង និងអភិវឌ្ឍប្រព័ន្ធ' },
+  /* Stage 1 events */
+  sf_s1_e1:          { en: 'Admin account created',                      km: 'គណនី Admin ត្រូវបានបង្កើត' },
+  sf_s1_e1s:         { en: 'Superuser seeded with role=admin, is_admin=TRUE', km: 'Superuser បង្កើតដោយ role=admin' },
+  sf_s1_e2:          { en: 'Telegram bot configured',                    km: 'Telegram Bot ត្រូវបានដំឡើង' },
+  sf_s1_e2s:         { en: 'Alerts fire when pneumonia ≥ 85% confidence', km: 'ការជូនដំណឹងបានភ្លាម ≥ 85%' },
+  sf_s1_e3:          { en: 'Ad placements created',                      km: 'ការបង្ហាញផ្សាយពាណិជ្ជកម្ម' },
+  sf_s1_e3s:         { en: 'Banner ads for free-tier users — 4 placement zones', km: 'ផ្ទាំង Banner សម្រាប់ Free tier' },
+  sf_s1_e4:          { en: 'PostgreSQL schema live',                     km: 'PostgreSQL Schema ដំណើរការ' },
+  sf_s1_e4s:         { en: '9 tables: users, doctors, scans, appointments, reviews, subscriptions, ads, system_logs, telegram_configs',
+                       km: '9 tables: users, doctors, scans, appointments, reviews, subscriptions, ads, system_logs, telegram_configs' },
+  /* Stage 2 */
+  sf_s2_e1:          { en: 'Doctor fills registration form',             km: 'Doctor បំពេញទម្រង់ចុះឈ្មោះ' },
+  sf_s2_e1s:         { en: 'Name, specialty, license, university, rate, bio, availability', km: 'ឈ្មោះ ជំនាញ អាជ្ញាបណ្ណ មហាវិទ្យាល័យ ថ្លៃ' },
+  sf_s2_e2:          { en: 'Profile saved as pending',                   km: 'ទម្រង់ត្រូវបានរក្សា ស្ថានភាព pending' },
+  sf_s2_e2s:         { en: 'is_active=FALSE, is_verified=FALSE — login blocked until approved', km: 'Login ត្រូវបានបិទ រហូតទល់ Admin អនុម័ត' },
+  sf_s2_e3:          { en: 'Admin notified instantly',                   km: 'Admin ទទួលការជូនដំណឹងភ្លាម' },
+  sf_s2_e3s:         { en: 'Dashboard queue + Telegram message fires immediately', km: 'Dashboard Queue + Telegram ភ្លាមៗ' },
+  sf_s2_e4:          { en: 'Admin reviews credentials',                  km: 'Admin ពិនិត្យព័ត៌មានអត្តសញ្ញាណ' },
+  sf_s2_e4s:         { en: 'Views license, qualifications, checks Ministry database', km: 'មើលអាជ្ញាបណ្ណ វុឌ្ឍិ ពិនិត្យ Ministry database' },
+  sf_s2_approve:     { en: 'Approve',                                    km: 'អនុម័ត' },
+  sf_s2_approve_sub: { en: 'status=approved, is_active=TRUE. Email sent with login link.', km: 'status=approved, is_active=TRUE. Email ផ្ញើ.' },
+  sf_s2_reject:      { en: 'Reject',                                     km: 'បដិសេធ' },
+  sf_s2_reject_sub:  { en: 'status=rejected, reason saved. Email sent with rejection reason.', km: 'status=rejected ហេតុផលត្រូវបានរក្សាទុក.' },
+  /* Stage 3 */
+  sf_s3_e1:          { en: 'Doctor logs in for first time',              km: 'Doctor Login លើកដំបូង' },
+  sf_s3_e1s:         { en: 'System checks: status=approved + is_active=TRUE. JWT issued for 8h.', km: 'ប្រព័ន្ធពិនិត្យ: approved + active. JWT 8h.' },
+  sf_s3_e2:          { en: 'Dashboard loads live data',                  km: 'Dashboard ផ្ទុក data ផ្ទាល់' },
+  sf_s3_e2s:         { en: 'All KPI cards query database in real time',  km: 'KPI cards ទាំងអស់ query database ពេលផ្ទាល់' },
+  sf_s3_e3:          { en: 'Doctor profile live in marketplace',         km: 'ទម្រង់ Doctor ចូលក្នុង Marketplace' },
+  sf_s3_e3s:         { en: 'Patients can now find, view, and book this doctor', km: 'អ្នកជំងឺអាចស្វែងរក មើល និងកក់ Doctor' },
+  /* Stage 4 */
+  sf_s4_e1:          { en: 'Patient registers',                          km: 'អ្នកជំងឺចុះឈ្មោះ' },
+  sf_s4_e1s:         { en: 'role=patient, tier=free. Ad banner visible until Pro upgrade.', km: 'role=patient, tier=free. ផ្ទាំង Ad បង្ហាញ.' },
+  sf_s4_e2:          { en: 'Patient uploads X-ray',                      km: 'អ្នកជំងឺបញ្ចូល X-ray' },
+  sf_s4_e2s:         { en: 'PNG/JPG dropped into upload zone. 3 scans/day limit for free tier.', km: 'PNG/JPG បញ្ចូលក្នុង Upload Zone. Free tier: 3 ស្កែន/ថ្ងៃ.' },
+  sf_s4_e3:          { en: 'CNN+ANN hybrid AI processes scan',            km: 'AI CNN+ANN Hybrid វិភាគ X-ray' },
+  sf_s4_e3s:         { en: 'Conv2D → Flatten → Dense → sigmoid. Occlusion heatmap generated.', km: 'Conv2D → Flatten → Dense → sigmoid. Occlusion Heatmap.' },
+  sf_pneumonia:      { en: 'PNEUMONIA DETECTED',                         km: 'រកឃើញជំងឺរលាកសួត' },
+  sf_pneumonia_sub:  { en: 'Heatmap highlights affected region. Telegram alert fires if ≥ 85%.', km: 'Heatmap បង្ហាញផ្នែកដែលមានបញ្ហា. Telegram alert ≥ 85%.' },
+  sf_normal:         { en: 'NORMAL',                                     km: 'ធម្មតា' },
+  sf_normal_sub:     { en: 'Green result badge. Scan saved to history.', km: 'Badge ពណ៌បៃតង. ស្កែនត្រូវបានរក្សា.' },
+  sf_s4_e5:          { en: 'Telegram alert fires',                       km: 'Telegram Alert ដំណើរការ' },
+  sf_s4_e5s:         { en: 'If confidence ≥ 85% → admin notified instantly with bilingual message', km: 'confidence ≥ 85% → Admin ទទួលការជូនដំណឹង 2 ភាសា' },
+  sf_s4_e6:          { en: 'Scan saved to system log',                   km: 'ស្កែនត្រូវបានរក្សា system log' },
+  sf_s4_e6s:         { en: 'Admin sees in /admin/logs with severity level, AI time, and IP', km: 'Admin មើល /admin/logs severity AI time IP' },
+  /* Stage 5 */
+  sf_s5_e1:          { en: 'Patient opens Find a Doctor',                km: 'អ្នកជំងឺបើក Find a Doctor' },
+  sf_s5_e1s:         { en: 'Returns only approved doctors. Filter by specialty, rating, city.', km: 'បង្ហាញតែ Doctor approved. Filter ជំនាញ ការវាយតម្លៃ ទីក្រុង.' },
+  sf_s5_e2:          { en: 'Patient views doctor profile',               km: 'អ្នកជំងឺមើលទម្រង់ Doctor' },
+  sf_s5_e2s:         { en: 'Full bio, license (masked), availability, reviews list, avg rating', km: 'Bio អាជ្ញាបណ្ណ ម៉ោងទំនេរ បញ្ជីការវាយតម្លៃ' },
+  sf_s5_e3:          { en: 'Patient books consultation',                 km: 'អ្នកជំងឺកក់ការពិគ្រោះ' },
+  sf_s5_e3s:         { en: 'Selects date + time + note. Payment via ABA KHQR. Fee recorded.', km: 'ជ្រើសកាលបរិច្ឆេទ ម៉ោង. ទូទាត់ ABA KHQR.' },
+  sf_s5_e4:          { en: 'System generates meeting link',              km: 'ប្រព័ន្ធបង្កើតតំណប្រជុំ' },
+  sf_s5_e4s:         { en: 'https://meet.google.com/smx-{id} generated. Status → confirmed.', km: 'https://meet.google.com/smx-{id} ត្រូវបានបង្កើត. Status → confirmed.' },
+  sf_s5_e5:          { en: 'Doctor notified of new booking',             km: 'Doctor ទទួលការជូនដំណឹងការកក់ថ្មី' },
+  sf_s5_e5s:         { en: 'Email sent with patient note, date, fee. Appears in today\'s schedule.', km: 'Email ផ្ញើ ជាមួយកំណត់ចំណាំ ថ្ងៃ ថ្លៃ.' },
+  /* Stage 6 */
+  sf_s6_e1:          { en: 'Join button activates 15 min before',        km: 'ប៊ូតុង Join ដំណើរការ 15 នាទីមុន' },
+  sf_s6_e1s:         { en: 'Before window: shows countdown. After start: opens meeting link.', km: 'មុនពេល: countdown. ក្រោយ: បើ meeting link.' },
+  sf_s6_e2:          { en: 'Both join the video meeting',                km: 'ភាគីទាំងពីរចូល video meeting' },
+  sf_s6_e2s:         { en: 'Patient + doctor connect via meeting link. ~30 min consultation.', km: 'Patient + Doctor ភ្ជាប់ via meeting link. ~30 នាទី.' },
+  sf_s6_e3:          { en: 'Doctor marks appointment complete',          km: 'Doctor សម្គាល់ appointment ថា complete' },
+  sf_s6_e3s:         { en: 'Status → completed. Fee added to doctor total earnings.', km: 'Status → completed. ថ្លៃបន្ថែម total earnings.' },
+  sf_completed:      { en: 'Completed',                                  km: 'បានបញ្ចប់' },
+  sf_confirmed:      { en: 'Confirmed',                                  km: 'បានបញ្ជាក់' },
+  sf_revenue:        { en: 'Consultation Revenue',                       km: 'ចំណូលពីការពិគ្រោះ' },
+  sf_total_apts:     { en: 'Total Appointments',                         km: 'ការណាត់ជួបសរុប' },
+  /* Stage 7 */
+  sf_s7_e1:          { en: 'Patient receives review email',              km: 'អ្នកជំងឺទទួល email ស្នើការវាយតម្លៃ' },
+  sf_s7_e1s:         { en: 'System sends link to leave review after appointment completes', km: 'ប្រព័ន្ធផ្ញើ link ក្រោយ appointment បញ្ចប់' },
+  sf_s7_e2:          { en: 'Patient submits star rating + comment',      km: 'អ្នកជំងឺបញ្ជូន ★ rating + comment' },
+  sf_s7_e2s:         { en: '1–5 stars + text comment recorded in reviews table', km: '1–5 ★ + comment ត្រូវបានរក្សា' },
+  sf_s7_e3:          { en: 'System recalculates avg rating',             km: 'ប្រព័ន្ធគណនា avg rating ឡើងវិញ' },
+  sf_s7_e3s:         { en: 'avg_rating = AVG(rating) WHERE doctor_id=X — total_reviews incremented', km: 'avg_rating = AVG(rating) — total_reviews ++' },
+  sf_s7_e4:          { en: 'Doctor ranking improves',                    km: 'ចំណាត់ថ្នាក់ Doctor ប្រសើរឡើង' },
+  sf_s7_e4s:         { en: 'Higher rating = better position in patient search results', km: 'Rating ខ្ពស់ = ទីតាំងល្អប្រសើរ ក្នុង search' },
+  sf_s7_e5:          { en: 'Full history saved',                         km: 'ប្រវត្តិពេញត្រូវបានរក្សា' },
+  sf_s7_e5s:         { en: 'Patient sees: scan, result, appointment, doctor, cost, review in one place', km: 'Patient មើល: scan result appointment doctor cost review' },
+  sf_reviews:        { en: 'reviews',                                    km: 'ការវាយតម្លៃ' },
+  /* Stage 8 */
+  sf_s8_e1:          { en: 'Live KPI dashboard',                         km: 'KPI Dashboard ផ្ទាល់' },
+  sf_s8_e1s:         { en: 'All metrics update from real database queries on every page load', km: 'Metrics ទាំងអស់ update ពី DB' },
+  sf_total_users:    { en: 'Total users',                                km: 'អ្នកប្រើសរុប' },
+  sf_sub_revenue:    { en: 'Sub revenue',                                km: 'ចំណូលជាវ' },
+  sf_doctors_live:   { en: 'Doctors live',                               km: 'Doctor active' },
+  sf_s8_e2:          { en: 'System logs — every scan tracked',           km: 'System logs — គ្រប់ស្កែនត្រូវតាមដាន' },
+  sf_s8_e2s:         { en: 'Scan ID, user, result, confidence, AI time, severity. Soft-delete supported.', km: 'Scan ID user result confidence AI time severity.' },
+  sf_s8_e3:          { en: 'Subscription management',                   km: 'ការគ្រប់គ្រងការជាវ' },
+  sf_s8_e3s:         { en: 'Free vs Pro split, revenue by plan, expiry dates, manual revoke/extend', km: 'Free vs Pro ចំណូល expiry manual revoke/extend' },
+  sf_s8_e4:          { en: 'Ad performance tracking',                   km: 'តាមដានការអនុវត្ត Ad' },
+  sf_s8_e4s:         { en: 'CTR per ad, views, clicks. Pause underperforming ads instantly.', km: 'CTR per ad views clicks. ផ្អាក Ad ខ្សោយភ្លាម.' },
+  sf_s8_e5:          { en: 'Doctor queue — continuous review cycle',     km: 'Doctor queue — វដ្ដ review បន្ត' },
+  sf_s8_e5s:         { en: 'New doctors submit daily. Admin reviews each within 24h.', km: 'Doctor ថ្មីដាក់ស្នើប្រចាំថ្ងៃ. Admin ពិនិត្យក្នុង 24ម.' },
+  sf_total_patients: { en: 'Total patients',                             km: 'អ្នកជំងឺសរុប' },
+  /* Summary metrics */
+  sf_m1_label:       { en: 'Total system interactions',                  km: 'អន្តរកម្មប្រព័ន្ធសរុប' },
+  sf_m1_sub:         { en: 'scans + appointments + reviews',             km: 'ស្កែន + ការណាត់ + ការវាយតម្លៃ' },
+  sf_m2_label:       { en: 'Platform revenue',                           km: 'ចំណូលវេទិកា' },
+  sf_m2_sub:         { en: 'subscriptions + consultations',              km: 'ការជាវ + ការពិគ្រោះ' },
+  sf_m3_label:       { en: 'Avg doctor rating',                          km: 'ការវាយតម្លៃជាមធ្យម' },
+  sf_m3_sub_from:    { en: 'from',                                       km: 'ពី' },
+  sf_m4_label:       { en: 'High severity alerts',                       km: 'ការជូនដំណឹងកម្រិតខ្ពស់' },
+  sf_m4_sub:         { en: 'PNEUMONIA ≥ 85% confidence',                 km: 'PNEUMONIA ≥ 85% confidence' },
+});
+
+/* Apply translations immediately (language may already be set to km) */
+if (typeof I18n !== 'undefined' && I18n.applyAll) I18n.applyAll();
+
+/* ═══════════════════════════════════════════════════════════════
+   SYSTEM FLOW — interactive 8-stage stepper
+   ═══════════════════════════════════════════════════════════════ */
+let currentStage = 0;
+const TOTAL_STAGES = 8;
+
+function goToStage(index) {
+  const next = Math.max(0, Math.min(TOTAL_STAGES - 1, index));
+  if (next === currentStage && index >= 0 && index < TOTAL_STAGES) {
+    /* same stage — no-op unless forced */
+  }
+  currentStage = next;
+
+  /* Show/hide panels */
+  document.querySelectorAll('.stage-panel').forEach((p, i) => {
+    p.classList.toggle('sf-active', i === currentStage);
+  });
+
+  /* Update dots */
+  document.querySelectorAll('.stage-dot').forEach((d, i) => {
+    d.classList.remove('active', 'done');
+    if (i < currentStage)  d.classList.add('done');
+    if (i === currentStage) d.classList.add('active');
+  });
+
+  /* Update all prev/next buttons in the current panel */
+  const panel = document.getElementById(`stage-${currentStage}`);
+  if (panel) {
+    panel.querySelectorAll('[id="btn-prev"]').forEach(b => b.disabled = (currentStage === 0));
+    panel.querySelectorAll('[id="btn-next"]').forEach(b => b.disabled = (currentStage === TOTAL_STAGES - 1));
+    panel.querySelectorAll('.stage-counter').forEach(el => {
+      el.textContent = `Stage ${currentStage + 1} of ${TOTAL_STAGES}`;
+    });
+  }
+
+  /* Scroll stepper dot into view on mobile */
+  const dot = document.querySelector(`.stage-dot[data-stage="${currentStage}"]`);
+  if (dot) dot.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+}
+
+/* Wire up dot clicks */
+document.querySelectorAll('.stage-dot').forEach((d, i) => {
+  d.addEventListener('click', () => goToStage(i));
+});
+
+/* Keyboard navigation */
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight') goToStage(currentStage + 1);
+  if (e.key === 'ArrowLeft')  goToStage(currentStage - 1);
+});
+
+/* Init */
+goToStage(0);
+</script>
+{% endblock %}
