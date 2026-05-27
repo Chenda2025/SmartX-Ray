@@ -27,10 +27,12 @@ static/reports/*
 !static/heatmaps/.gitkeep
 !static/reports/.gitkeep
 
-# AI model (large binary — store separately)
+# AI model (large binary — hosted on GitHub Releases, not committed)
 models/*.h5
 models/*.keras
 models/*.pb
+models/*.tflite
+models/saved_model_tmp/
 
 # IDE
 .vscode/
