@@ -85,11 +85,10 @@ def admin_telegram_page():
     return render_template("admin/telegram.html", active="telegram")
 
 
-@admin_bp.route("/system-flow")
-def admin_system_flow_page():
+def _build_flow_stats() -> dict:
     """
-    System Flow page — real-world interaction between Admin, Doctor, Patient.
-    All stats are live from the database via SQLAlchemy.
+    Build the live-stats dict shared by System Flow and Presentation pages.
+    All values are safe-cast ints/floats — never None.
     """
     from app.models.user         import User
     from app.models.doctor       import Doctor
@@ -99,38 +98,29 @@ def admin_system_flow_page():
     from app.models.system_log   import SystemLog
 
     def _i(val, default=0):
-        """Safe int cast."""
-        try:
-            return int(val) if val is not None else default
-        except (TypeError, ValueError):
-            return default
+        try:    return int(val)   if val is not None else default
+        except: return default  # noqa: E722
 
     def _f(val, default=0.0):
-        """Safe float cast."""
-        try:
-            return round(float(val), 2) if val is not None else default
-        except (TypeError, ValueError):
-            return default
+        try:    return round(float(val), 2) if val is not None else default
+        except: return default  # noqa: E722
 
-    # ── Patients ───────────────────────────────────────────────────────────
+    # Patients
     total_patients = _i(User.query.filter_by(role="patient").count())
-    pro_patients   = _i(User.query.filter(
-        User.role == "patient", User.tier == "pro"
-    ).count())
+    pro_patients   = _i(User.query.filter(User.role == "patient", User.tier == "pro").count())
 
-    # ── Doctors ────────────────────────────────────────────────────────────
+    # Doctors
     approved_doctors = _i(Doctor.query.filter_by(is_verified=True,  is_active=True).count())
     pending_doctors  = _i(Doctor.query.filter_by(is_verified=False, is_active=True).count())
     rejected_doctors = _i(Doctor.query.filter_by(is_active=False).count())
 
-    # ── Scans ──────────────────────────────────────────────────────────────
+    # Scans
     total_scans         = _i(Scan.query.count())
     high_severity_scans = _i(Scan.query.filter(
-        Scan.prediction == "PNEUMONIA",
-        Scan.confidence >= 0.85,
+        Scan.prediction == "PNEUMONIA", Scan.confidence >= 0.85,
     ).count())
 
-    # ── Appointments ───────────────────────────────────────────────────────
+    # Appointments
     total_appointments     = _i(Appointment.query.count())
     confirmed_appointments = _i(Appointment.query.filter_by(status="confirmed").count())
     completed_appointments = _i(Appointment.query.filter_by(status="completed").count())
@@ -138,27 +128,23 @@ def admin_system_flow_page():
         func.coalesce(func.sum(Appointment.fee_amount), 0)
     ).filter(Appointment.status == "completed").scalar())
 
-    # ── Reviews (no ORM model — use db.text) ──────────────────────────────
+    # Reviews — no ORM model; fall back if table doesn't exist
     try:
-        total_reviews = _i(db.session.execute(
-            db.text("SELECT COUNT(*) FROM reviews")
-        ).scalar())
-        avg_rating = round(_f(db.session.execute(
+        total_reviews = _i(db.session.execute(db.text("SELECT COUNT(*) FROM reviews")).scalar())
+        avg_rating    = round(_f(db.session.execute(
             db.text("SELECT COALESCE(AVG(CAST(rating AS FLOAT)), 0) FROM reviews")
         ).scalar()), 1)
     except Exception:
-        total_reviews = 0
-        avg_rating    = 0.0
+        total_reviews, avg_rating = 0, 0.0
 
-    # ── Logs & Subscriptions ───────────────────────────────────────────────
-    high_alerts          = _i(SystemLog.query.filter_by(severity="high",   is_deleted=False).count())
+    # Logs & Subscriptions
+    high_alerts          = _i(SystemLog.query.filter_by(severity="high", is_deleted=False).count())
     active_subscriptions = _i(Subscription.query.filter_by(status="active").count())
-
     monthly_subs         = _i(Subscription.query.filter_by(status="active", plan="monthly").count())
     yearly_subs          = _i(Subscription.query.filter_by(status="active", plan="yearly").count())
     subscription_revenue = round(monthly_subs * 9.99 + yearly_subs * 79.99, 2)
 
-    stats = {
+    return {
         "total_patients":           total_patients,
         "pro_patients":             pro_patients,
         "free_patients":            max(0, total_patients - pro_patients),
@@ -178,7 +164,25 @@ def admin_system_flow_page():
         "active_subscriptions":     active_subscriptions,
     }
 
-    return render_template("admin/system_flow.html", stats=stats, active="system-flow")
+
+@admin_bp.route("/system-flow")
+def admin_system_flow_page():
+    """System Flow — real-world actor interaction, all stats live from DB."""
+    return render_template(
+        "admin/system_flow.html",
+        stats=_build_flow_stats(),
+        active="system-flow",
+    )
+
+
+@admin_bp.route("/presentation")
+def admin_presentation_page():
+    """Slide-deck presentation with 10 slides, fullscreen, keyboard nav."""
+    return render_template(
+        "admin/presentation.html",
+        stats=_build_flow_stats(),
+        active="presentation",
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

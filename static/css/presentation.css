@@ -1,0 +1,571 @@
+/**
+ * presentation.css
+ * Styles for /admin/presentation — full 10-slide deck viewer
+ *
+ * Layout tree:
+ *   body:has(#pres-shell)          → override admin-content padding
+ *   .pres-shell                    → toolbar + main (flex column)
+ *   .pres-main                     → thumbs rail + viewer (flex row)
+ *   .pres-thumbs                   → scrollable thumbnail strip
+ *   .pres-viewer                   → stage-outer + footer nav
+ *   #pres-stage-outer              → dark canvas (scales to fill)
+ *   #pres-stage                    → 960×540 slide container (JS-scaled)
+ *   .pres-slide                    → each slide (960×540, absolute)
+ */
+
+/* ════════════════════════════════════════════════════════════════
+   1. PAGE LAYOUT OVERRIDES
+   ════════════════════════════════════════════════════════════════ */
+
+/* Tighten the admin-content padding so slides can use more vertical space */
+body:has(#pres-shell) .admin-content {
+  padding: 10px 14px 10px !important;
+  overflow: hidden;
+  height: calc(100vh - 56px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fullscreen: hide chrome, let presentation fill viewport */
+:fullscreen body,
+:-webkit-full-screen body { overflow: hidden; }
+:fullscreen #sidebar,
+:-webkit-full-screen #sidebar { display: none !important; }
+:fullscreen #topbar,
+:-webkit-full-screen #topbar { display: none !important; }
+:fullscreen #main,
+:-webkit-full-screen #main { margin-left: 0 !important; height: 100vh; }
+:fullscreen .admin-content,
+:-webkit-full-screen .admin-content {
+  padding: 0 !important;
+  height: 100vh !important;
+}
+:fullscreen .pres-shell,
+:-webkit-full-screen .pres-shell { padding: 0; gap: 0; }
+:fullscreen .pres-toolbar,
+:-webkit-full-screen .pres-toolbar { display: none; }
+:fullscreen .pres-thumbs,
+:-webkit-full-screen .pres-thumbs { display: none; }
+:fullscreen .pres-nav,
+:-webkit-full-screen .pres-nav {
+  background: rgba(15,23,42,.85);
+  border-radius: 0;
+  padding: 8px 24px;
+}
+:fullscreen #pres-stage-outer,
+:-webkit-full-screen #pres-stage-outer { border-radius: 0; }
+
+/* @media print */
+@media print {
+  body * { visibility: hidden !important; }
+  #pres-shell, #pres-shell * { visibility: visible !important; }
+  .pres-toolbar, .pres-thumbs, .pres-nav { display: none !important; }
+  .pres-viewer { overflow: visible !important; }
+  #pres-stage-outer { background: #fff !important; overflow: visible !important; border-radius: 0 !important; }
+  #pres-stage { transform: none !important; position: relative !important; top: 0 !important; left: 0 !important; }
+  .pres-slide { display: none !important; position: relative !important; page-break-after: always; }
+  .pres-slide.active { display: block !important; }
+  @page { size: 960px 540px; margin: 0; }
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2. SHELL & TOOLBAR
+   ════════════════════════════════════════════════════════════════ */
+
+.pres-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.pres-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 14px;
+  background: var(--color-surface, #fff);
+  border: 1px solid var(--color-border, #e2e8f0);
+  border-radius: 10px;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.pres-toolbar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #0f172a);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.pres-toolbar-actions { display: flex; gap: 6px; align-items: center; }
+
+.pres-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1.5px solid var(--color-border, #e2e8f0);
+  background: var(--color-surface, #fff);
+  color: var(--color-text-primary, #0f172a);
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+}
+.pres-btn:hover {
+  border-color: #6366F1;
+  color: #6366F1;
+}
+.pres-btn.primary {
+  background: #6366F1;
+  border-color: #6366F1;
+  color: #fff;
+}
+.pres-btn.primary:hover {
+  background: #4F46E5;
+  border-color: #4F46E5;
+}
+.pres-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ════════════════════════════════════════════════════════════════
+   3. MAIN AREA: THUMBS + VIEWER
+   ════════════════════════════════════════════════════════════════ */
+
+.pres-main {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* ── Thumbnail rail ── */
+.pres-thumbs {
+  width: 108px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 2px 2px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border, #e2e8f0) transparent;
+}
+.pres-thumbs::-webkit-scrollbar { width: 4px; }
+.pres-thumbs::-webkit-scrollbar-thumb { background: var(--color-border, #e2e8f0); border-radius: 4px; }
+
+.pres-thumb {
+  width: 104px;
+  height: 58px;   /* ≈ 16:9 of 104px */
+  border-radius: 6px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.12s, box-shadow 0.12s;
+  flex-shrink: 0;
+  position: relative;
+  gap: 3px;
+}
+.pres-thumb:hover  { border-color: #a5b4fc; }
+.pres-thumb.active {
+  border-color: #6366F1;
+  box-shadow: 0 0 0 2px rgba(99,102,241,.25);
+}
+.pres-thumb-num {
+  position: absolute;
+  top: 3px; left: 5px;
+  font-size: 9px; font-weight: 700;
+  color: rgba(255,255,255,.85);
+  text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.pres-thumb-icon {
+  font-size: 16px;
+  opacity: .85;
+}
+.pres-thumb-label {
+  font-size: 8px; font-weight: 600;
+  text-align: center;
+  padding: 0 5px;
+  line-height: 1.25;
+  text-shadow: 0 1px 2px rgba(0,0,0,.5);
+}
+
+/* Thumbnail colour themes (match slide backgrounds) */
+.pt-indigo { background: linear-gradient(135deg,#6366F1,#4338CA); color:#fff; }
+.pt-dark   { background: linear-gradient(135deg,#1e293b,#0f172a); color:#e2e8f0; }
+.pt-inky   { background: linear-gradient(135deg,#1e1b4b,#312e81); color:#c7d2fe; }
+.pt-white  { background: #f8fafc; border: 1.5px solid #e2e8f0; color: #1e293b; }
+.pt-green  { background: linear-gradient(135deg,#d1fae5,#a7f3d0); color:#064e3b; }
+.pt-amber  { background: linear-gradient(135deg,#fef3c7,#fde68a); color:#78350f; }
+.pt-teal   { background: linear-gradient(135deg,#cffafe,#a5f3fc); color:#0c4a6e; }
+.pt-violet { background: linear-gradient(135deg,#1e293b,#4338CA); color:#c7d2fe; }
+.pt-close  { background: linear-gradient(135deg,#4F46E5,#7C3AED); color:#fff; }
+
+/* ── Viewer + Stage ── */
+.pres-viewer {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 8px;
+  min-width: 0;
+}
+
+#pres-stage-outer {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: #0f172a;
+  border-radius: 10px;
+  min-height: 0;
+}
+
+#pres-stage {
+  width: 960px;
+  height: 540px;
+  position: absolute;
+  transform-origin: top left;
+  /* transform + left + top set by JS */
+}
+
+/* ── Footer nav bar ── */
+.pres-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.pres-nav-counter {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary, #64748b);
+  white-space: nowrap;
+}
+.pres-progress {
+  flex: 1;
+  height: 4px;
+  background: var(--color-border, #e2e8f0);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.pres-progress-fill {
+  height: 100%;
+  background: #6366F1;
+  border-radius: 2px;
+  transition: width 0.2s ease;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4. SLIDES  (960 × 540, absolute)
+   ════════════════════════════════════════════════════════════════ */
+
+.pres-slide {
+  width: 960px;
+  height: 540px;
+  position: absolute;
+  top: 0; left: 0;
+  display: none;
+  overflow: hidden;
+  font-family: 'DM Sans', 'Inter', sans-serif;
+}
+.pres-slide.active { display: flex; flex-direction: column; }
+
+/* ── Slide header band ── */
+.s-hdr {
+  padding: 18px 32px 14px;
+  position: relative;
+  flex-shrink: 0;
+}
+.s-hdr-num {
+  position: absolute;
+  top: 14px; right: 24px;
+  font-size: 11px;
+  font-weight: 600;
+  opacity: 0.55;
+}
+.s-hdr-title {
+  font-size: 21px;
+  font-weight: 700;
+  margin: 0 0 3px;
+  line-height: 1.2;
+}
+.s-hdr-sub {
+  font-size: 12px;
+  opacity: 0.72;
+  margin: 0 0 8px;
+  line-height: 1.4;
+}
+.s-hdr-actors { display: flex; gap: 5px; flex-wrap: wrap; }
+
+/* ── Slide body ── */
+.s-body {
+  flex: 1;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* ── Header colour bands ── */
+.s-hdr.indigo { background: #6366F1; color: #fff; }
+.s-hdr.dark   { background: #1e293b; color: #e2e8f0; }
+.s-hdr.green  { background: #059669; color: #fff; }
+.s-hdr.amber  { background: #D97706; color: #fff; }
+.s-hdr.teal   { background: #0891B2; color: #fff; }
+
+/* ── Actor tags on slide headers ── */
+.s-actor-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+}
+.s-actor-tag.admin   { background: rgba(255,255,255,.2);  color: #fff; }
+.s-actor-tag.doctor  { background: rgba(255,255,255,.2);  color: #fff; }
+.s-actor-tag.patient { background: rgba(255,255,255,.2);  color: #fff; }
+.s-actor-tag.system  { background: rgba(255,255,255,.15); color: rgba(255,255,255,.85); }
+
+/* ════════════════════════════════════════════════════════════════
+   5. SLIDE BODY COMPONENTS
+   ════════════════════════════════════════════════════════════════ */
+
+/* Content grids */
+.s-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.s-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.s-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+
+/* Card */
+.s-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  overflow: hidden;
+}
+.s-card.indigo-border { border-left: 3px solid #6366F1; }
+.s-card.green-border  { border-left: 3px solid #10B981; }
+.s-card.amber-border  { border-left: 3px solid #F59E0B; }
+.s-card.red-border    { border-left: 3px solid #EF4444; }
+.s-card.teal-border   { border-left: 3px solid #0891B2; }
+.s-card.violet-border { border-left: 3px solid #8B5CF6; }
+
+.s-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s-card-body {
+  font-size: 11px;
+  color: #475569;
+  line-height: 1.55;
+}
+.s-card-body li { margin-bottom: 3px; }
+
+/* Stat big */
+.s-stat-big {
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  color: #0f172a;
+}
+.s-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+/* Data pill */
+.s-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  background: #EEEDFE;
+  color: #4338CA;
+}
+.s-pill.green  { background: #E1F5EE; color: #065F46; }
+.s-pill.amber  { background: #FAEEDA; color: #78350F; }
+.s-pill.red    { background: #FCEBEB; color: #991B1B; }
+.s-pill.gray   { background: #F1F5F9; color: #475569; }
+.s-pill.teal   { background: #CFFAFE; color: #0C4A6E; }
+
+/* Flow arrow */
+.s-flow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.s-flow-step {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+.s-flow-arrow {
+  color: #94a3b8;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Decision split */
+.s-decision { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.s-decision-card {
+  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1.5px solid;
+}
+.s-decision-card.approve { background: #F0FDF4; border-color: #86efac; }
+.s-decision-card.reject  { background: #FEF2F2; border-color: #fca5a5; }
+.s-decision-title {
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 4px;
+}
+.s-decision-card.approve .s-decision-title { color: #166534; }
+.s-decision-card.reject  .s-decision-title { color: #991b1b; }
+.s-decision-body { font-size: 10.5px; color: #64748b; line-height: 1.45; }
+
+/* Icon circle */
+.s-icon {
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.s-icon.indigo { background: #EEEDFE; color: #6366F1; }
+.s-icon.green  { background: #D1FAE5; color: #059669; }
+.s-icon.amber  { background: #FEF3C7; color: #D97706; }
+.s-icon.red    { background: #FEE2E2; color: #DC2626; }
+.s-icon.teal   { background: #CFFAFE; color: #0891B2; }
+.s-icon.violet { background: #EDE9FE; color: #7C3AED; }
+.s-icon.gray   { background: #F1F5F9; color: #64748b; }
+
+/* Section label */
+.s-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #94a3b8;
+  margin-bottom: 7px;
+}
+
+/* Architecture pipeline */
+.s-arch-pipeline {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.s-arch-block {
+  background: #1e1b4b;
+  border: 1px solid rgba(99,102,241,.4);
+  border-radius: 7px;
+  padding: 8px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #c7d2fe;
+  text-align: center;
+  flex-shrink: 0;
+  line-height: 1.3;
+}
+.s-arch-arrow {
+  color: #6366F1;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+/* Business model card */
+.s-biz-card {
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+}
+.s-biz-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.s-biz-body {
+  font-size: 10.5px;
+  opacity: .78;
+  line-height: 1.45;
+}
+.s-biz-amount {
+  font-size: 13px;
+  font-weight: 700;
+  color: #a5f3fc;
+  margin-top: 4px;
+}
+
+/* KPI summary (slide 10) */
+.s-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 14px;
+}
+.s-kpi-card {
+  background: rgba(255,255,255,.12);
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px;
+  padding: 20px 22px;
+  text-align: center;
+  color: #fff;
+}
+.s-kpi-value {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 6px;
+}
+.s-kpi-label {
+  font-size: 12px;
+  opacity: .75;
+}
+
+/* Utility */
+.s-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 10px 0;
+}
+.s-mono {
+  font-family: ui-monospace, 'SFMono-Regular', monospace;
+  font-size: 10px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
