@@ -69,11 +69,20 @@ def _download(url: str, dest: Path) -> None:
         _download_urllib(url, dest)                        # stdlib fallback
 
 
+def _build_headers() -> dict:
+    """Return request headers, injecting a GitHub token if set."""
+    headers = {"User-Agent": "SmartXRay-build/1.0"}
+    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    return headers
+
+
 def _download_requests(url: str, dest: Path) -> None:
     import requests
     print(f"  Using requests …")
     with requests.get(url, stream=True, timeout=600,
-                      headers={"User-Agent": "SmartXRay-build/1.0"}) as r:
+                      headers=_build_headers()) as r:
         r.raise_for_status()
         total    = int(r.headers.get("content-length", 0))
         received = 0
