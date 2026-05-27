@@ -1199,62 +1199,9 @@ Object.assign(TRANSLATIONS, {
   sf_m4_sub:         { en: 'PNEUMONIA ≥ 85% confidence',                 km: 'PNEUMONIA ≥ 85% confidence' },
 });
 
-/* Apply translations immediately (language may already be set to km) */
-if (typeof I18n !== 'undefined' && I18n.applyAll) I18n.applyAll();
-
-/* ═══════════════════════════════════════════════════════════════
-   SYSTEM FLOW — interactive 8-stage stepper
-   ═══════════════════════════════════════════════════════════════ */
-let currentStage = 0;
-const TOTAL_STAGES = 8;
-
-function goToStage(index) {
-  const next = Math.max(0, Math.min(TOTAL_STAGES - 1, index));
-  if (next === currentStage && index >= 0 && index < TOTAL_STAGES) {
-    /* same stage — no-op unless forced */
-  }
-  currentStage = next;
-
-  /* Show/hide panels */
-  document.querySelectorAll('.stage-panel').forEach((p, i) => {
-    p.classList.toggle('sf-active', i === currentStage);
-  });
-
-  /* Update dots */
-  document.querySelectorAll('.stage-dot').forEach((d, i) => {
-    d.classList.remove('active', 'done');
-    if (i < currentStage)  d.classList.add('done');
-    if (i === currentStage) d.classList.add('active');
-  });
-
-  /* Update all prev/next buttons in the current panel */
-  const panel = document.getElementById(`stage-${currentStage}`);
-  if (panel) {
-    panel.querySelectorAll('[id="btn-prev"]').forEach(b => b.disabled = (currentStage === 0));
-    panel.querySelectorAll('[id="btn-next"]').forEach(b => b.disabled = (currentStage === TOTAL_STAGES - 1));
-    panel.querySelectorAll('.stage-counter').forEach(el => {
-      el.textContent = `Stage ${currentStage + 1} of ${TOTAL_STAGES}`;
-    });
-  }
-
-  /* Scroll stepper dot into view on mobile */
-  const dot = document.querySelector(`.stage-dot[data-stage="${currentStage}"]`);
-  if (dot) dot.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-}
-
-/* Wire up dot clicks */
-document.querySelectorAll('.stage-dot').forEach((d, i) => {
-  d.addEventListener('click', () => goToStage(i));
-});
-
-/* Keyboard navigation */
-document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  if (e.key === 'ArrowRight') goToStage(currentStage + 1);
-  if (e.key === 'ArrowLeft')  goToStage(currentStage - 1);
-});
-
-/* Init */
-goToStage(0);
+/* TRANSLATIONS are registered above — system_flow.js handles the rest */
 </script>
+
+{# External stage-navigation module — loaded after i18n.js (from base.html) and TRANSLATIONS #}
+<script src="/static/js/system_flow.js"></script>
 {% endblock %}
