@@ -151,10 +151,18 @@ def create_app(env: str | None = None) -> Flask:
             logger.warning("Health check — DB unreachable: %s", exc)
             checks["database"] = "error"
         try:
-            from app.services.ai_service import _model
-            checks["model"] = "loaded" if _model is not None else "not_loaded"
-        except Exception:
-            checks["model"] = "unknown"
+            from app.services.ai_service import _model, _backend
+            import app.services.ai_service as _ai
+            h5_path     = app.config.get("MODEL_PATH", "")
+            onnx_path   = h5_path.replace(".h5", ".onnx")
+            tflite_path = h5_path.replace(".h5", ".tflite")
+            checks["model"]        = "loaded" if _model is not None else "not_loaded"
+            checks["backend"]      = _backend or "none"
+            checks["onnx_exists"]  = os.path.exists(onnx_path)
+            checks["tflite_exists"]= os.path.exists(tflite_path)
+            checks["h5_exists"]    = os.path.exists(h5_path)
+        except Exception as exc:
+            checks["model"] = f"unknown ({exc})"
 
         overall    = "ok" if all(v in ("ok", "loaded", "not_loaded") for v in checks.values()) else "degraded"
         http_code  = 200 if overall == "ok" else 503

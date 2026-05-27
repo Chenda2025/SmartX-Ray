@@ -48,44 +48,54 @@ def _load():
     # ── 1. ONNX Runtime (~100 MB RAM, no TF dependency) ──────────────────
     if os.path.exists(onnx_path):
         logger.info("Loading ONNX model from %s …", onnx_path)
-        import onnxruntime as ort
-        sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
-        _backend = "onnx"
-        logger.info("ONNX model loaded — input: %s", sess.get_inputs()[0].name)
-        return sess
+        try:
+            import onnxruntime as ort
+            sess = ort.InferenceSession(onnx_path, providers=["CPUExecutionProvider"])
+            _backend = "onnx"
+            logger.info("ONNX model loaded — input: %s", sess.get_inputs()[0].name)
+            return sess
+        except Exception as exc:
+            logger.error("ONNX load failed (%s), trying next backend…", exc)
 
     # ── 2. TFLite (~300 MB RAM, needs TF) ─────────────────────────────────
     if os.path.exists(tflite_path):
         logger.info("Loading TFLite model from %s …", tflite_path)
-        import tensorflow as tf
-        interpreter = tf.lite.Interpreter(model_path=tflite_path)
-        interpreter.allocate_tensors()
-        _backend = "tflite"
-        logger.info("TFLite model loaded")
-        return interpreter
+        try:
+            import tensorflow as tf
+            interpreter = tf.lite.Interpreter(model_path=tflite_path)
+            interpreter.allocate_tensors()
+            _backend = "tflite"
+            logger.info("TFLite model loaded")
+            return interpreter
+        except Exception as exc:
+            logger.error("TFLite load failed (%s), trying next backend…", exc)
 
     # ── 3. Keras full model (~400 MB RAM) ─────────────────────────────────
     if os.path.exists(h5_path):
         logger.info("Loading Keras model from %s …", h5_path)
-        import tensorflow as tf
-
-        class _PatchedDense(tf.keras.layers.Dense):
-            @classmethod
-            def from_config(cls, config):
-                config.pop("quantization_config", None)
-                return super().from_config(config)
-
         try:
-            model = tf.keras.models.load_model(
-                h5_path, compile=False,
-                custom_objects={"Dense": _PatchedDense},
-            )
-        except Exception:
-            model = tf.keras.models.load_model(h5_path, compile=False)
+            import tensorflow as tf
 
-        _backend = "keras"
-        logger.info("Keras model loaded — input shape: %s", model.input_shape)
-        return model
+            class _PatchedDense(tf.keras.layers.Dense):
+                @classmethod
+                def from_config(cls, config):
+                    config.pop("quantization_config", None)
+                    return super().from_config(config)
+
+            try:
+                model = tf.keras.models.load_model(
+                    h5_path, compile=False,
+                    custom_objects={"Dense": _PatchedDense},
+                )
+            except Exception:
+                model = tf.keras.models.load_model(h5_path, compile=False)
+
+            _backend = "keras"
+            logger.info("Keras model loaded — input shape: %s", model.input_shape)
+            return model
+        except Exception as exc:
+            logger.error("Keras load failed: %s", exc)
+            raise
 
     raise FileNotFoundError(
         f"No model found. Looked for:\n  {onnx_path}\n  {tflite_path}\n  {h5_path}\n"
