@@ -20,8 +20,10 @@ import hashlib
 from pathlib import Path
 
 # ── Config ─────────────────────────────────────────────────────────────────
-MODEL_PATH   = Path("models/best_model.h5")
 MODEL_URL    = os.environ.get("MODEL_URL", "").strip()
+# Auto-detect filename from URL (supports .tflite and .h5)
+_url_filename = MODEL_URL.split("?")[0].split("/")[-1] if MODEL_URL else "best_model.tflite"
+MODEL_PATH   = Path("models") / (_url_filename if _url_filename.endswith((".h5", ".tflite")) else "best_model.tflite")
 MODEL_SHA256 = os.environ.get("MODEL_SHA256", "").strip().lower()  # optional checksum
 MIN_BYTES    = 10 * 1024 * 1024   # anything < 10 MB is probably a placeholder/corrupt
 
