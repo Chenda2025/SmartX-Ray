@@ -41,7 +41,14 @@ def upload_scan():
     from app.services.gradcam import generate_gradcam
 
     t0 = time.time()
-    prediction, confidence, raw_score = predict(save_path)
+    try:
+        prediction, confidence, raw_score = predict(save_path)
+    except FileNotFoundError as exc:
+        current_app.logger.error("AI model file missing: %s", exc)
+        return jsonify({"error": "AI model is not available. Please contact support."}), 503
+    except Exception as exc:
+        current_app.logger.exception("AI prediction failed for %s", filename)
+        return jsonify({"error": "AI analysis failed. Please try again."}), 500
     processing_ms = int((time.time() - t0) * 1000)
 
     heatmap_filename = generate_gradcam(save_path, filename)

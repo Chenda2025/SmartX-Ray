@@ -336,8 +336,26 @@ async function udSubmitScan() {
   try {
     const form = new FormData();
     form.append('file', UD.uploadedFile);
-    const res  = await api.upload('/scan/upload', form);
-    const data = await res.json();
+
+    let res;
+    try {
+      res = await api.upload('/scan/upload', form);
+    } catch (fetchErr) {
+      // True network failure — server unreachable or CORS
+      udShowToast('Network error. Please check your connection.', 'error');
+      console.error('[scan] fetch failed:', fetchErr);
+      return;
+    }
+
+    // Try to parse JSON — server may return HTML on a 500 crash
+    let data;
+    try {
+      data = await res.json();
+    } catch (jsonErr) {
+      udShowToast(`Server error (${res.status}). Please try again or contact support.`, 'error');
+      console.error('[scan] non-JSON response, status:', res.status, jsonErr);
+      return;
+    }
 
     if (!res.ok) {
       udShowToast(data.error || 'Upload failed. Please try again.', 'error');
@@ -361,8 +379,8 @@ async function udSubmitScan() {
 
     udClearPreview();
   } catch (err) {
-    udShowToast('Network error. Please check your connection.', 'error');
-    console.error(err);
+    udShowToast('Unexpected error. Please try again.', 'error');
+    console.error('[scan] unexpected error:', err);
   } finally {
     document.getElementById('udAnalyseBtn').disabled = false;
     document.getElementById('udLoading').classList.remove('visible');
