@@ -53,8 +53,8 @@ def create_checkout():
         payment_method_types=["card"],
         line_items=[{"price": price_id, "quantity": 1}],
         mode="subscription",
-        success_url=f"{data.get('success_url', 'http://localhost:5000/dashboard')}?session_id={{CHECKOUT_SESSION_ID}}",
-        cancel_url=data.get("cancel_url", "http://localhost:5000/pricing"),
+        success_url=f"{data.get('success_url', current_app.config.get('APP_BASE_URL', 'https://smartxray.onrender.com') + '/dashboard')}?session_id={{CHECKOUT_SESSION_ID}}",
+        cancel_url=data.get("cancel_url", current_app.config.get("APP_BASE_URL", "https://smartxray.onrender.com") + "/pricing"),
         metadata={"user_id": user.id, "plan": plan},
     )
 

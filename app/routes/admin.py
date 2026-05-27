@@ -25,11 +25,11 @@ from app.utils.auth_guard import admin_required
 
 
 def _base_url() -> str:
-    """Return APP_BASE_URL config or fallback to localhost."""
+    """Return APP_BASE_URL config or fallback to the production URL."""
     try:
-        return current_app.config.get("APP_BASE_URL", "http://localhost:5000")
+        return current_app.config.get("APP_BASE_URL", "https://smartxray.onrender.com").rstrip("/")
     except RuntimeError:
-        return "http://localhost:5000"
+        return "https://smartxray.onrender.com"
 
 # ── Blueprints ─────────────────────────────────────────────────────────────
 admin_bp     = Blueprint("admin",     __name__)   # HTML pages

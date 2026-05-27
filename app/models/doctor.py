@@ -6,6 +6,11 @@ class Doctor(db.Model):
     __tablename__ = "doctors"
 
     id              = db.Column(db.Integer, primary_key=True)
+
+    # FK to users table (linked doctor-portal account) — added by migration c004
+    user_id         = db.Column(db.Integer, db.ForeignKey("users.id", ondelete="SET NULL"),
+                                nullable=True, index=True)
+
     full_name       = db.Column(db.String(255), nullable=False)
     specialty       = db.Column(db.String(255), nullable=False)   # e.g. Pulmonologist
     qualifications  = db.Column(db.String(512))                   # MBBS, MD, etc.
@@ -17,17 +22,31 @@ class Doctor(db.Model):
     website         = db.Column(db.String(512))
     bio             = db.Column(db.Text)
     avatar_url      = db.Column(db.String(512))
+    photo_url       = db.Column(db.String(512))         # alias used by c004 routes
     google_maps_url = db.Column(db.String(1024))
 
     # Rating (aggregate — updated via trigger or app logic)
     rating          = db.Column(db.Float, default=0.0)
     review_count    = db.Column(db.Integer, default=0)
 
-    # Doctor-portal fields (used by /doctor/dashboard)
+    # Extended rating fields — added by migration c004
+    avg_rating      = db.Column(db.Numeric(3, 2), default=0.0)
+    total_reviews   = db.Column(db.Integer, default=0)
+    total_earnings  = db.Column(db.Numeric(12, 2), default=0.0)
+    experience_years = db.Column(db.Integer)
+
+    # Doctor-portal fields (c002 + c004)
     license_no        = db.Column(db.String(100))
+    license_number    = db.Column(db.String(100))      # c004 alias of license_no
     rate_per_session  = db.Column(db.Float, default=0.0)       # USD per session
     availability      = db.Column(db.String(255))              # e.g. "Mon–Fri 9–5"
-    rejection_reason  = db.Column(db.Text)                     # set by admin on reject
+    university        = db.Column(db.String(255))              # c004
+
+    # Rejection / review metadata
+    rejection_reason  = db.Column(db.Text)             # set by admin (c002 name)
+    reject_reason     = db.Column(db.Text)             # c004 alias
+    reviewed_by       = db.Column(db.Integer)          # admin user id
+    reviewed_at       = db.Column(db.DateTime(timezone=True))
 
     # Visibility flags
     is_verified     = db.Column(db.Boolean, default=False, nullable=False)
@@ -40,7 +59,7 @@ class Doctor(db.Model):
 
     @property
     def status(self) -> str:
-        """Derive dashboard state from flags."""
+        """Derive dashboard state from flags (source of truth: is_verified + is_active)."""
         if self.is_verified and self.is_active:
             return "approved"
         if self.is_active:
@@ -50,6 +69,7 @@ class Doctor(db.Model):
     def to_dict(self) -> dict:
         return {
             "id":               self.id,
+            "user_id":          self.user_id,
             "full_name":        self.full_name,
             "specialty":        self.specialty,
             "qualifications":   self.qualifications,
@@ -61,13 +81,17 @@ class Doctor(db.Model):
             "email":            self.email,
             "website":          self.website,
             "bio":              self.bio,
-            "avatar_url":       self.avatar_url,
+            "avatar_url":       self.avatar_url or self.photo_url,
             "google_maps_url":  self.google_maps_url,
             "rating":           self.rating,
             "review_count":     self.review_count,
+            "avg_rating":       float(self.avg_rating or self.rating or 0),
+            "total_reviews":    self.total_reviews or self.review_count,
+            "experience_years": self.experience_years,
+            "university":       self.university,
             "rate_per_session": self.rate_per_session,
             "availability":     self.availability,
-            "rejection_reason": self.rejection_reason,
+            "rejection_reason": self.rejection_reason or self.reject_reason,
             "is_verified":      self.is_verified,
             "is_featured":      self.is_featured,
             "is_active":        self.is_active,

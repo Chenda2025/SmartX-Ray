@@ -41,15 +41,6 @@ from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
 
-# ── base URL for email links (override via APP_BASE_URL env var) ──────────────
-_BASE_URL = "http://localhost:5000"
-
-try:
-    from flask import current_app
-    _BASE_URL = current_app.config.get("APP_BASE_URL", _BASE_URL)
-except Exception:
-    pass
-
 
 # ════════════════════════════════════════════════════════════════════════════
 #  UTILS
@@ -75,9 +66,9 @@ def _base_url() -> str:
     """Return the app base URL from config (with runtime lookup)."""
     try:
         from flask import current_app
-        return current_app.config.get("APP_BASE_URL", _BASE_URL)
+        return current_app.config.get("APP_BASE_URL", "https://smartxray.onrender.com").rstrip("/")
     except Exception:
-        return _BASE_URL
+        return "https://smartxray.onrender.com"
 
 
 # ════════════════════════════════════════════════════════════════════════════

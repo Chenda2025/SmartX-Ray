@@ -31,7 +31,7 @@ Backward compat:
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from functools import wraps
 
 from flask import current_app, jsonify, g

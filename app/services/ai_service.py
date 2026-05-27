@@ -158,6 +158,13 @@ def predict(image_path: str) -> tuple[str, float, float]:
     return label, confidence, raw
 
 
+# ── Backend accessor ───────────────────────────────────────────────────────
+
+def get_backend() -> str | None:
+    """Return the active backend string: 'onnx', 'tflite', or 'keras'."""
+    return _backend
+
+
 # ── Grad-CAM support (Keras backend only) ─────────────────────────────────
 
 def get_last_conv_layer_name() -> str | None:

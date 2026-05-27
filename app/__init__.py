@@ -152,7 +152,6 @@ def create_app(env: str | None = None) -> Flask:
             checks["database"] = "error"
         try:
             from app.services.ai_service import _model, _backend
-            import app.services.ai_service as _ai
             h5_path     = app.config.get("MODEL_PATH", "")
             onnx_path   = h5_path.replace(".h5", ".onnx")
             tflite_path = h5_path.replace(".h5", ".tflite")

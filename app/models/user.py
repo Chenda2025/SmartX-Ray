@@ -14,6 +14,7 @@ class User(db.Model):
     is_active      = db.Column(db.Boolean, default=True, nullable=False)
     is_verified    = db.Column(db.Boolean, default=False, nullable=False)
     is_admin       = db.Column(db.Boolean, default=False, nullable=False)
+    role           = db.Column(db.String(20), nullable=False, default="patient")  # patient | admin
     university     = db.Column(db.String(100))  # RUPP | IU | NUM | AUSF | UHS | other
     avatar_url     = db.Column(db.String(512))
     scans_today    = db.Column(db.Integer, default=0, nullable=False)
@@ -45,6 +46,7 @@ class User(db.Model):
             "email":       self.email,
             "full_name":   self.full_name,
             "tier":        self.tier,
+            "role":        self.role,
             "is_active":   self.is_active,
             "is_admin":    self.is_admin,
             "university":  self.university,
