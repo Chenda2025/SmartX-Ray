@@ -58,6 +58,18 @@ services:
       - key: TELEGRAM_CHAT_ID
         sync: false
 
+      # ── Admin account (created by scripts/create_admin.py at deploy time) ──
+      - key: ADMIN_EMAIL
+        sync: false       # e.g. admin@smartxray.com
+      - key: ADMIN_PASSWORD
+        sync: false       # strong password
+      - key: ADMIN_NAME
+        value: Admin
+
+      # ── Public base URL (used in emails and Stripe redirects) ─────────────
+      - key: APP_BASE_URL
+        sync: false       # e.g. https://smartxray.onrender.com  (no trailing slash)
+
       # ── Stripe (leave blank to disable payments) ──────────────────────────
       - key: STRIPE_SECRET_KEY
         sync: false
