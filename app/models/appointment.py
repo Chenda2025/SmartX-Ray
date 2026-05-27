@@ -49,7 +49,7 @@ class Appointment(db.Model):
             "duration_min":     self.duration_min,
             "note":             self.patient_note or self.note,
             "status":           self.status,
-            "fee_amount":       float(self.fee_amount or self.fee_snapshot or 0),
+            "fee_amount":       float(self.fee_amount if self.fee_amount is not None else self.fee_snapshot if self.fee_snapshot is not None else 0),
             "meeting_link":     self.meeting_link,
             "payment_method":   self.payment_method,
             "payment_status":   self.payment_status,

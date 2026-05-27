@@ -24,7 +24,9 @@ def app():
         _db.create_all()
         _seed_base_data()
         yield application
-        _db.drop_all()
+        # Use CASCADE so dependent tables (reviews, etc.) don't block drop_all
+        _db.session.execute(_db.text("DROP SCHEMA public CASCADE; CREATE SCHEMA public;"))
+        _db.session.commit()
 
 
 def _seed_base_data():
@@ -61,6 +63,9 @@ def client(app):
 @pytest.fixture()
 def free_user(app):
     with app.app_context():
+        # Delete any leftover from a previous interrupted run, then create fresh
+        _db.session.query(User).filter_by(email="free@test.com").delete()
+        _db.session.commit()
         u = User(email="free@test.com", full_name="Free User", tier="free")
         u.set_password("password123")
         _db.session.add(u)
@@ -73,6 +78,9 @@ def free_user(app):
 @pytest.fixture()
 def pro_user(app):
     with app.app_context():
+        # Delete any leftover from a previous interrupted run, then create fresh
+        _db.session.query(User).filter_by(email="pro@test.com").delete()
+        _db.session.commit()
         u = User(email="pro@test.com", full_name="Pro User", tier="pro")
         u.set_password("password123")
         _db.session.add(u)

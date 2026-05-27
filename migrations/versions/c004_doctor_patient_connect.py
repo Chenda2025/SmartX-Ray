@@ -65,7 +65,13 @@ def upgrade():
         ('avg_rating',        sa.Numeric(3, 2),    True),
         ('total_reviews',     sa.Integer(),        True),
         ('total_earnings',    sa.Numeric(12, 2),   True),
+        # c002 columns — ensure they exist even on DBs that skipped c002
+        ('license_no',        sa.String(100),      True),
         ('license_number',    sa.String(100),      True),
+        ('rejection_reason',  sa.Text(),           True),
+        ('rate_per_session',  sa.Numeric(10, 2),   True),
+        ('availability',      sa.String(255),      True),
+        # c004 columns
         ('reject_reason',     sa.Text(),           True),
         ('reviewed_by',       sa.Integer(),        True),
         ('reviewed_at',       sa.DateTime(timezone=True), True),
@@ -95,11 +101,12 @@ def upgrade():
         WHERE avg_rating IS NULL
     """))
 
-    # license_number ← license_no back-fill
-    op.execute(text("""
-        UPDATE doctors SET license_number = license_no
-        WHERE license_number IS NULL AND license_no IS NOT NULL
-    """))
+    # license_number ← license_no back-fill (only if legacy column exists)
+    if _column_exists('doctors', 'license_no'):
+        op.execute(text("""
+            UPDATE doctors SET license_number = license_no
+            WHERE license_number IS NULL AND license_no IS NOT NULL
+        """))
 
     # user_id FK: add constraint if not already there
     bind = op.get_bind()

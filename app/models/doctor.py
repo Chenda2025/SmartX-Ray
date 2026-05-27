@@ -85,7 +85,7 @@ class Doctor(db.Model):
             "google_maps_url":  self.google_maps_url,
             "rating":           self.rating,
             "review_count":     self.review_count,
-            "avg_rating":       float(self.avg_rating or self.rating or 0),
+            "avg_rating":       float(self.avg_rating if self.avg_rating is not None else self.rating if self.rating is not None else 0),
             "total_reviews":    self.total_reviews or self.review_count,
             "experience_years": self.experience_years,
             "university":       self.university,

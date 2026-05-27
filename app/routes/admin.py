@@ -166,6 +166,7 @@ def _build_flow_stats() -> dict:
 
 
 @admin_bp.route("/system-flow")
+@admin_required
 def admin_system_flow_page():
     """System Flow — real-world actor interaction, all stats live from DB."""
     return render_template(
@@ -176,6 +177,7 @@ def admin_system_flow_page():
 
 
 @admin_bp.route("/presentation")
+@admin_required
 def admin_presentation_page():
     """Slide-deck presentation with 10 slides, fullscreen, keyboard nav."""
     return render_template(
@@ -186,6 +188,7 @@ def admin_presentation_page():
 
 
 @admin_bp.route("/slides")
+@admin_required
 def admin_slides_page():
     """
     12-slide deck for teacher presentation — dark navy theme.

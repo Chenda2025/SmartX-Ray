@@ -89,7 +89,7 @@ SmartX-Ray/
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example
-└── run.py
+└── app.py              # thin runner for `python app.py` (local only)
 ```
 
 ---
@@ -151,7 +151,9 @@ Ensure `models/best_model.h5` exists (already committed or download separately).
 ### 5. Run the app
 
 ```bash
-python run.py
+flask run
+# or: python app.py
+# or: gunicorn 'app:create_app()' --bind 0.0.0.0:5000 --workers 2 --timeout 120
 ```
 
 Visit **http://localhost:5000**

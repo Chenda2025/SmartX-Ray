@@ -62,7 +62,7 @@ def send_scan_result(user, scan) -> None:
     </p>
     <p>Confidence: <strong>{conf}%</strong></p>
     {"<p>A PDF report has been generated in your dashboard.</p>" if scan.report_id else ""}
-    <p><a href="{base}/dashboard">View full result with heatmap →</a></p>
+    <p><a href="{base}/scan/{scan.id}">View full result with heatmap →</a></p>
     <hr>
     <small><em>This is an AI-assisted result. Always consult a qualified physician.</em></small>
     """
