@@ -1050,15 +1050,18 @@ function ddOpenPatientInfo(aptId) {
     const scol   = isPneu ? '#DC2626' : '#059669';
     const sbg    = isPneu ? '#FEF2F2' : '#ECFDF5';
     const conf   = parseFloat(sc.confidence || 0).toFixed(1);
-    const fallbackDiv = `<div style="background:#1E293B;border-radius:8px;height:100px;display:flex;
-             align-items:center;justify-content:center;color:#64748B;">
-           <i class="ti ti-x-ray" style="font-size:2rem;"></i>
-         </div>`;
     const imgHtml = sc.image_url
       ? `<img src="${_ddEsc(sc.image_url)}" alt="X-ray"
              style="width:100%;border-radius:8px;max-height:200px;object-fit:contain;background:#0F172A;"
-             onerror="this.replaceWith(document.createRange().createContextualFragment(${JSON.stringify(fallbackDiv)}))" />`
-      : fallbackDiv;
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+         <div style="display:none;background:#1E293B;border-radius:8px;height:100px;
+                     align-items:center;justify-content:center;color:#64748B;">
+           <i class="ti ti-x-ray" style="font-size:2rem;"></i>
+         </div>`
+      : `<div style="background:#1E293B;border-radius:8px;height:100px;display:flex;
+                     align-items:center;justify-content:center;color:#64748B;">
+           <i class="ti ti-x-ray" style="font-size:2rem;"></i>
+         </div>`;
     const pdfBtn = sc.report_url
       ? `<button onclick="ddDownloadScanReport(${a.appointment_id})"
              style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;

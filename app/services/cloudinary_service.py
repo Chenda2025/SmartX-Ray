@@ -28,7 +28,7 @@ def _configure():
 
 def upload_image(local_path: str, folder: str = "smartxray") -> str | None:
     """
-    Upload a local file to Cloudinary.
+    Upload a local image file to Cloudinary.
     Returns the HTTPS URL, or None if Cloudinary is not configured / upload fails.
     """
     if not is_configured():
@@ -47,6 +47,30 @@ def upload_image(local_path: str, folder: str = "smartxray") -> str | None:
         return url
     except Exception:
         logger.exception("Cloudinary upload failed for %s", local_path)
+        return None
+
+
+def upload_file(local_path: str, folder: str = "smartxray") -> str | None:
+    """
+    Upload any file (PDF, etc.) to Cloudinary using resource_type='raw'.
+    Returns the HTTPS URL, or None if not configured / upload fails.
+    """
+    if not is_configured():
+        return None
+    try:
+        _configure()
+        import cloudinary.uploader
+        result = cloudinary.uploader.upload(
+            local_path,
+            folder=folder,
+            resource_type="raw",
+            overwrite=True,
+        )
+        url = result.get("secure_url")
+        logger.info("Cloudinary file upload OK → %s", url)
+        return url
+    except Exception:
+        logger.exception("Cloudinary file upload failed for %s", local_path)
         return None
 
 

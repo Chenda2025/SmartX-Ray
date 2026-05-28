@@ -720,14 +720,30 @@ def download_attached_scan_report(apt_id):
     if not report:
         return jsonify({"error": "Report not found."}), 404
 
+    report.download_count = (report.download_count or 0) + 1
+    db.session.commit()
+
+    # Cloudinary-stored PDF — proxy the bytes back so the JWT auth header is honoured
+    if report.file_path.startswith("http"):
+        import requests as _req
+        try:
+            r = _req.get(report.file_path, timeout=15)
+            r.raise_for_status()
+        except Exception:
+            return jsonify({"error": "Could not fetch report from cloud storage."}), 502
+        from flask import Response
+        return Response(
+            r.content,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="scan_report_apt{apt_id}.pdf"'},
+        )
+
+    # Local file fallback
     abs_path = os.path.join(
         current_app.root_path, "..", "static", report.file_path
     )
     if not os.path.exists(abs_path):
         return jsonify({"error": "Report file not found on server."}), 404
-
-    report.download_count = (report.download_count or 0) + 1
-    db.session.commit()
 
     return send_file(abs_path, mimetype="application/pdf",
                      as_attachment=True,

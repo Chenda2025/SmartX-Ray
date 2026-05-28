@@ -8,7 +8,11 @@ from app.models.ad import Ad
 from app.models.report import Report
 from app.utils.auth_guard import jwt_required_user, pro_required, _get_current_user, check_scan_quota
 from app.utils.validators import allowed_image
-from app.services.cloudinary_service import upload_image as _cloud_upload, delete_image as _cloud_delete
+from app.services.cloudinary_service import (
+    upload_image as _cloud_upload,
+    upload_file  as _cloud_upload_file,
+    delete_image as _cloud_delete,
+)
 
 
 def _image_url(path: str | None) -> str | None:
@@ -121,9 +125,13 @@ def upload_scan():
             pdf_filename, pdf_size = generate_report(
                 scan, user, current_app.config["REPORT_FOLDER"]
             )
+            pdf_abs = os.path.join(current_app.config["REPORT_FOLDER"], pdf_filename)
+            cloud_pdf_url = _cloud_upload_file(pdf_abs, folder="smartxray/reports")
+            stored_pdf_path = cloud_pdf_url or f"reports/{pdf_filename}"
+
             report = Report(
                 user_id   = user.id,
-                file_path = f"reports/{pdf_filename}",
+                file_path = stored_pdf_path,
                 file_size = pdf_size,
                 summary   = f"{prediction} detected with {round(confidence*100,2)}% confidence.",
             )
@@ -241,6 +249,22 @@ def download_report(report_id):
     from datetime import datetime, timezone
     report.last_downloaded_at = datetime.now(timezone.utc)
     db.session.commit()
+
+    # Cloudinary-stored PDF
+    if report.file_path.startswith("http"):
+        import requests as _req
+        from flask import Response
+        try:
+            r = _req.get(report.file_path, timeout=15)
+            r.raise_for_status()
+        except Exception:
+            return jsonify({"error": "Could not fetch report from cloud storage."}), 502
+        filename = os.path.basename(report.file_path.split("?")[0])
+        return Response(
+            r.content,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        )
 
     reports_dir = current_app.config["REPORT_FOLDER"]
     filename    = os.path.basename(report.file_path)
