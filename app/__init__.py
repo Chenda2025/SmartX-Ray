@@ -292,4 +292,13 @@ def create_app(env: str | None = None) -> Flask:
         db.session.commit()
         click.echo(f"✓ Reset quota for {n} free user(s).")
 
+    # ── Pre-load AI model at worker startup (avoids first-request timeout) ──
+    with app.app_context():
+        try:
+            from app.services.ai_service import get_model
+            get_model()
+            logger.info("AI model pre-loaded at startup")
+        except Exception as exc:
+            logger.warning("AI model not available at startup (scans disabled): %s", exc)
+
     return app
