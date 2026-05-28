@@ -65,7 +65,8 @@ const Auth = {
 
   async login(email, password) {
     const res  = await api.post("/auth/login", { email, password });
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
     if (!res.ok) throw new Error(data.error || "Login failed.");
     Token.save(data.access_token, data.refresh_token);
     User.save(data.user);
@@ -74,7 +75,8 @@ const Auth = {
 
   async register(email, password, full_name) {
     const res  = await api.post("/auth/register", { email, password, full_name });
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
     if (!res.ok) throw new Error(data.error || "Registration failed.");
     Token.save(data.access_token, data.refresh_token);
     User.save(data.user);
@@ -83,7 +85,8 @@ const Auth = {
 
   async me() {
     const res  = await api.get("/auth/me");
-    const data = await res.json();
+    let data = {};
+    try { data = await res.json(); } catch (_) {}
     if (res.ok) User.save(data);
     return data;
   },
