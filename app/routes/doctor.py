@@ -19,6 +19,7 @@ Admin approve/reject live in:
 from __future__ import annotations
 
 from datetime import date, datetime, timezone, timedelta
+from app.utils.time_utils import cambodia_today
 
 import os
 from flask import Blueprint, current_app, g, jsonify, request
@@ -346,7 +347,7 @@ def doctor_dashboard():
     doctor: Doctor = g.current_doctor
     user:   User   = g.current_user
 
-    today       = date.today()
+    today       = cambodia_today()
     month_start = today.replace(day=1)
 
     # ── Import models locally to avoid circular imports ───────────────
@@ -693,7 +694,7 @@ def get_stats():
     doctor = g.current_doctor
     from app.models.appointment import Appointment
 
-    today       = date.today()
+    today       = cambodia_today()
     month_start = today.replace(day=1)
     fee_col     = _get_fee_col()
     patient_col = _get_patient_col()

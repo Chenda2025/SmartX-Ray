@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from app.utils.time_utils import cambodia_now, fmt_ict
 
 logger = logging.getLogger(__name__)
 
@@ -58,8 +59,8 @@ def generate_meeting_link(appointment_id: int) -> str:
 
 
 def _ts() -> str:
-    """Return current UTC timestamp as a formatted string."""
-    return datetime.now(timezone.utc).strftime("%d %b %Y  %H:%M UTC")
+    """Return current Cambodia (ICT) timestamp as a formatted string."""
+    return cambodia_now().strftime("%d %b %Y  %H:%M ICT")
 
 
 def _base_url() -> str:

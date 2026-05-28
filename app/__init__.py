@@ -3,6 +3,7 @@ import logging
 import click
 import platform
 from datetime import datetime, timezone
+from app.utils.time_utils import cambodia_now
 from flask import Flask, jsonify, request
 from config import config_map
 from app.extensions import db, migrate, jwt, cors, mail
@@ -184,7 +185,7 @@ def create_app(env: str | None = None) -> Flask:
             "version":   "1.0.0",
             "env":       app.config.get("ENV", env),
             "python":    platform.python_version(),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": cambodia_now().isoformat(),
         }
 
         # Return HTML when opened in a browser; JSON for API/curl clients

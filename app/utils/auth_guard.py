@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from app.utils.time_utils import cambodia_now, cambodia_today
 from functools import wraps
 
 from flask import current_app, jsonify, g
@@ -347,14 +348,14 @@ def jwt_required_user(fn):
 def check_scan_quota(user) -> tuple[bool, str | None]:
     """
     Returns (allowed: bool, error_msg: str | None).
-    Resets daily counter if it's a new UTC day.
+    Resets daily counter if it's a new Cambodia day (ICT, UTC+7).
     Pro users are never rate-limited.
     """
     if user.is_pro:
         return True, None
 
-    now = datetime.now(timezone.utc)
-    if not user.scans_reset_at or user.scans_reset_at.date() < now.date():
+    now = cambodia_now()
+    if not user.scans_reset_at or user.scans_reset_at.astimezone(now.tzinfo).date() < now.date():
         user.scans_today = 0
         user.scans_reset_at = now
         db.session.flush()
