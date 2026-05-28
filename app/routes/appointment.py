@@ -863,7 +863,23 @@ def _format_apt_for_patient(a: Appointment) -> dict:
                     "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
                 }
         except Exception:
-            pass
+            db.session.rollback()
+            try:
+                from app.models.scan import Scan as ScanModel
+                s = db.session.get(ScanModel, scan_id)
+                if s:
+                    attached_scan = {
+                        "id":          s.id,
+                        "prediction":  s.prediction,
+                        "confidence":  round(s.confidence * 100, 2),
+                        "created_at":  s.created_at.isoformat() if s.created_at else None,
+                        "report_id":   s.report_id,
+                        "report_url":  f"/api/scan/report/{s.report_id}/download" if s.report_id else None,
+                        "image_url":   f"/static/{s.image_path}" if s.image_path else None,
+                        "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
+                    }
+            except Exception:
+                pass
 
     return {
         "id":              a.id,

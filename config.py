@@ -21,6 +21,12 @@ class Config:
     )
     SQLALCHEMY_DATABASE_URI = _db_url.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,   # test connection before use — prevents SSL EOF errors
+        "pool_recycle":  300,    # recycle connections every 5 min (Render drops idle ones)
+        "pool_timeout":  30,
+        "connect_args":  {"connect_timeout": 10},
+    }
 
     # ── JWT ────────────────────────────────────────────────────────────────
     JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "jwt-secret-change-me")

@@ -861,10 +861,13 @@ def _format_appointment(a) -> dict:
     patient_name  = "—"
     patient_email = ""
     if patient_id:
-        patient = db.session.get(UserModel, patient_id)
-        if patient:
-            patient_name  = patient.full_name or patient.email
-            patient_email = patient.email or ""
+        try:
+            patient = db.session.get(UserModel, patient_id)
+            if patient:
+                patient_name  = patient.full_name or patient.email
+                patient_email = patient.email or ""
+        except Exception:
+            db.session.rollback()
 
     # Meeting link — upgrade old fake Google Meet links to real Jitsi rooms
     meeting_link = getattr(a, "meeting_link", None)
@@ -912,7 +915,23 @@ def _format_appointment(a) -> dict:
                     "report_url":  f"/api/appointments/{a.id}/scan-report" if s.report_id else None,
                 }
         except Exception:
-            pass
+            db.session.rollback()
+            try:  # one retry after rollback (recovers from dropped SSL connection)
+                from app.models.scan import Scan as ScanModel
+                s = db.session.get(ScanModel, scan_id)
+                if s:
+                    attached_scan = {
+                        "id":          s.id,
+                        "prediction":  s.prediction,
+                        "confidence":  round(s.confidence * 100, 2),
+                        "created_at":  s.created_at.isoformat() if s.created_at else None,
+                        "image_url":   f"/static/{s.image_path}" if s.image_path else None,
+                        "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
+                        "report_id":   s.report_id,
+                        "report_url":  f"/api/appointments/{a.id}/scan-report" if s.report_id else None,
+                    }
+            except Exception:
+                pass
 
     return {
         "appointment_id":  a.id,
