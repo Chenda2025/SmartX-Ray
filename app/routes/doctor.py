@@ -180,6 +180,72 @@ def register_doctor():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# ROUTE — POST /api/doctor/claim
+# Admin-created doctors set their password here (no User account yet).
+# ─────────────────────────────────────────────────────────────────────────────
+
+@doctor_bp.route("/claim", methods=["POST"])
+def claim_account():
+    """
+    Body: { email, password }
+    Returns:
+      201 { access_token, refresh_token, doctor, user }  — success
+      400 { error }                                       — validation
+      404 { error }                                       — no doctor profile
+      409 { error }                                       — account already exists
+    """
+    data     = request.get_json(silent=True) or {}
+    email    = (data.get("email")    or "").strip().lower()
+    password = (data.get("password") or "")
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required."}), 400
+
+    err = validate_password(password)
+    if err:
+        return jsonify({"error": err}), 400
+
+    doctor = Doctor.query.filter_by(email=email).first()
+    if not doctor:
+        return jsonify({"error": "No doctor profile found for this email."}), 404
+
+    if User.query.filter_by(email=email).first():
+        return jsonify({"error": "Account already claimed. Please log in instead."}), 409
+
+    is_approved = doctor.is_verified and doctor.is_active
+    user = User(
+        email       = email,
+        full_name   = doctor.full_name,
+        tier        = "pro",
+        is_active   = is_approved,
+        is_verified = is_approved,
+    )
+    try:
+        user.role = "doctor"
+    except AttributeError:
+        pass
+    user.set_password(password)
+    db.session.add(user)
+    db.session.flush()
+
+    _safe_set(doctor, "user_id", user.id)
+    db.session.commit()
+
+    access  = create_access_token(
+        identity          = str(user.id),
+        additional_claims = {"role": "doctor", "doctor_id": doctor.id},
+    )
+    refresh = create_refresh_token(identity=str(user.id))
+
+    return jsonify({
+        "access_token":  access,
+        "refresh_token": refresh,
+        "user":          user.to_dict(),
+        "doctor":        doctor.to_dict(),
+    }), 201
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # ROUTE 4 — POST /api/doctor/login
 # Doctor-specific login with status checks.
 # Blocks pending and rejected accounts with structured error codes.

@@ -924,7 +924,7 @@ async function dlLogin() {
   dlSetLoading('dlLoginBtn','dlSpinner2L', null, true);
 
   try {
-    const res  = await fetch('/api/auth/login', {
+    const res  = await fetch('/api/doctor/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: DL.email, password: pw }),
