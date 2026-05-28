@@ -28,6 +28,7 @@ stripe==10.5.0
 python-dotenv==1.0.1
 requests==2.32.3
 gunicorn==22.0.0
+cloudinary==1.41.0
 
 # Security
 PyJWT==2.8.0

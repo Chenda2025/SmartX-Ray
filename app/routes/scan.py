@@ -8,6 +8,17 @@ from app.models.ad import Ad
 from app.models.report import Report
 from app.utils.auth_guard import jwt_required_user, pro_required, _get_current_user, check_scan_quota
 from app.utils.validators import allowed_image
+from app.services.cloudinary_service import upload_image as _cloud_upload, delete_image as _cloud_delete
+
+
+def _image_url(path: str | None) -> str | None:
+    """Resolve a stored image path to a public URL.
+    Cloudinary URLs are stored as full https:// strings.
+    Legacy local paths are relative (e.g. 'uploads/abc.jpg').
+    """
+    if not path:
+        return None
+    return path if path.startswith("http") else f"/static/{path}"
 
 scan_bp = Blueprint("scan", __name__)
 
@@ -53,11 +64,23 @@ def upload_scan():
 
     heatmap_filename = generate_gradcam(save_path, filename)
 
+    # ── Upload to Cloudinary (persists across Render redeployments) ───────
+    heatmap_abs = None
+    if heatmap_filename:
+        heatmap_abs = os.path.join(current_app.config["HEATMAP_FOLDER"], heatmap_filename)
+
+    cloud_image_url   = _cloud_upload(save_path,    folder="smartxray/scans")
+    cloud_heatmap_url = _cloud_upload(heatmap_abs,  folder="smartxray/heatmaps") if heatmap_abs else None
+
+    # Prefer Cloudinary URL; fall back to local relative path
+    stored_image_path   = cloud_image_url   or f"uploads/{filename}"
+    stored_heatmap_path = cloud_heatmap_url or (f"heatmaps/{heatmap_filename}" if heatmap_filename else None)
+
     # ── Persist scan record ───────────────────────────────────────────────
     scan = Scan(
         user_id       = user.id,
-        image_path    = f"uploads/{filename}",
-        heatmap_path  = f"heatmaps/{heatmap_filename}" if heatmap_filename else None,
+        image_path    = stored_image_path,
+        heatmap_path  = stored_heatmap_path,
         prediction    = prediction,
         confidence    = confidence,
         raw_score     = raw_score,
@@ -86,8 +109,8 @@ def upload_scan():
 
     # ── Build response ────────────────────────────────────────────────────
     result = scan.to_dict(include_paths=True)
-    result["image_url"]   = f"/static/uploads/{filename}"
-    result["heatmap_url"] = f"/static/heatmaps/{heatmap_filename}" if heatmap_filename else None
+    result["image_url"]   = _image_url(scan.image_path)
+    result["heatmap_url"] = _image_url(scan.heatmap_path)
 
     # ── Pro: auto-generate PDF report ────────────────────────────────────
     if user.is_pro:
@@ -168,8 +191,8 @@ def get_scan(scan_id):
         return jsonify({"error": "Scan not found."}), 404
 
     result = scan.to_dict(include_paths=True)
-    result["image_url"]   = f"/static/{scan.image_path}"
-    result["heatmap_url"] = f"/static/{scan.heatmap_path}" if scan.heatmap_path else None
+    result["image_url"]   = _image_url(scan.image_path)
+    result["heatmap_url"] = _image_url(scan.heatmap_path)
 
     # Link to report if one exists (Pro)
     if scan.report_id:
@@ -188,10 +211,14 @@ def delete_scan(scan_id):
     if not scan or scan.user_id != user.id:
         return jsonify({"error": "Scan not found."}), 404
 
-    # Remove physical files
-    for rel_path in (scan.image_path, scan.heatmap_path):
-        if rel_path:
-            abs_path = os.path.join(current_app.root_path, "..", "static", rel_path)
+    # Remove from Cloudinary (full URLs) or local disk (relative paths)
+    for path in (scan.image_path, scan.heatmap_path):
+        if not path:
+            continue
+        if path.startswith("http"):
+            _cloud_delete(path)
+        else:
+            abs_path = os.path.join(current_app.root_path, "..", "static", path)
             if os.path.exists(abs_path):
                 os.remove(abs_path)
 

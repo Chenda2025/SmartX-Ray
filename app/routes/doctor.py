@@ -36,6 +36,27 @@ from app.models.doctor import Doctor
 from app.models.user import User
 from app.utils.auth_guard import doctor_required
 from app.utils.validators import validate_email, validate_password
+from app.services.cloudinary_service import is_configured as _cloud_configured
+
+
+def _resolve_url(path: str | None) -> str | None:
+    """Return a public URL for a stored image path (Cloudinary or local)."""
+    if not path:
+        return None
+    return path if path.startswith("http") else f"/static/{path}"
+
+
+def _build_scan_dict(s, apt_id: int) -> dict:
+    return {
+        "id":          s.id,
+        "prediction":  s.prediction,
+        "confidence":  round(s.confidence * 100, 2),
+        "created_at":  s.created_at.isoformat() if s.created_at else None,
+        "image_url":   _resolve_url(s.image_path),
+        "heatmap_url": _resolve_url(s.heatmap_path),
+        "report_id":   s.report_id,
+        "report_url":  f"/api/appointments/{apt_id}/scan-report" if s.report_id else None,
+    }
 
 doctor_bp = Blueprint("doctor", __name__)
 
@@ -904,32 +925,14 @@ def _format_appointment(a) -> dict:
             from app.models.scan import Scan as ScanModel
             s = db.session.get(ScanModel, scan_id)
             if s:
-                attached_scan = {
-                    "id":          s.id,
-                    "prediction":  s.prediction,
-                    "confidence":  round(s.confidence * 100, 2),
-                    "created_at":  s.created_at.isoformat() if s.created_at else None,
-                    "image_url":   f"/static/{s.image_path}" if s.image_path else None,
-                    "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
-                    "report_id":   s.report_id,
-                    "report_url":  f"/api/appointments/{a.id}/scan-report" if s.report_id else None,
-                }
+                attached_scan = _build_scan_dict(s, a.id)
         except Exception:
             db.session.rollback()
             try:  # one retry after rollback (recovers from dropped SSL connection)
                 from app.models.scan import Scan as ScanModel
                 s = db.session.get(ScanModel, scan_id)
                 if s:
-                    attached_scan = {
-                        "id":          s.id,
-                        "prediction":  s.prediction,
-                        "confidence":  round(s.confidence * 100, 2),
-                        "created_at":  s.created_at.isoformat() if s.created_at else None,
-                        "image_url":   f"/static/{s.image_path}" if s.image_path else None,
-                        "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
-                        "report_id":   s.report_id,
-                        "report_url":  f"/api/appointments/{a.id}/scan-report" if s.report_id else None,
-                    }
+                    attached_scan = _build_scan_dict(s, a.id)
             except Exception:
                 pass
 
