@@ -745,10 +745,12 @@ function udRenderDoctors() {
 function udDoctorCardHTML(d, idx = 0) {
   const palette  = _DOC_PALETTE[idx % _DOC_PALETTE.length];
   const initials = (d.full_name || 'DR').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-  const rating   = Number(d.rating || 0).toFixed(1);
+  const ratingVal = d.avg_rating ?? d.rating ?? 0;
+  const rating   = Number(ratingVal).toFixed(1);
   const stars    = Array.from({length:5}, (_,i) =>
-    `<i class="ti ti-star${i < Math.floor(d.rating) ? '-filled' : ''}" style="font-size:13px;"></i>`
+    `<i class="ti ti-star${i < Math.floor(ratingVal) ? '-filled' : ''}" style="font-size:13px;"></i>`
   ).join('');
+  const reviewCount = d.total_reviews ?? d.review_count ?? 0;
   const fee = d.rate_per_session ? `$${d.rate_per_session}` : (d.qualifications ? '' : '—');
   const verBadge = d.is_verified
     ? `<span class="ud-verified-badge">
@@ -775,7 +777,7 @@ function udDoctorCardHTML(d, idx = 0) {
       <div class="ud-doc-rating">
         <span class="ud-stars">${stars}</span>
         <span class="ud-rating-num">${rating}</span>
-        <span class="ud-rating-rev">(${d.review_count || 0} ${I18n.t('doc_reviews') || 'reviews'})</span>
+        <span class="ud-rating-rev">(${reviewCount} ${I18n.t('doc_reviews') || 'reviews'})</span>
       </div>
       ${fee ? `<div class="ud-doc-price"><i class="ti ti-currency-dollar"></i>${fee} ${I18n.t('doc_consult') || '/ consultation'}</div>` : ''}
       <div class="ud-doc-actions">
