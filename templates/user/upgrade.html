@@ -239,6 +239,26 @@
       text-align: center; font-size: 11px; color: var(--text-hint);
       margin-top: 10px;
     }
+    /* Demo upgrade button */
+    .up-demo-btn {
+      width: 100%; padding: 14px;
+      background: linear-gradient(135deg, #10B981, #059669); color: #fff;
+      border: none; border-radius: var(--r-btn);
+      font-size: 15px; font-weight: 700; font-family: var(--font-body);
+      cursor: pointer; transition: opacity .15s, transform .1s;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .up-demo-btn:hover:not(:disabled) { opacity: .9; transform: translateY(-1px); }
+    .up-demo-btn:disabled { opacity: .6; cursor: not-allowed; }
+    .up-demo-divider {
+      display: flex; align-items: center; gap: 10px;
+      margin: 14px 0;
+      font-size: 11px; color: var(--text-hint);
+    }
+    .up-demo-divider::before, .up-demo-divider::after {
+      content: ''; flex: 1; height: 1px; background: var(--border);
+    }
 
     /* ── SUCCESS STATE ── */
     .up-success {
@@ -351,6 +371,13 @@
       </div>
       <div class="up-form-body">
 
+        <!-- ── DEMO UPGRADE BUTTON ── -->
+        <button class="up-demo-btn" id="upDemoBtn" onclick="upDemoUpgrade()">
+          <i class="ti ti-rocket"></i>
+          <span id="upDemoLabel">Demo Upgrade — Activate Pro Instantly</span>
+        </button>
+        <div class="up-demo-divider">or fill in card details below</div>
+
         <div class="up-secure">
           <i class="ti ti-lock"></i>
           Secured with 256-bit SSL encryption
@@ -442,6 +469,14 @@
 
 
 <script>
+/* ── Auto-fill card fields with demo data on load ── */
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('upCardName').value = 'Tob Chenda';
+  document.getElementById('upCardNum').value  = '4242  4242  4242  4242';
+  document.getElementById('upExpiry').value   = '12 / 27';
+  document.getElementById('upCvc').value      = '123';
+});
+
 /* ── state ── */
 let _upPlan = 'monthly';
 const _PLANS = {
@@ -485,6 +520,51 @@ function upValidate() {
   if (exp.length < 4)   return 'Please enter a valid expiry date.';
   if (cvc.length < 3)   return 'Please enter a valid CVC.';
   return null;
+}
+
+/* ── demo upgrade — no validation, instant ── */
+async function upDemoUpgrade() {
+  const btn = document.getElementById('upDemoBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin .8s linear infinite"></i> Activating Pro…';
+
+  if (!document.getElementById('spinStyle')) {
+    const s = document.createElement('style');
+    s.id = 'spinStyle';
+    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  const token = localStorage.getItem('access_token');
+  if (!token) { window.location = '/login'; return; }
+
+  try {
+    await new Promise(r => setTimeout(r, 900));   // brief visual feedback
+    const res  = await fetch('/api/subscription/mock-upgrade', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body:    JSON.stringify({ plan: _upPlan }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || '{}');
+        stored.tier = 'pro';
+        localStorage.setItem('user', JSON.stringify(stored));
+      } catch {}
+      document.getElementById('upFormView').style.display    = 'none';
+      document.getElementById('upSuccessView').style.display = 'block';
+      const planLabel = _upPlan === 'yearly' ? '$79.99/year' : '$9.99/month';
+      document.getElementById('upSuccessMsg').textContent =
+        `Your Pro subscription is active at ${planLabel}. Enjoy unlimited scans and all Pro features.`;
+    } else {
+      throw new Error(data.error || 'Upgrade failed.');
+    }
+  } catch (e) {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-rocket"></i> Demo Upgrade — Activate Pro Instantly';
+    alert(e.message || 'Something went wrong. Please try again.');
+  }
 }
 
 /* ── submit ── */
