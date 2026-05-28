@@ -252,24 +252,6 @@ def admin_presentation_page():
     )
 
 
-@admin_bp.route("/slides")
-def admin_slides_page():
-    """
-    12-slide deck for teacher presentation — dark navy theme.
-    Team Work slide is slide 3. Live stats via _build_flow_stats().
-    """
-    s = _build_flow_stats()
-    stats = {
-        "total_patients":   s["total_patients"],
-        "approved_doctors": s["approved_doctors"],
-        "total_scans":      s["total_scans"],
-        "completed_appts":  s["completed_appointments"],
-        "revenue":          round(s["total_revenue"] + s["subscription_revenue"], 2),
-        "avg_rating":       s["avg_rating"],
-    }
-    return render_template("admin/slides.html", stats=stats, active="slides")
-
-
 # ══════════════════════════════════════════════════════════════════════════════
 #  API: AUTHENTICATION
 # ══════════════════════════════════════════════════════════════════════════════

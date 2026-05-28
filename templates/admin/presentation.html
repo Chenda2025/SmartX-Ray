@@ -16,7 +16,7 @@
       <i class="ti ti-presentation" style="color:#6366F1; font-size:16px"></i>
       <span data-i18n="adm_nav_presentation">Presentation</span>
       <span style="font-weight:400; color:var(--color-text-secondary,#64748b); font-size:12px;">
-        — SmartX-Ray Web · 10 slides
+        — SmartX-Ray Web · 11 slides
       </span>
     </div>
     <div class="pres-toolbar-actions">
@@ -45,54 +45,60 @@
 
       <div class="pres-thumb pt-dark" data-slide="1">
         <span class="pres-thumb-num">2</span>
+        <i class="ti ti-users pres-thumb-icon"></i>
+        <span class="pres-thumb-label">Our Team</span>
+      </div>
+
+      <div class="pres-thumb pt-dark" data-slide="2">
+        <span class="pres-thumb-num">3</span>
         <i class="ti ti-alert-triangle pres-thumb-icon"></i>
         <span class="pres-thumb-label">Problem</span>
       </div>
 
-      <div class="pres-thumb pt-inky" data-slide="2">
-        <span class="pres-thumb-num">3</span>
+      <div class="pres-thumb pt-inky" data-slide="3">
+        <span class="pres-thumb-num">4</span>
         <i class="ti ti-stack pres-thumb-icon"></i>
         <span class="pres-thumb-label">Tech Stack</span>
       </div>
 
-      <div class="pres-thumb pt-inky" data-slide="3">
-        <span class="pres-thumb-num">4</span>
+      <div class="pres-thumb pt-inky" data-slide="4">
+        <span class="pres-thumb-num">5</span>
         <i class="ti ti-brain pres-thumb-icon"></i>
         <span class="pres-thumb-label">AI Model</span>
       </div>
 
-      <div class="pres-thumb pt-white" data-slide="4">
-        <span class="pres-thumb-num" style="color:#1e293b">5</span>
+      <div class="pres-thumb pt-white" data-slide="5">
+        <span class="pres-thumb-num" style="color:#1e293b">6</span>
         <i class="ti ti-users pres-thumb-icon" style="color:#6366F1"></i>
         <span class="pres-thumb-label" style="color:#1e293b">3 Actors</span>
       </div>
 
-      <div class="pres-thumb pt-green" data-slide="5">
-        <span class="pres-thumb-num">6</span>
+      <div class="pres-thumb pt-green" data-slide="6">
+        <span class="pres-thumb-num">7</span>
         <i class="ti ti-stethoscope pres-thumb-icon"></i>
         <span class="pres-thumb-label">Onboarding</span>
       </div>
 
-      <div class="pres-thumb pt-amber" data-slide="6">
-        <span class="pres-thumb-num">7</span>
+      <div class="pres-thumb pt-amber" data-slide="7">
+        <span class="pres-thumb-num">8</span>
         <i class="ti ti-scan pres-thumb-icon"></i>
         <span class="pres-thumb-label">AI Diagnosis</span>
       </div>
 
-      <div class="pres-thumb pt-teal" data-slide="7">
-        <span class="pres-thumb-num">8</span>
+      <div class="pres-thumb pt-teal" data-slide="8">
+        <span class="pres-thumb-num">9</span>
         <i class="ti ti-calendar pres-thumb-icon"></i>
         <span class="pres-thumb-label">Consultation</span>
       </div>
 
-      <div class="pres-thumb pt-violet" data-slide="8">
-        <span class="pres-thumb-num">9</span>
+      <div class="pres-thumb pt-violet" data-slide="9">
+        <span class="pres-thumb-num">10</span>
         <i class="ti ti-cash pres-thumb-icon"></i>
         <span class="pres-thumb-label">Business</span>
       </div>
 
-      <div class="pres-thumb pt-close" data-slide="9">
-        <span class="pres-thumb-num">10</span>
+      <div class="pres-thumb pt-close" data-slide="10">
+        <span class="pres-thumb-num">11</span>
         <i class="ti ti-chart-bar pres-thumb-icon"></i>
         <span class="pres-thumb-label">Summary</span>
       </div>
@@ -138,11 +144,106 @@
           </div>
 
           {# ══════════════════════════════════════════════════════════
-               SLIDE 2 — PROBLEM & SOLUTION
+               SLIDE 2 — OUR TEAM (Teacher + Students)
              ══════════════════════════════════════════════════════════ #}
           <div class="pres-slide" id="pres-slide-1">
+            <div style="height:100%;background:linear-gradient(150deg,#0f0e27 0%,#1e1b4b 60%,#1a2744 100%);display:flex;flex-direction:column;padding:26px 36px;color:#e2e8f0;overflow:hidden;">
+              {# Header #}
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+                <div>
+                  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.9px;color:#818cf8;margin-bottom:5px;">Project Team</div>
+                  <h2 style="font-size:22px;font-weight:800;margin:0 0 3px;color:#fff;">SmartX-Ray Cambodia</h2>
+                  <p style="font-size:12px;color:#94a3b8;margin:0;">ក្រុមការងារ Project Final Year — RUPP</p>
+                </div>
+                <span style="font-size:11px;color:#6366F1;opacity:.7;">2 / 11</span>
+              </div>
+
+              {# Three profile cards #}
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;flex:1;align-items:start;">
+
+                {# ── Teacher ── #}
+                <div style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+                  <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #6366F1;margin-bottom:12px;flex-shrink:0;">
+                    <img src="/static/img/Sovann Chen.jpg" alt="Sovann Chen"
+                         style="width:100%;height:100%;object-fit:cover;object-position:top;" />
+                  </div>
+                  <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;">Sovann Chen</div>
+                  <div style="font-size:11px;color:#a5b4fc;margin-bottom:1px;">សុវណ្ណ ចែន</div>
+                  <div style="font-size:10px;background:rgba(99,102,241,.35);border:1px solid rgba(99,102,241,.5);border-radius:20px;padding:2px 10px;color:#c7d2fe;font-weight:700;margin:6px 0 10px;">Supervisor</div>
+                  <div style="text-align:left;width:100%;">
+                    <div style="font-size:10px;font-weight:700;color:#818cf8;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Advanced AI — Final Project</div>
+                    <div style="font-size:10px;color:#94a3b8;line-height:1.7;">
+                      <div>ស្មាតអ៊ិចរ៉េ Web — SmartX-Ray</div>
+                      <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;">
+                        <span style="background:rgba(99,102,241,.2);border-radius:4px;padding:1px 6px;font-size:9px;color:#a5b4fc;">CNN · ANN</span>
+                        <span style="background:rgba(99,102,241,.2);border-radius:4px;padding:1px 6px;font-size:9px;color:#a5b4fc;">Hybrid</span>
+                        <span style="background:rgba(99,102,241,.2);border-radius:4px;padding:1px 6px;font-size:9px;color:#a5b4fc;">Grad-CAM</span>
+                      </div>
+                      <div style="margin-top:6px;font-size:9.5px;color:#a5b4fc;line-height:1.6;">
+                        ✓ Project requirements defined<br>
+                        ✓ 5 business models · Bilingual<br>
+                        ✓ Cambodia context
+                      </div>
+                    </div>
+                    <div style="margin-top:8px;border-top:1px solid rgba(99,102,241,.25);padding-top:8px;font-size:9.5px;color:#c7d2fe;font-style:italic;line-height:1.5;">
+                      "Thank you for your guidance"<br>
+                      <span style="color:#818cf8;">សូមអរគុណចំពោះការណែនាំ</span>
+                    </div>
+                  </div>
+                </div>
+
+                {# ── Student 1 — Tob Chenda ── #}
+                <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.25);border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+                  <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #10B981;margin-bottom:12px;flex-shrink:0;">
+                    <img src="/static/img/Tob Chenda.jpg" alt="Tob Chenda"
+                         style="width:100%;height:100%;object-fit:cover;object-position:top;" />
+                  </div>
+                  <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;">Tob Chenda</div>
+                  <div style="font-size:11px;color:#6ee7b7;margin-bottom:1px;">ទប់ចិន្តា</div>
+                  <div style="font-size:10px;background:rgba(16,185,129,.2);border:1px solid rgba(16,185,129,.4);border-radius:20px;padding:2px 10px;color:#a7f3d0;font-weight:700;margin:6px 0 10px;">Developer</div>
+                  <div style="text-align:left;width:100%;">
+                    <div style="font-size:10px;font-weight:700;color:#34d399;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Responsibilities</div>
+                    <div style="font-size:10px;color:#94a3b8;line-height:1.75;">
+                      <div>✓ Backend development (Flask)</div>
+                      <div>✓ AI model training (CNN+ANN)</div>
+                      <div>✓ Database schema design</div>
+                      <div>✓ Frontend UI implementation</div>
+                      <div>✓ System architecture</div>
+                    </div>
+                  </div>
+                </div>
+
+                {# ── Student 2 — Ly Heang ── #}
+                <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.25);border-radius:14px;padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;">
+                  <div style="width:80px;height:80px;border-radius:50%;overflow:hidden;border:3px solid #F59E0B;margin-bottom:12px;flex-shrink:0;">
+                    <img src="/static/img/Ly Heang.JPG" alt="Ly Heang"
+                         style="width:100%;height:100%;object-fit:cover;object-position:top;" />
+                  </div>
+                  <div style="font-size:14px;font-weight:800;color:#fff;margin-bottom:2px;">Ly Heang</div>
+                  <div style="font-size:11px;color:#fcd34d;margin-bottom:1px;">លី ហៀង</div>
+                  <div style="font-size:10px;background:rgba(245,158,11,.2);border:1px solid rgba(245,158,11,.4);border-radius:20px;padding:2px 10px;color:#fde68a;font-weight:700;margin:6px 0 10px;">QA &amp; Support</div>
+                  <div style="text-align:left;width:100%;">
+                    <div style="font-size:10px;font-weight:700;color:#fbbf24;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">Responsibilities</div>
+                    <div style="font-size:10px;color:#94a3b8;line-height:1.75;">
+                      <div>✓ Project resources provision</div>
+                      <div>✓ System testing &amp; QA</div>
+                      <div>✓ X-ray dataset collection</div>
+                      <div>✓ Feature validation testing</div>
+                      <div>✓ Presentation preparation</div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>{# /grid #}
+            </div>
+          </div>
+
+          {# ══════════════════════════════════════════════════════════
+               SLIDE 3 — PROBLEM & SOLUTION
+             ══════════════════════════════════════════════════════════ #}
+          <div class="pres-slide" id="pres-slide-2">
             <div class="s-hdr dark">
-              <span class="s-hdr-num">2 / 10</span>
+              <span class="s-hdr-num">3 / 11</span>
               <div class="s-hdr-title" data-i18n="p_s2_title">The Problem &amp; Our Solution</div>
               <div class="s-hdr-sub" data-i18n="p_s2_sub">Why Cambodia needs AI-assisted X-ray screening</div>
             </div>
@@ -189,9 +290,9 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 3 — TECHNOLOGY STACK
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-2">
+          <div class="pres-slide" id="pres-slide-3">
             <div class="s-hdr indigo">
-              <span class="s-hdr-num">3 / 10</span>
+              <span class="s-hdr-num">4 / 11</span>
               <div class="s-hdr-title" data-i18n="p_s3_title">Technology Stack</div>
               <div class="s-hdr-sub" data-i18n="p_s3_sub">Built to run on a free-tier server with &lt; 100 MB RAM</div>
             </div>
@@ -227,7 +328,7 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 4 — AI MODEL ARCHITECTURE
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-3">
+          <div class="pres-slide" id="pres-slide-4">
             <div style="height:100%;background:linear-gradient(160deg,#0f0e27 0%,#1e1b4b 100%);display:flex;flex-direction:column;padding:28px 36px;color:#e2e8f0;">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
                 <div>
@@ -235,7 +336,7 @@
                   <h2 style="font-size:22px;font-weight:800;margin:0 0 4px;color:#fff;" data-i18n="p_s4_title">CNN + ANN Hybrid Model</h2>
                   <p style="font-size:12px;color:#94a3b8;margin:0;" data-i18n="p_s4_sub">Keras-trained, exported to ONNX Runtime for production</p>
                 </div>
-                <span style="font-size:11px;color:#6366F1;opacity:.7;">4 / 10</span>
+                <span style="font-size:11px;color:#6366F1;opacity:.7;">5 / 11</span>
               </div>
               {# Architecture pipeline #}
               <div style="margin-bottom:18px;">
@@ -296,9 +397,9 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 5 — THREE ACTORS
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-4">
+          <div class="pres-slide" id="pres-slide-5">
             <div class="s-hdr" style="background:#f8fafc;border-bottom:1px solid #e2e8f0;color:#0f172a;">
-              <span class="s-hdr-num" style="color:#94a3b8;">5 / 10</span>
+              <span class="s-hdr-num" style="color:#94a3b8;">6 / 11</span>
               <div class="s-hdr-title" data-i18n="p_s5_title">Platform Actors &amp; Permissions</div>
               <div class="s-hdr-sub" style="color:#64748b;" data-i18n="p_s5_sub">Three roles — each with distinct capabilities and access levels</div>
             </div>
@@ -352,9 +453,9 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 6 — STAGES 1–3: ONBOARDING
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-5">
+          <div class="pres-slide" id="pres-slide-6">
             <div class="s-hdr green">
-              <span class="s-hdr-num">6 / 10</span>
+              <span class="s-hdr-num">7 / 11</span>
               <div class="s-hdr-title" data-i18n="p_s6_title">Stages 1–3 · Platform Setup &amp; Doctor Onboarding</div>
               <div class="s-hdr-sub" data-i18n="p_s6_sub">Admin configures → Doctor registers → Admin approves → Doctor goes live</div>
               <div class="s-hdr-actors">
@@ -418,9 +519,9 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 7 — STAGE 4: AI DIAGNOSIS
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-6">
+          <div class="pres-slide" id="pres-slide-7">
             <div class="s-hdr amber">
-              <span class="s-hdr-num">7 / 10</span>
+              <span class="s-hdr-num">8 / 11</span>
               <div class="s-hdr-title" data-i18n="p_s7_title">Stage 4 · AI Diagnosis Engine</div>
               <div class="s-hdr-sub" data-i18n="p_s7_sub">Patient uploads X-ray → CNN+ANN processes → NORMAL or PNEUMONIA result</div>
               <div class="s-hdr-actors">
@@ -489,9 +590,9 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 8 — STAGES 5–7: BOOKING & CONSULTATION
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-7">
+          <div class="pres-slide" id="pres-slide-8">
             <div class="s-hdr teal">
-              <span class="s-hdr-num">8 / 10</span>
+              <span class="s-hdr-num">9 / 11</span>
               <div class="s-hdr-title" data-i18n="p_s8_title">Stages 5–7 · Booking, Consultation &amp; Review</div>
               <div class="s-hdr-sub" data-i18n="p_s8_sub">Patient finds doctor → books → pays → meets → reviews</div>
               <div class="s-hdr-actors">
@@ -553,14 +654,14 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 9 — BUSINESS MODEL
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-8">
+          <div class="pres-slide" id="pres-slide-9">
             <div style="height:100%;background:linear-gradient(150deg,#0f172a 0%,#1e1b4b 60%,#1e293b 100%);display:flex;flex-direction:column;padding:26px 36px;color:#e2e8f0;">
               <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;">
                 <div>
                   <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#818cf8;margin-bottom:4px;" data-i18n="p_s9_label">Revenue Model</div>
                   <h2 style="font-size:22px;font-weight:800;color:#fff;margin:0;" data-i18n="p_s9_title">5 Business Revenue Streams</h2>
                 </div>
-                <span style="font-size:11px;color:#6366F1;opacity:.7;">9 / 10</span>
+                <span style="font-size:11px;color:#6366F1;opacity:.7;">10 / 11</span>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;flex:1;">
                 {# Stream 1 #}
@@ -599,7 +700,7 @@
           {# ══════════════════════════════════════════════════════════
                SLIDE 10 — SUMMARY & THANK YOU
              ══════════════════════════════════════════════════════════ #}
-          <div class="pres-slide" id="pres-slide-9">
+          <div class="pres-slide" id="pres-slide-10">
             <div style="height:100%;background:linear-gradient(135deg,#4338CA 0%,#6366F1 50%,#7C3AED 100%);display:flex;flex-direction:column;color:#fff;padding:28px 40px;">
               <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
                 <div>
@@ -607,7 +708,7 @@
                   <h2 style="font-size:26px;font-weight:800;margin:0 0 3px;" data-i18n="p_s10_title">SmartX-Ray — By The Numbers</h2>
                   <p style="font-size:12px;opacity:.65;margin:0;" data-i18n="p_s10_sub">All figures pulled live from the database</p>
                 </div>
-                <span style="font-size:11px;opacity:.5;">10 / 10</span>
+                <span style="font-size:11px;opacity:.5;">11 / 11</span>
               </div>
               {# 4 KPI cards #}
               <div class="s-kpi-grid" style="margin-bottom:16px;">
@@ -661,7 +762,7 @@
         <div class="pres-progress">
           <div class="pres-progress-fill" id="pres-progress-fill" style="width:10%"></div>
         </div>
-        <span class="pres-nav-counter" id="pres-counter">Slide 1 of 10</span>
+        <span class="pres-nav-counter" id="pres-counter">Slide 1 of 11</span>
         <button class="pres-btn primary" id="pres-next" onclick="goToSlide(presSlide+1)">
           <span data-i18n="sf_next">Next</span>
           <i class="ti ti-chevron-right" style="font-size:13px"></i>
