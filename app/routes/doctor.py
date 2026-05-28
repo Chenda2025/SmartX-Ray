@@ -75,21 +75,28 @@ def _doctor_status(doctor: Doctor) -> str:
 def register_doctor():
     """
     Public endpoint — no JWT required.
-    Body:
-      full_name*, email*, password*, specialty*,
-      license_number*, university, experience_years,
-      rate_per_session, availability, bio
-    Returns:
-      201 { message, doctor_id }
+    Accepts multipart/form-data OR JSON.
+    Fields: full_name*, email*, password*, specialty*, license_number*,
+            university, experience_years, rate_per_session, availability, bio
+    Files:  photo (optional), license_doc (optional PDF/JPG/PNG)
+    Returns: 201 { message, doctor_id }
     """
-    data = request.get_json(silent=True) or {}
+    import os
+    from werkzeug.utils import secure_filename as _secure
+
+    # Accept both multipart/form-data and JSON
+    if request.content_type and "multipart" in request.content_type:
+        get = lambda k, d="": (request.form.get(k) or d)
+    else:
+        _json = request.get_json(silent=True) or {}
+        get   = lambda k, d="": (_json.get(k) or d)
 
     # ── Required fields ───────────────────────────────────────────────
-    full_name      = (data.get("full_name")      or "").strip()
-    email          = (data.get("email")          or "").strip().lower()
-    password       = (data.get("password")       or "")
-    specialty      = (data.get("specialty")      or "").strip()
-    license_number = (data.get("license_number") or data.get("license_no") or "").strip()
+    full_name      = get("full_name").strip()
+    email          = get("email").strip().lower()
+    password       = get("password")
+    specialty      = get("specialty").strip()
+    license_number = (get("license_number") or get("license_no")).strip()
 
     if not full_name:
         return jsonify({"error": "full_name is required."}), 400
@@ -109,48 +116,45 @@ def register_doctor():
     if User.query.filter_by(email=email).first():
         return jsonify({"error": "Email already registered."}), 409
 
-    # Check for duplicate license number
     existing_lic = _check_duplicate_license(license_number)
     if existing_lic:
         return jsonify({"error": "License number already registered."}), 409
 
     # ── Optional fields ───────────────────────────────────────────────
-    university       = (data.get("university")       or "").strip() or None
-    experience_years = int(data.get("experience_years") or 0)
-    rate_per_session = float(data.get("rate_per_session") or 15.00)
-    availability     = (data.get("availability") or "").strip() or None
-    bio              = (data.get("bio")          or "").strip() or None
+    university       = get("university").strip() or None
+    experience_years = int(get("experience_years") or 0)
+    rate_per_session = float(get("rate_per_session") or 15.00)
+    availability     = get("availability").strip() or None
+    bio              = get("bio").strip() or None
 
     # ── 1. Create locked user account ─────────────────────────────────
     user = User(
         email       = email,
         full_name   = full_name,
-        tier        = "pro",       # doctors always Pro
-        is_active   = False,       # ← locked until admin approves
+        tier        = "pro",
+        is_active   = False,
         is_verified = False,
     )
-    # Set role column if it exists (post-migration)
     try:
         user.role = "doctor"
     except AttributeError:
         pass
     user.set_password(password)
     db.session.add(user)
-    db.session.flush()             # get user.id without committing
+    db.session.flush()
 
     # ── 2. Create doctor profile (pending) ────────────────────────────
     doctor = Doctor(
         email            = email,
         full_name        = full_name,
         specialty        = specialty,
-        license_no       = license_number,      # old column
+        license_no       = license_number,
         bio              = bio,
         rate_per_session = rate_per_session,
         availability     = availability,
-        is_active        = True,    # ← True + is_verified=False = pending
+        is_active        = True,
         is_verified      = False,
     )
-    # New columns (post-migration); safe with try/except
     _safe_set(doctor, "user_id",          user.id)
     _safe_set(doctor, "license_number",   license_number)
     _safe_set(doctor, "university",       university)
@@ -158,6 +162,37 @@ def register_doctor():
     _safe_set(doctor, "status",           "pending")
 
     db.session.add(doctor)
+    db.session.flush()   # get doctor.id for filenames
+
+    # ── 3. Save uploaded profile photo ───────────────────────────────
+    photo_file = request.files.get("photo")
+    if photo_file and photo_file.filename:
+        ext = os.path.splitext(_secure(photo_file.filename))[1].lower()
+        if ext in {".jpg", ".jpeg", ".png", ".webp"}:
+            save_dir = os.path.join(
+                current_app.root_path, "..", "static", "uploads", "doctors"
+            )
+            os.makedirs(save_dir, exist_ok=True)
+            fname     = f"doctor_{doctor.id}{ext}"
+            photo_file.save(os.path.join(save_dir, fname))
+            photo_url = f"/static/uploads/doctors/{fname}"
+            _safe_set(doctor, "photo_url",  photo_url)
+            _safe_set(doctor, "avatar_url", photo_url)
+
+    # ── 4. Save uploaded license document ────────────────────────────
+    lic_file = request.files.get("license_doc")
+    if lic_file and lic_file.filename:
+        ext = os.path.splitext(_secure(lic_file.filename))[1].lower()
+        if ext in {".pdf", ".jpg", ".jpeg", ".png"}:
+            save_dir = os.path.join(
+                current_app.root_path, "..", "static", "uploads", "doctors", "licenses"
+            )
+            os.makedirs(save_dir, exist_ok=True)
+            fname   = f"license_{doctor.id}{ext}"
+            lic_file.save(os.path.join(save_dir, fname))
+            lic_url = f"/static/uploads/doctors/licenses/{fname}"
+            _safe_set(doctor, "license_doc_url", lic_url)
+
     db.session.commit()
 
     # ── 3. Telegram alert to admin ────────────────────────────────────
@@ -413,10 +448,10 @@ def doctor_dashboard():
     except Exception:
         earnings_pending = 0.0
 
-    # ── Today's schedule ──────────────────────────────────────────────
+    # ── Today's schedule (confirmed + completed for today) ───────────
     today_schedule_rows = Appointment.query.filter(
-        Appointment.doctor_id   == doctor.id,
-        Appointment.status      == "confirmed",
+        Appointment.doctor_id == doctor.id,
+        Appointment.status.in_(["confirmed", "completed"]),
         Appointment.appointment_date == today,
     ).order_by(Appointment.appointment_time.asc()).all()
 
@@ -831,14 +866,14 @@ def _format_appointment(a) -> dict:
             patient_name  = patient.full_name or patient.email
             patient_email = patient.email or ""
 
-    # Meeting link (new column or mock)
+    # Meeting link — upgrade old fake Google Meet links to real Jitsi rooms
     meeting_link = getattr(a, "meeting_link", None)
-    if not meeting_link:
+    if not meeting_link or "meet.google.com/smx" in str(meeting_link):
         try:
             from app.utils.notifications import generate_meeting_link
             meeting_link = generate_meeting_link(a.id)
         except Exception:
-            meeting_link = f"https://meet.google.com/smx-{str(a.id).zfill(3)}"
+            meeting_link = f"https://meet.jit.si/SmartXRay-apt-{a.id}"
 
     note = (
         getattr(a, "patient_note", None)

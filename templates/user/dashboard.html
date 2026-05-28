@@ -38,6 +38,10 @@
   </nav>
 
   <div class="ud-nav-right">
+    <a href="/find-doctor" class="ud-find-doctor-btn">
+      <i class="ti ti-stethoscope"></i>
+      <span data-i18n="nav_find_doctor_s">Find a Doctor</span>
+    </a>
     <button class="ud-lang-btn" id="udLangBtn" onclick="udToggleLang()">ខ្មែរ</button>
     <span class="ud-tier-badge free" id="udTierBadge">Free</span>
     <button class="ud-bell" title="Notifications" aria-label="Notifications">
@@ -77,7 +81,7 @@
   <a href="javascript:void(0)" class="ud-tab-item" data-section="history-section" onclick="udScrollTo('history-section')">
     <i class="ti ti-history"></i><span data-i18n="nav_history">History</span>
   </a>
-  <a href="javascript:void(0)" class="ud-tab-item" data-section="doctor-section" onclick="udScrollTo('doctor-section')">
+  <a href="/find-doctor" class="ud-tab-item">
     <i class="ti ti-stethoscope"></i><span data-i18n="nav_find_doctor_s">Doctor</span>
   </a>
   <a href="/upgrade" class="ud-tab-item nav-upgrade">
@@ -411,7 +415,12 @@
 
   <!-- ── COMPONENT 9 — APPOINTMENTS PANEL ─────────────────────────────── -->
   <section class="ud-card ud-appt-card" id="appt-section">
-    <div class="ud-appt-title" data-i18n="appt_title">My Appointments</div>
+    <div class="ud-appt-header">
+      <div class="ud-appt-title" data-i18n="appt_title">My Appointments</div>
+      <button class="ud-appt-refresh-btn" onclick="udLoadAppointments()" title="Refresh appointments">
+        <i class="ti ti-refresh"></i>
+      </button>
+    </div>
 
     <!-- Empty state (default) -->
     <div class="ud-empty" id="udApptEmpty">
@@ -827,6 +836,37 @@ Object.assign(TRANSLATIONS, {
 });
 </script>
 <script src="/static/js/user-dashboard.js"></script>
+
+<!-- Camera Modal -->
+<div class="ud-cam-overlay" id="udCamOverlay" onclick="if(event.target===this)udCloseCamera()">
+  <div class="ud-cam-modal">
+    <div class="ud-cam-header">
+      <div class="ud-cam-title">
+        <i class="ti ti-camera"></i>
+        <span>Camera Preview</span>
+      </div>
+      <button class="ud-cam-close" onclick="udCloseCamera()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="ud-cam-body">
+      <div class="ud-cam-preview" id="udCamPreview">
+        <div class="ud-cam-placeholder" id="udCamPlaceholder">
+          <i class="ti ti-camera-off"></i>
+          <span>Camera not started</span>
+        </div>
+        <video id="udCamVideo" autoplay playsinline style="display:none;"></video>
+      </div>
+      <div class="ud-cam-status" id="udCamStatus">Click "Start Camera" to test your camera before joining.</div>
+      <div class="ud-cam-footer">
+        <button class="ud-cam-start-btn" id="udCamStartBtn" onclick="udStartCamera()">
+          <i class="ti ti-camera"></i> Start Camera
+        </button>
+        <button class="ud-cam-join-btn" id="udCamJoinBtn" style="display:none;" onclick="udCameraJoinMeeting()">
+          <i class="ti ti-video"></i> Reopen Meeting
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
 

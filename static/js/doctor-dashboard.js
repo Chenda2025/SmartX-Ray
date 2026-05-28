@@ -288,13 +288,17 @@ function _ddRenderUpcoming(list) {
       <td>
         <div class="dd-tbl-actions">
           ${a.meeting_link
-            ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-sm-join" title="Access">
+            ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-sm-join" title="Join Meeting">
                  <i class="ti ti-video"></i>
                </a>`
-            : `<button class="dd-btn-sm-join" onclick="ddShowToast('Meeting link not ready yet','info')" title="Access">
+            : `<button class="dd-btn-sm-join" onclick="ddShowToast('Meeting link not ready yet','info')" title="Join Meeting">
                  <i class="ti ti-video"></i>
                </button>`
           }
+          <button class="dd-btn-sm-complete" title="Mark Complete"
+            onclick="ddMarkComplete(${a.appointment_id})">
+            <i class="ti ti-circle-check"></i>
+          </button>
           <button class="dd-btn-sm-info" title="Full Info"
             onclick="ddOpenPatientInfo(${a.appointment_id})">
             <i class="ti ti-info-circle"></i>
@@ -329,6 +333,25 @@ async function ddConfirmCancel(aptId) {
       _ddLoadDashboard(token);   // refresh table
     } else {
       ddShowToast(data.error || 'Could not cancel.', 'error');
+    }
+  } catch (_) { ddShowToast('Network error.', 'error'); }
+}
+
+/* ── Mark appointment as completed ───────────────────────────────────────── */
+async function ddMarkComplete(aptId) {
+  if (!confirm('Mark this appointment as completed?')) return;
+  const token = localStorage.getItem('access_token');
+  try {
+    const res = await fetch(`/api/appointments/${aptId}/complete`, {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    if (res.ok) {
+      ddShowToast('Appointment marked as completed.', 'success');
+      _ddLoadDashboard(token);
+    } else {
+      ddShowToast(data.error || 'Could not complete appointment.', 'error');
     }
   } catch (_) { ddShowToast('Network error.', 'error'); }
 }
@@ -878,16 +901,29 @@ function _ddRenderTodaySchedule(list) {
         font-weight:600;margin-left:6px;">${isPneu?'Pneumonia':'Normal'} ${parseFloat(sc.confidence||0).toFixed(0)}%</span>`;
     }
 
-    const actionsHtml = isDone ? '' : `
+    const isCompleted = a.status === 'completed';
+    let actionsHtml = '';
+    if (!isDone) {
+      actionsHtml = `
       <div class="dd-appt-actions">
         ${a.meeting_link
           ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-join"><i class="ti ti-video"></i> <span>Join</span></a>`
           : `<button class="dd-btn-join" onclick="ddShowToast('Meeting not ready','info')"><i class="ti ti-video"></i> <span>Join</span></button>`}
+        <button class="dd-btn-mark-complete" onclick="ddMarkComplete(${a.appointment_id})">
+          <i class="ti ti-circle-check"></i> <span>Mark Complete</span>
+        </button>
         <button class="dd-btn-detail" onclick="ddOpenPatientInfo(${a.appointment_id})"><span>View Details</span></button>
       </div>`;
+    } else if (isCompleted) {
+      actionsHtml = `
+      <div class="dd-appt-actions">
+        <div class="dd-completed-badge"><i class="ti ti-circle-check-filled"></i> Completed</div>
+        <button class="dd-btn-detail" onclick="ddOpenPatientInfo(${a.appointment_id})"><span>View Details</span></button>
+      </div>`;
+    }
 
     return `
-    <div class="dd-tl-row">
+    <div class="dd-tl-row" id="dd-tl-row-${a.appointment_id}">
       <div class="dd-tl-time">
         <span class="dd-tl-hh">${hh}</span>
         <span class="dd-tl-ampm">${ampm}</span>
@@ -901,7 +937,7 @@ function _ddRenderTodaySchedule(list) {
           <div class="dd-appt-patient">
             <div class="dd-appt-avatar" style="background:${bg};color:${fg};">${initials}</div>
             <div>
-              <div class="dd-appt-name${isDone?' dd-strikethrough':''}">${_ddEsc(a.patient_name||'—')}</div>
+              <div class="dd-appt-name${isCompleted?' dd-strikethrough':''}">${_ddEsc(a.patient_name||'—')}</div>
               <div class="dd-appt-meta"><i class="ti ti-video"></i> Video consultation${scanBadge}</div>
             </div>
           </div>
@@ -1022,12 +1058,13 @@ function ddOpenPatientInfo(aptId) {
            <i class="ti ti-x-ray" style="font-size:2rem;"></i>
          </div>`;
     const pdfBtn = sc.report_url
-      ? `<a href="${_ddEsc(sc.report_url)}" target="_blank"
+      ? `<button onclick="ddDownloadScanReport(${a.appointment_id})"
              style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;
                     color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;
-                    border-radius:6px;padding:4px 10px;text-decoration:none;font-weight:600;margin-top:8px;">
+                    border-radius:6px;padding:4px 10px;cursor:pointer;font-weight:600;
+                    margin-top:8px;font-family:inherit;">
            <i class="ti ti-file-type-pdf"></i> Download PDF Report
-         </a>` : '';
+         </button>` : '';
     scanSection = `
       <div style="margin-top:16px;">
         <div style="font-size:.72rem;color:var(--dd-muted);font-weight:700;text-transform:uppercase;
@@ -1096,6 +1133,44 @@ function ddOpenPatientInfo(aptId) {
 function ddClosePatientInfo() {
   const modal = document.getElementById('ddPatientInfoModal');
   if (modal) modal.classList.remove('open');
+}
+
+/* ── Download patient scan PDF (auth-gated — must use fetch, not <a href>) ── */
+async function ddDownloadScanReport(aptId) {
+  const token = localStorage.getItem('access_token');
+  if (!token) { ddShowToast('Not logged in.', 'error'); return; }
+
+  const btn = document.activeElement;
+  const origHtml = btn ? btn.innerHTML : '';
+  if (btn) { btn.innerHTML = '<i class="ti ti-loader-2"></i> Downloading…'; btn.disabled = true; }
+
+  try {
+    const res = await fetch(`/api/appointments/${aptId}/scan-report`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      ddShowToast(err.error || 'Could not download report.', 'error');
+      return;
+    }
+
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href     = url;
+    link.download = `scan_report_apt${aptId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+
+    ddShowToast('PDF downloaded.', 'success');
+  } catch (_) {
+    ddShowToast('Network error — could not download.', 'error');
+  } finally {
+    if (btn) { btn.innerHTML = origHtml; btn.disabled = false; }
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════

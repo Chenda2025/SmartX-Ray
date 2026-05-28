@@ -109,6 +109,53 @@
   @keyframes fadeUp { from{opacity:0;transform:translateY(8px);} }
   .dr-toast.success { border-left:3px solid var(--green); }
   .dr-toast.error   { border-left:3px solid var(--red); }
+
+  /* ── Profile Photo Picker ───────────────────────────── */
+  .dr-photo-wrap {
+    display:flex;align-items:center;gap:1.2rem;
+    background:var(--indigo-lt);border:1.5px dashed #C7D2FE;
+    border-radius:12px;padding:1rem 1.25rem;
+  }
+  .dr-avatar-ring {
+    position:relative;width:76px;height:76px;flex-shrink:0;cursor:pointer;
+  }
+  .dr-avatar-img {
+    width:76px;height:76px;border-radius:50%;
+    background:#E0E7FF;border:2.5px solid #C7D2FE;
+    object-fit:cover;display:block;
+  }
+  .dr-avatar-overlay {
+    position:absolute;inset:0;border-radius:50%;
+    background:rgba(99,102,241,.55);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;transition:opacity .16s;
+    color:#fff;font-size:1.2rem;
+  }
+  .dr-avatar-ring:hover .dr-avatar-overlay { opacity:1; }
+  .dr-photo-right { flex:1; }
+  .dr-photo-title { font-size:.85rem;font-weight:700;color:var(--indigo);margin-bottom:.2rem; }
+  .dr-photo-hint  { font-size:.75rem;color:var(--muted); }
+  .dr-photo-name  { font-size:.75rem;color:var(--green);font-weight:600;margin-top:.25rem;display:none; }
+
+  /* ── License Document Upload ────────────────────────── */
+  .dr-upload-zone {
+    border:2px dashed var(--border);border-radius:10px;
+    padding:1.1rem;text-align:center;cursor:pointer;
+    background:#FAFBFC;transition:border-color .15s,background .15s;
+    display:flex;flex-direction:column;align-items:center;gap:.35rem;
+  }
+  .dr-upload-zone:hover,.dr-upload-zone.drag-over {
+    border-color:var(--indigo);background:var(--indigo-lt);
+  }
+  .dr-upload-zone i   { font-size:1.6rem;color:var(--muted); }
+  .dr-upload-zone.has-file i { color:var(--green); }
+  .dr-upload-label { font-size:.82rem;font-weight:600;color:var(--text2); }
+  .dr-upload-hint  { font-size:.73rem;color:var(--muted); }
+  .dr-upload-file-name {
+    font-size:.75rem;font-weight:600;color:var(--green);
+    background:var(--green-lt);border-radius:6px;
+    padding:2px 8px;display:none;
+  }
   </style>
 </head>
 <body>
@@ -166,19 +213,19 @@
         <!-- Account info -->
         <div class="dr-form-group dr-full">
           <label class="dr-label" data-i18n="dr_email">Email Address <span>*</span></label>
-          <input type="email" class="dr-input" id="drEmail" placeholder="doctor@example.com" required />
+          <input type="email" class="dr-input" id="drEmail" data-i18n-placeholder="dr_email_ph" placeholder="doctor@example.com" required />
         </div>
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_password">Password <span>*</span></label>
-          <input type="password" class="dr-input" id="drPassword" placeholder="Min 8 characters"
+          <input type="password" class="dr-input" id="drPassword" data-i18n-placeholder="dr_pw_ph" placeholder="Min 8 characters"
                  oninput="drPwStrength()" required minlength="8" />
           <div class="dr-pw-bar"><div class="dr-pw-fill" id="drPwFill"></div></div>
         </div>
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_confirm_pw">Confirm Password <span>*</span></label>
-          <input type="password" class="dr-input" id="drConfirmPw" placeholder="Repeat password" required />
+          <input type="password" class="dr-input" id="drConfirmPw" data-i18n-placeholder="dr_confirm_ph" placeholder="Repeat password" required />
         </div>
 
         <!-- Divider -->
@@ -186,9 +233,29 @@
           <p style="font-size:.8rem;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;" data-i18n="dr_prof_info">Professional Information</p>
         </div>
 
+        <!-- Profile Photo Upload -->
+        <div class="dr-form-group dr-full">
+          <label class="dr-label"><span data-i18n="dr_photo_label">Profile Photo</span> <span style="font-weight:400;color:var(--muted);" data-i18n="dr_optional">(optional)</span></label>
+          <input type="file" id="drPhotoInput" accept=".jpg,.jpeg,.png,.webp" style="display:none"
+                 onchange="drOnPhotoChange(this)" />
+          <div class="dr-photo-wrap" onclick="document.getElementById('drPhotoInput').click()">
+            <div class="dr-avatar-ring">
+              <img id="drAvatarPreview" class="dr-avatar-img"
+                   src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 76'><rect width='76' height='76' rx='38' fill='%23E0E7FF'/><text x='38' y='48' font-size='28' text-anchor='middle' fill='%236366F1' font-family='sans-serif'>?</text></svg>"
+                   alt="avatar" />
+              <div class="dr-avatar-overlay"><i class="ti ti-camera"></i></div>
+            </div>
+            <div class="dr-photo-right">
+              <div class="dr-photo-title" data-i18n="dr_photo_upload">Upload Profile Photo</div>
+              <div class="dr-photo-hint" data-i18n="dr_photo_hint">JPG, PNG, or WEBP · Max 5 MB</div>
+              <div class="dr-photo-name" id="drPhotoName"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_full_name">Full Name <span>*</span></label>
-          <input type="text" class="dr-input" id="drFullName" placeholder="Dr. Your Name" required />
+          <input type="text" class="dr-input" id="drFullName" data-i18n-placeholder="dr_full_name_ph" placeholder="Dr. Your Name" required />
         </div>
 
         <div class="dr-form-group">
@@ -209,23 +276,23 @@
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_license_no">License Number <span>*</span></label>
-          <input type="text" class="dr-input" id="drLicenseNo" placeholder="e.g. KH-MED-0001" required />
+          <input type="text" class="dr-input" id="drLicenseNo" data-i18n-placeholder="dr_license_ph" placeholder="e.g. KH-MED-0001" required />
           <span class="dr-input-hint" data-i18n="dr_license_hint">Issued by Ministry of Health Cambodia</span>
         </div>
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_qualifications">Qualifications</label>
-          <input type="text" class="dr-input" id="drQualifications" placeholder="e.g. MBBS, MD" />
+          <input type="text" class="dr-input" id="drQualifications" data-i18n-placeholder="dr_quals_ph" placeholder="e.g. MBBS, MD" />
         </div>
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_hospital">Hospital / Clinic</label>
-          <input type="text" class="dr-input" id="drHospital" placeholder="e.g. RUPP Medical Centre" />
+          <input type="text" class="dr-input" id="drHospital" data-i18n-placeholder="dr_hospital_ph" placeholder="e.g. RUPP Medical Centre" />
         </div>
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_university">University / Institution</label>
-          <input type="text" class="dr-input" id="drUniversity" placeholder="e.g. RUPP, NUM, IU" />
+          <input type="text" class="dr-input" id="drUniversity" data-i18n-placeholder="dr_univ_ph" placeholder="e.g. RUPP, NUM, IU" />
         </div>
 
         <div class="dr-form-group">
@@ -235,7 +302,7 @@
 
         <div class="dr-form-group">
           <label class="dr-label" data-i18n="dr_availability">Availability</label>
-          <input type="text" class="dr-input" id="drAvailability" placeholder="e.g. Mon–Fri 9:00–17:00" />
+          <input type="text" class="dr-input" id="drAvailability" data-i18n-placeholder="dr_avail_ph" placeholder="e.g. Mon–Fri 9:00–17:00" />
         </div>
 
         <div class="dr-form-group">
@@ -250,7 +317,24 @@
 
         <div class="dr-form-group dr-full">
           <label class="dr-label" data-i18n="dr_bio">Professional Bio <span>*</span></label>
-          <textarea class="dr-textarea" id="drBio" placeholder="Briefly describe your clinical experience and expertise…" required></textarea>
+          <textarea class="dr-textarea" id="drBio" data-i18n-placeholder="dr_bio_ph" placeholder="Briefly describe your clinical experience and expertise…" required></textarea>
+        </div>
+
+        <!-- License Document Upload -->
+        <div class="dr-form-group dr-full">
+          <label class="dr-label"><span data-i18n="dr_lic_doc_label">License Document</span> <span>*</span></label>
+          <input type="file" id="drLicenseDoc" accept=".pdf,.jpg,.jpeg,.png" style="display:none"
+                 onchange="drOnLicenseChange(this)" />
+          <div class="dr-upload-zone" id="drLicenseZone"
+               onclick="document.getElementById('drLicenseDoc').click()"
+               ondragover="event.preventDefault();this.classList.add('drag-over')"
+               ondragleave="this.classList.remove('drag-over')"
+               ondrop="drOnLicenseDrop(event)">
+            <i class="ti ti-file-certificate" id="drLicenseIcon"></i>
+            <div class="dr-upload-label" id="drLicenseLabel" data-i18n="dr_lic_upload_label">Click or drag to upload license scan</div>
+            <div class="dr-upload-hint" data-i18n="dr_lic_upload_hint">PDF, JPG, or PNG · Issued by Ministry of Health Cambodia</div>
+            <div class="dr-upload-file-name" id="drLicenseFileName"></div>
+          </div>
         </div>
 
       </div>
@@ -307,6 +391,39 @@ Object.assign(TRANSLATIONS, {
   dr_success_title:   { en:'Application Submitted!',                km:'ពាក្យសុំបានដាក់!' },
   dr_success_sub:     { en:'Our admin team will review your license within 24 hours. You will receive a confirmation email once approved.', km:'ក្រុមការងាររបស់យើងនឹងពិនិត្យអាជ្ञាបណ្ណក្នុង 24 ម៉ោង។' },
   dr_go_login:        { en:'Go to Doctor Login',                    km:'ចូលទំព័រវេជ្ជបណ្ឌិត' },
+
+  /* Photo upload */
+  dr_photo_label:     { en:'Profile Photo',                         km:'រូបភាពប្រវត្តិ' },
+  dr_optional:        { en:'(optional)',                            km:'(ស្រេចចិត្ត)' },
+  dr_photo_upload:    { en:'Upload Profile Photo',                  km:'បង្ហោះរូបថតប្រវត្តិ' },
+  dr_photo_hint:      { en:'JPG, PNG, or WEBP · Max 5 MB',         km:'JPG, PNG, ឬ WEBP · អតិបរមា 5 MB' },
+
+  /* License document upload */
+  dr_lic_doc_label:   { en:'License Document',                      km:'ឯកសារអាជ្ញាបណ្ណ' },
+  dr_lic_upload_label:{ en:'Click or drag to upload license scan',  km:'ចុចឬអូសឯកសារអាជ្ញាបណ្ណ' },
+  dr_lic_upload_hint: { en:'PDF, JPG, or PNG · Issued by Ministry of Health Cambodia', km:'PDF, JPG, ឬ PNG · ចេញដោយក្រសួងសុខាភិបាល' },
+  dr_lic_selected:    { en:'File selected',                         km:'ឯកសារបានជ្រើសរើស' },
+
+  /* Placeholders */
+  dr_email_ph:        { en:'doctor@example.com',                    km:'doctor@example.com' },
+  dr_pw_ph:           { en:'Min 8 characters',                      km:'យ៉ាងតិចបំផុត 8 តួអក្សរ' },
+  dr_confirm_ph:      { en:'Repeat password',                       km:'បញ្ជាក់ម្តងទៀត' },
+  dr_full_name_ph:    { en:'Dr. Your Name',                         km:'វ.គ. ឈ្មោះរបស់អ្នក' },
+  dr_license_ph:      { en:'e.g. KH-MED-0001',                      km:'ឧ. KH-MED-0001' },
+  dr_quals_ph:        { en:'e.g. MBBS, MD',                         km:'ឧ. MBBS, MD' },
+  dr_hospital_ph:     { en:'e.g. RUPP Medical Centre',              km:'ឧ. មជ្ឈមណ្ឌល RUPP' },
+  dr_univ_ph:         { en:'e.g. RUPP, NUM, IU',                    km:'ឧ. RUPP, NUM, IU' },
+  dr_avail_ph:        { en:'e.g. Mon–Fri 9:00–17:00',               km:'ឧ. ច័ន្ទ–សុក្រ 9:00–17:00' },
+  dr_bio_ph:          { en:'Briefly describe your clinical experience and expertise…', km:'ពណ៌នាសង្ខេបបទពិសោធន៍គ្លីនិករបស់អ្នក…' },
+
+  /* Validation messages */
+  dr_err_required:    { en:'Please fill all required fields.',       km:'សូមបំពេញព័ត៌មានចាំបាច់ទាំងអស់។' },
+  dr_err_pw_len:      { en:'Password must be at least 8 characters.',km:'ពាក្យសម្ងាត់ត្រូវតែ 8 តួអក្សរ ឬច្រើនជាង។' },
+  dr_err_pw_match:    { en:'Passwords do not match.',                km:'ពាក្យសម្ងាត់មិនត្រូវគ្នា។' },
+  dr_err_no_lic:      { en:'Please upload your license document (PDF or image).', km:'សូមបង្ហោះឯកសារអាជ្ញាបណ្ណ (PDF ឬរូបភាព)។' },
+  dr_err_photo_size:  { en:'Photo must be under 5 MB.',             km:'រូបភាពត្រូវតូចជាង 5 MB។' },
+  dr_err_file_type:   { en:'Only PDF, JPG or PNG accepted.',         km:'ទទួលយកតែ PDF, JPG ឬ PNG ប៉ុណ្ណោះ។' },
+  dr_toast_submitted: { en:'Application submitted!',                km:'ពាក្យសុំបានដាក់ជោគជ័យ!' },
 });
 </script>
 <script>
@@ -314,6 +431,58 @@ Object.assign(TRANSLATIONS, {
 
 let LANG = localStorage.getItem('lang')||'en';
 window.LANG = LANG;
+
+/* ── Photo preview ─────────────────────────────────────────────────── */
+function drOnPhotoChange(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    drToast(I18n.t('dr_err_photo_size'), 'error');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('drAvatarPreview').src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+  const nameEl = document.getElementById('drPhotoName');
+  nameEl.textContent = '✓ ' + file.name;
+  nameEl.style.display = 'block';
+}
+
+/* ── License file ──────────────────────────────────────────────────── */
+function drOnLicenseChange(input) {
+  if (!input.files || !input.files[0]) return;
+  _drSetLicenseFile(input.files[0]);
+}
+function drOnLicenseDrop(e) {
+  e.preventDefault();
+  document.getElementById('drLicenseZone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  const input = document.getElementById('drLicenseDoc');
+  const dt = new DataTransfer();
+  dt.items.add(file);
+  input.files = dt.files;
+  _drSetLicenseFile(file);
+}
+function _drSetLicenseFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (!['pdf','jpg','jpeg','png'].includes(ext)) {
+    drToast(I18n.t('dr_err_file_type'), 'error');
+    return;
+  }
+  const zone  = document.getElementById('drLicenseZone');
+  const icon  = document.getElementById('drLicenseIcon');
+  const label = document.getElementById('drLicenseLabel');
+  const fnEl  = document.getElementById('drLicenseFileName');
+  zone.classList.add('has-file');
+  icon.className  = 'ti ti-circle-check';
+  label.textContent = I18n.t('dr_lic_selected');
+  fnEl.textContent  = file.name;
+  fnEl.style.display = 'inline-block';
+}
 
 function drPwStrength() {
   const pw  = document.getElementById('drPassword').value;
@@ -361,10 +530,13 @@ async function drSubmit() {
 
   // Client-side validation
   if (!email || !pw || !fullName || !specialty || !license || !bio || !rate) {
-    showErr('Please fill all required fields.'); return;
+    showErr(I18n.t('dr_err_required')); return;
   }
-  if (pw.length < 8) { showErr('Password must be at least 8 characters.'); return; }
-  if (pw !== cpw)    { showErr('Passwords do not match.'); return; }
+  if (pw.length < 8) { showErr(I18n.t('dr_err_pw_len')); return; }
+  if (pw !== cpw)    { showErr(I18n.t('dr_err_pw_match')); return; }
+
+  const licFile = document.getElementById('drLicenseDoc').files[0];
+  if (!licFile) { showErr(I18n.t('dr_err_no_lic')); return; }
 
   const btn = document.getElementById('drSubmitBtn');
   btn.disabled = true;
@@ -372,27 +544,30 @@ async function drSubmit() {
   drUpdateSteps(2);
 
   try {
-    const body = {
-      email,
-      password: pw,
-      full_name: fullName,
-      specialty,
-      license_no: license,
-      license_number: license,
-      bio,
-      rate_per_session: parseFloat(rate) || 0,
-    };
-    if (hosp)  body.hospital       = hosp;
-    if (quals) body.qualifications  = quals;
-    if (avail) body.availability    = avail;
-    if (exp)   body.experience_years = parseInt(exp)||0;
-    if (phone) body.phone            = phone;
-    if (univ)  body.university       = univ;
+    const fd = new FormData();
+    fd.append('email',            email);
+    fd.append('password',         pw);
+    fd.append('full_name',        fullName);
+    fd.append('specialty',        specialty);
+    fd.append('license_no',       license);
+    fd.append('license_number',   license);
+    fd.append('bio',              bio);
+    fd.append('rate_per_session', parseFloat(rate) || 0);
+    if (hosp)  fd.append('hospital',        hosp);
+    if (quals) fd.append('qualifications',  quals);
+    if (avail) fd.append('availability',    avail);
+    if (exp)   fd.append('experience_years', parseInt(exp)||0);
+    if (phone) fd.append('phone',           phone);
+    if (univ)  fd.append('university',      univ);
+
+    fd.append('license_doc', licFile);
+
+    const photoFile = document.getElementById('drPhotoInput').files[0];
+    if (photoFile) fd.append('photo', photoFile);
 
     const res  = await fetch('/api/doctor/register', {
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(body),
+      body: fd,   // multipart/form-data — no Content-Type header needed
     });
     const data = await res.json();
 
@@ -408,7 +583,7 @@ async function drSubmit() {
     drUpdateSteps(3);
     document.getElementById('drForm').style.display = 'none';
     document.getElementById('drSuccess').classList.add('show');
-    drToast('Application submitted!','success');
+    drToast(I18n.t('dr_toast_submitted'),'success');
 
   } catch(e) {
     showErr(e.message);
@@ -434,6 +609,12 @@ function drToggleLang() {
   document.getElementById('dr-html').setAttribute('lang',LANG==='km'?'km':'en');
   document.getElementById('drLangBtn').textContent=LANG==='km'?'English':'ខ្មែរ';
   if(typeof applyLang==='function') applyLang(LANG);
+  // Re-translate the license label only if no file is currently selected
+  const licDoc = document.getElementById('drLicenseDoc');
+  if (!licDoc || !licDoc.files || !licDoc.files[0]) {
+    const lbl = document.getElementById('drLicenseLabel');
+    if (lbl && !lbl.dataset.i18nDirty) lbl.textContent = I18n.t('dr_lic_upload_label');
+  }
 }
 
 document.addEventListener('DOMContentLoaded',()=>{

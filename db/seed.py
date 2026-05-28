@@ -510,7 +510,7 @@ def _seed_appointment(sopheap_id: int, sophal_doctor_id: int) -> int:
                 30,
                 'confirmed',
                 :note, :note,
-                'https://meet.google.com/smx-001',
+                'https://meet.jit.si/SmartXRay-apt-1',
                 15.00, 15.00,
                 'ABA KHQR', 'paid',
                 NOW()
@@ -544,7 +544,7 @@ def _seed_appointment(sopheap_id: int, sophal_doctor_id: int) -> int:
     apt_id = result.fetchone()[0]
     print(f"      ✓  Sopheap → Dr. Sophal Meas")
     print(f"         25 May 2026 10:00 · confirmed · $15 ABA KHQR")
-    print(f"         meeting: https://meet.google.com/smx-001  (id={apt_id})")
+    print(f"         meeting: https://meet.jit.si/SmartXRay-apt-{apt_id}  (id={apt_id})")
     return apt_id
 
 

@@ -103,7 +103,9 @@
     width:52px; height:52px; border-radius:12px; flex-shrink:0;
     display:flex; align-items:center; justify-content:center;
     font-family:'Space Grotesk',sans-serif; font-size:1rem; font-weight:700; color:#fff;
+    overflow:hidden;
   }
+  .ma-doc-ava img { width:100%; height:100%; object-fit:cover; display:block; }
   .ma-doc-info { flex:1; min-width:0; }
   .ma-doc-name  { font-weight:700; font-size:.97rem; }
   .ma-doc-spec  { font-size:.78rem; color:var(--indigo); font-weight:600; margin-top:.1rem; }
@@ -232,7 +234,8 @@
     padding:.65rem .85rem; background:#F8FAFC; border-radius:10px;
     border:1px solid var(--border); margin-bottom:1.1rem;
   }
-  .ma-modal-doc-ava { width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0; }
+  .ma-modal-doc-ava { width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.85rem;color:#fff;flex-shrink:0;overflow:hidden; }
+  .ma-modal-doc-ava img { width:100%; height:100%; object-fit:cover; display:block; }
   .ma-modal-doc-name { font-weight:700; font-size:.88rem; }
   .ma-modal-doc-spec { font-size:.75rem; color:var(--indigo); font-weight:600; }
 
@@ -648,7 +651,10 @@ function maCard(a) {
   return `
     <div class="ma-card ${cardCls}" data-apt-id="${a.id}">
       <div class="ma-card-top">
-        <div class="ma-doc-ava" style="background:${fg};">${init}</div>
+        ${(doc.photo_url||doc.avatar_url)
+          ? `<div class="ma-doc-ava"><img src="${doc.photo_url||doc.avatar_url}" alt="${init}" onerror="this.parentElement.style.background='${fg}';this.parentElement.textContent='${init}';"></div>`
+          : `<div class="ma-doc-ava" style="background:${fg};">${init}</div>`
+        }
         <div class="ma-doc-info">
           <div class="ma-doc-name">${escHtml(doc.full_name || '—')}</div>
           <div class="ma-doc-spec">${escHtml(doc.specialty || '—')}</div>
@@ -673,7 +679,7 @@ function maCard(a) {
 
 /* ─── Encode doctor data for onclick attr ────────────────────────────────── */
 function encodeDocData(doc, color) {
-  const obj = { name: doc.full_name || '—', spec: doc.specialty || '—', color };
+  const obj = { name: doc.full_name || '—', spec: doc.specialty || '—', color, photo: doc.photo_url || doc.avatar_url || '' };
   return JSON.stringify(obj).replace(/'/g, "\\'").replace(/"/g, '&quot;');
 }
 function escHtml(s) {
@@ -738,8 +744,18 @@ function maOpenReview(aptId, docDataEncoded) {
 
   // Populate doctor card
   const ava  = document.getElementById('maReviewDocAva');
-  ava.textContent = _initials(doc.name || '');
-  ava.style.background = doc.color || '#6366F1';
+  if (doc.photo) {
+    ava.innerHTML = '';
+    ava.style.background = '';
+    const _img = document.createElement('img');
+    _img.src = doc.photo; _img.alt = _initials(doc.name||'');
+    _img.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    _img.onerror = () => { ava.innerHTML = _initials(doc.name||''); ava.style.background = doc.color||'#6366F1'; };
+    ava.appendChild(_img);
+  } else {
+    ava.innerHTML = _initials(doc.name || '');
+    ava.style.background = doc.color || '#6366F1';
+  }
   document.getElementById('maReviewDocName').textContent = doc.name || '—';
   document.getElementById('maReviewDocSpec').textContent = doc.spec || '—';
 

@@ -49,13 +49,12 @@ logger = logging.getLogger(__name__)
 
 def generate_meeting_link(appointment_id: int) -> str:
     """
-    Return a mock Google Meet link for the given appointment.
-    In production, replace with a real Google Meet / Zoom API call.
+    Return a Jitsi Meet link for the given appointment.
+    Jitsi Meet rooms are auto-created on first visit — no API key needed.
 
-    Format: https://meet.google.com/smx-<zero-padded id>
+    Format: https://meet.jit.si/SmartXRay-apt-<id>
     """
-    padded = str(appointment_id).zfill(3)
-    return f"https://meet.google.com/smx-{padded}"
+    return f"https://meet.jit.si/SmartXRay-apt-{appointment_id}"
 
 
 def _ts() -> str:

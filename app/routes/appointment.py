@@ -443,9 +443,9 @@ def join_meeting(apt_id):
                 "message": "This appointment time has passed.",
             }), 400
 
-    # Fetch or generate meeting link
+    # Fetch or generate meeting link — upgrade old fake Google Meet links
     meeting_link = getattr(apt, "meeting_link", None)
-    if not meeting_link:
+    if not meeting_link or "meet.google.com/smx" in str(meeting_link):
         from app.utils.notifications import generate_meeting_link
         meeting_link = generate_meeting_link(apt_id)
 
@@ -521,6 +521,16 @@ def complete_appointment(apt_id):
 
     # ── Mark complete ─────────────────────────────────────────────────
     apt.status = "completed"
+
+    # If the appointment was scheduled for a future date (early completion),
+    # move its date to today so it appears in Today's Schedule.
+    from app.utils.time_utils import cambodia_today as _today
+    today_date = _today()
+    try:
+        if apt.appointment_date and apt.appointment_date > today_date:
+            apt.appointment_date = today_date
+    except Exception:
+        pass
 
     # ── Update doctor total earnings ──────────────────────────────────
     fee = (
@@ -816,7 +826,7 @@ def _format_apt_for_patient(a: Appointment) -> dict:
     """Serialize an Appointment for the patient-facing API."""
     doctor       = db.session.get(Doctor, a.doctor_id)
     meeting_link = getattr(a, "meeting_link", None)
-    if not meeting_link:
+    if not meeting_link or "meet.google.com/smx" in str(meeting_link):
         from app.utils.notifications import generate_meeting_link
         meeting_link = generate_meeting_link(a.id)
 

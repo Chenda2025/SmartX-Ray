@@ -45,7 +45,9 @@
     width:80px; height:80px; border-radius:18px; margin:0 auto 1rem;
     display:flex; align-items:center; justify-content:center;
     font-size:1.6rem; font-weight:700; color:#fff;
+    overflow:hidden;
   }
+  .dp-avatar-lg img { width:100%; height:100%; object-fit:cover; display:block; }
   .dp-name   { text-align:center; font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:1.2rem; }
   .dp-spec   { text-align:center; color:var(--indigo); font-weight:600; font-size:.88rem; margin-top:.15rem; }
   .dp-verified { display:flex; align-items:center; justify-content:center; gap:.25rem; font-size:.75rem; font-weight:700; color:var(--green); margin-top:.4rem; }
@@ -260,7 +262,10 @@ function dpRenderSidebar(d) {
   const t = (k) => (LANG==='km' ? TRANSLATIONS[k]?.km : TRANSLATIONS[k]?.en) || '';
 
   document.getElementById('dpSidebar').innerHTML = `
-    <div class="dp-avatar-lg" style="background:${fg};">${initials}</div>
+    ${(d.photo_url || d.avatar_url)
+      ? `<div class="dp-avatar-lg"><img src="${d.photo_url || d.avatar_url}" alt="${initials}" onerror="this.parentElement.style.background='${fg}';this.parentElement.innerHTML='${initials}';"></div>`
+      : `<div class="dp-avatar-lg" style="background:${fg};">${initials}</div>`
+    }
     <div class="dp-name">${d.full_name}</div>
     <div class="dp-spec">${d.specialty||'—'}</div>
     ${d.is_verified ? `<div class="dp-verified"><i class="ti ti-shield-check"></i>${t('dp_verified')}</div>` : ''}

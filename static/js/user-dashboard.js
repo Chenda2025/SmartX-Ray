@@ -742,6 +742,19 @@ function udRenderDoctors() {
   grid.innerHTML = filtered.map((d, i) => udDoctorCardHTML(d, i)).join('');
 }
 
+function _udAvatarHTML(photoUrl, initials, palette, cssClass) {
+  if (photoUrl) {
+    const bg = palette.bg.replace(/"/g, '');
+    const fg = palette.color.replace(/"/g, '');
+    return `<div class="${cssClass}" style="background:${palette.bg};color:${palette.color};">
+      <img src="${photoUrl}" alt="${initials}"
+           style="object-fit:cover;width:100%;height:100%;display:block;"
+           onerror="this.style.display='none';this.parentElement.textContent='${initials}';">
+    </div>`;
+  }
+  return `<div class="${cssClass}" style="background:${palette.bg};color:${palette.color};">${initials}</div>`;
+}
+
 function udDoctorCardHTML(d, idx = 0) {
   const palette  = _DOC_PALETTE[idx % _DOC_PALETTE.length];
   const initials = (d.full_name || 'DR').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
@@ -762,7 +775,7 @@ function udDoctorCardHTML(d, idx = 0) {
     <div class="ud-doc-card">
       <div class="ud-doc-top">
         <div class="ud-doc-info">
-          <div class="ud-doc-avatar" style="background:${palette.bg};color:${palette.color};">${initials}</div>
+          ${_udAvatarHTML(d.avatar_url || d.photo_url, initials, palette, 'ud-doc-avatar')}
           <div>
             <div class="ud-doc-name">${d.full_name || '—'}</div>
             <div class="ud-doc-spec">${d.specialty || '—'}</div>
@@ -843,7 +856,7 @@ function udRenderAppointments() {
 
     return `
     <div class="ud-appt-row" id="appt-row-${a.id}">
-      <div class="ud-appt-avatar" style="background:${palette.bg};color:${palette.color};">${initials}</div>
+      ${_udAvatarHTML(doc.avatar_url || doc.photo_url, initials, palette, 'ud-appt-avatar')}
       <div class="ud-appt-info">
         <div class="ud-appt-name">${_udEsc(doc.full_name || '—')}</div>
         <div class="ud-appt-spec">${_udEsc(doc.specialty || '—')}</div>
@@ -861,6 +874,10 @@ function udRenderAppointments() {
         <button class="ud-join-btn" onclick="window.open('${_udEsc(a.meeting_link || '')}','_blank')">
           <i class="ti ti-video"></i>
           ${I18n.t('appt_join') || 'Join Meeting'}
+        </button>` : ''}
+        ${a.status === 'confirmed' ? `
+        <button class="ud-camera-btn" onclick="udOpenCamera(${a.id},'${_udEsc(a.meeting_link || '')}')">
+          <i class="ti ti-camera"></i> Open Camera
         </button>` : ''}
         ${a.status === 'confirmed' ? `
         <button class="ud-cancel-appt-btn" onclick="udCancelAppointment(${a.id})">
@@ -891,6 +908,138 @@ async function udCancelAppointment(aptId) {
   } catch {
     udShowToast('Network error. Please try again.', 'error');
   }
+}
+
+/* ── Camera Modal ───────────────────────────────────────────────────────────
+   Clicking "Open Camera" does three things at once:
+     1. Opens the meeting link with the doctor in a new tab immediately
+     2. Shows the camera-test modal so the patient can see their own video
+     3. Auto-starts the camera stream inside the modal
+   ──────────────────────────────────────────────────────────────────────── */
+let _udCamStream   = null;
+let _udCamMeetLink = '';
+
+async function udOpenCamera(aptId, meetingLink) {
+  _udCamMeetLink = meetingLink || '';
+
+  // Step 1 — open the doctor meeting link right away
+  if (_udCamMeetLink) {
+    window.open(_udCamMeetLink, '_blank');
+  }
+
+  // Step 2 — open the camera-test modal
+  const overlay  = document.getElementById('udCamOverlay');
+  const video    = document.getElementById('udCamVideo');
+  const ph       = document.getElementById('udCamPlaceholder');
+  const status   = document.getElementById('udCamStatus');
+  const startBtn = document.getElementById('udCamStartBtn');
+  const joinBtn  = document.getElementById('udCamJoinBtn');
+
+  if (_udCamStream) {
+    _udCamStream.getTracks().forEach(t => t.stop());
+    _udCamStream = null;
+  }
+
+  video.style.display    = 'none';
+  ph.style.display       = 'flex';
+  status.className       = 'ud-cam-status';
+  status.textContent     = 'Starting your camera…';
+  startBtn.innerHTML     = '<i class="ti ti-loader-2"></i> Starting…';
+  startBtn.disabled      = true;
+  joinBtn.style.display  = _udCamMeetLink ? '' : 'none';
+
+  overlay.classList.add('open');
+
+  // Step 3 — auto-start camera
+  try {
+    _udCamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    video.srcObject     = _udCamStream;
+    video.style.display = 'block';
+    ph.style.display    = 'none';
+
+    status.className   = 'ud-cam-status ok';
+    status.textContent = '✓ Camera & microphone ready — meeting opened in new tab';
+
+    startBtn.innerHTML = '<i class="ti ti-camera-off"></i> Stop Camera';
+    startBtn.disabled  = false;
+    startBtn.onclick   = udStopCamera;
+  } catch (err) {
+    status.className   = 'ud-cam-status err';
+    status.textContent = err.name === 'NotAllowedError'
+      ? '✗ Camera permission denied. Allow access in browser settings.'
+      : '✗ Could not access camera: ' + err.message;
+    startBtn.innerHTML = '<i class="ti ti-camera"></i> Try Again';
+    startBtn.disabled  = false;
+    startBtn.onclick   = udStartCamera;
+  }
+}
+
+async function udStartCamera() {
+  const video    = document.getElementById('udCamVideo');
+  const ph       = document.getElementById('udCamPlaceholder');
+  const status   = document.getElementById('udCamStatus');
+  const startBtn = document.getElementById('udCamStartBtn');
+
+  startBtn.innerHTML = '<i class="ti ti-loader-2"></i> Starting…';
+  startBtn.disabled  = true;
+
+  try {
+    _udCamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    video.srcObject     = _udCamStream;
+    video.style.display = 'block';
+    ph.style.display    = 'none';
+
+    status.className   = 'ud-cam-status ok';
+    status.textContent = '✓ Camera & microphone ready';
+
+    startBtn.innerHTML = '<i class="ti ti-camera-off"></i> Stop Camera';
+    startBtn.disabled  = false;
+    startBtn.onclick   = udStopCamera;
+  } catch (err) {
+    status.className   = 'ud-cam-status err';
+    status.textContent = err.name === 'NotAllowedError'
+      ? '✗ Camera permission denied. Allow access in browser settings.'
+      : '✗ Could not access camera: ' + err.message;
+    startBtn.innerHTML = '<i class="ti ti-camera"></i> Try Again';
+    startBtn.disabled  = false;
+  }
+}
+
+function udStopCamera() {
+  if (_udCamStream) {
+    _udCamStream.getTracks().forEach(t => t.stop());
+    _udCamStream = null;
+  }
+  const video    = document.getElementById('udCamVideo');
+  const ph       = document.getElementById('udCamPlaceholder');
+  const status   = document.getElementById('udCamStatus');
+  const startBtn = document.getElementById('udCamStartBtn');
+
+  video.srcObject     = null;
+  video.style.display = 'none';
+  ph.style.display    = 'flex';
+
+  status.className   = 'ud-cam-status';
+  status.textContent = 'Camera stopped.';
+
+  startBtn.innerHTML = '<i class="ti ti-camera"></i> Start Camera';
+  startBtn.onclick   = udStartCamera;
+}
+
+function udCameraJoinMeeting() {
+  if (_udCamMeetLink) window.open(_udCamMeetLink, '_blank');
+  udCloseCamera();
+}
+
+function udCloseCamera() {
+  if (_udCamStream) {
+    _udCamStream.getTracks().forEach(t => t.stop());
+    _udCamStream = null;
+  }
+  document.getElementById('udCamOverlay').classList.remove('open');
+  const video = document.getElementById('udCamVideo');
+  video.srcObject     = null;
+  video.style.display = 'none';
 }
 
 /* ── Date formatter: "2026-05-26" → "26 May 2026" ────────────────────────── */
@@ -935,9 +1084,27 @@ function udOpenBookModal(doctorId) {
 
   /* Avatar */
   const av = document.getElementById('mdAvatar');
-  av.textContent      = initials;
-  av.style.background = palette.bg;
-  av.style.color      = palette.color;
+  const photoUrl = d.avatar_url || d.photo_url;
+  if (photoUrl) {
+    av.innerHTML = '';
+    av.style.background = '';
+    av.style.color = '';
+    av.style.padding = '0';
+    const img = document.createElement('img');
+    img.src = photoUrl;
+    img.alt = initials;
+    img.style.cssText = 'width:100%;height:100%;object-fit:cover;border-radius:50%;';
+    img.onerror = () => {
+      av.innerHTML = initials;
+      av.style.background = palette.bg;
+      av.style.color = palette.color;
+    };
+    av.appendChild(img);
+  } else {
+    av.innerHTML = initials;
+    av.style.background = palette.bg;
+    av.style.color      = palette.color;
+  }
 
   document.getElementById('mdDocName').textContent = d.full_name || '—';
   document.getElementById('mdDocSpec').textContent = d.specialty  || '—';

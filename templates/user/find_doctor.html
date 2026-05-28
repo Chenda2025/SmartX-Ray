@@ -86,7 +86,8 @@
   .fd-doc-card:hover::before { opacity:1; }
 
   .fd-card-top { display:flex; align-items:flex-start; gap:.85rem; }
-  .fd-doc-avatar { width:56px; height:56px; border-radius:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.15rem; font-weight:700; color:#fff; letter-spacing:-.5px; box-shadow:0 4px 12px rgba(0,0,0,.15); }
+  .fd-doc-avatar { width:56px; height:56px; border-radius:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:1.15rem; font-weight:700; color:#fff; letter-spacing:-.5px; box-shadow:0 4px 12px rgba(0,0,0,.15); overflow:hidden; }
+  .fd-doc-avatar img { width:100%; height:100%; object-fit:cover; display:block; }
   .fd-doc-identity { flex:1; min-width:0; }
   .fd-doc-name { font-weight:700; font-size:.96rem; line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .fd-doc-spec { font-size:.78rem; color:var(--indigo); font-weight:600; margin-top:.1rem; display:flex; align-items:center; gap:.25rem; }
@@ -172,7 +173,8 @@
     border-bottom:1.5px solid var(--border); position:sticky; top:0;
     background:#fff; z-index:2; border-radius:18px 18px 0 0;
   }
-  .bm-doc-ava { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; color:#fff; flex-shrink:0; }
+  .bm-doc-ava { width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1rem; font-weight:700; color:#fff; flex-shrink:0; overflow:hidden; }
+  .bm-doc-ava img { width:100%; height:100%; object-fit:cover; display:block; }
   .bm-doc-info { flex:1; min-width:0; }
   .bm-doc-name { font-weight:700; font-size:.97rem; line-height:1.25; }
   .bm-doc-spec { font-size:.78rem; color:var(--indigo); font-weight:600; }
@@ -776,7 +778,10 @@ function fdCard(d){
   return `
   <div class="fd-doc-card" onclick="fdGoProfile(event,${d.id})" data-doc-id="${d.id}">
     <div class="fd-card-top">
-      <div class="fd-doc-avatar" style="background:${fg};">${_initials(d.full_name)}</div>
+      ${(d.photo_url||d.avatar_url)
+        ? `<div class="fd-doc-avatar"><img src="${d.photo_url||d.avatar_url}" alt="${_initials(d.full_name)}" onerror="this.parentElement.style.background='${fg}';this.parentElement.textContent='${_initials(d.full_name)}';"></div>`
+        : `<div class="fd-doc-avatar" style="background:${fg};">${_initials(d.full_name)}</div>`
+      }
       <div class="fd-doc-identity">
         <div class="fd-doc-name">${d.full_name}</div>
         <div class="fd-doc-spec"><i class="ti ti-stethoscope"></i>${d.specialty||'—'}</div>
@@ -860,8 +865,21 @@ function fdOpenBooking(docId, docData){
   const [fg] = _colorFor(d.full_name);
 
   // Header
-  document.getElementById('bmDocAva').style.background = fg;
-  document.getElementById('bmDocAva').textContent = _initials(d.full_name);
+  const _bmAva = document.getElementById('bmDocAva');
+  const _bmPhoto = d.photo_url || d.avatar_url;
+  if (_bmPhoto) {
+    _bmAva.innerHTML = '';
+    _bmAva.style.background = '';
+    const _bmImg = document.createElement('img');
+    _bmImg.src = _bmPhoto;
+    _bmImg.alt = _initials(d.full_name);
+    _bmImg.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+    _bmImg.onerror = () => { _bmAva.innerHTML = _initials(d.full_name); _bmAva.style.background = fg; };
+    _bmAva.appendChild(_bmImg);
+  } else {
+    _bmAva.innerHTML = _initials(d.full_name);
+    _bmAva.style.background = fg;
+  }
   document.getElementById('bmDocName').textContent = d.full_name;
   document.getElementById('bmDocSpec').textContent = d.specialty||'';
   document.getElementById('bmDocRate').textContent = `$${BM.rate.toFixed(0)}${_t('bm_per_session')||'/session'}`;
