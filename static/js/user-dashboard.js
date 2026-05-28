@@ -16,6 +16,8 @@ let UD = {
   doctorFilter: 'all',
   selectedDate: null,
   selectedTime: null,
+  calYear:      new Date().getFullYear(),
+  calMonth:     new Date().getMonth(),
   activeDoctorId:    null,
   activeDoctorFee:   15,
   activeDoctorName:  '',
@@ -938,13 +940,16 @@ function udOpenBookModal(doctorId) {
   document.getElementById('mdDocSpec').textContent = d.specialty  || '—';
   document.getElementById('mdFee').textContent = `$${fee.toFixed(2)}`;
 
-  /* Reset selections */
+  /* Reset selections + calendar to current month */
   UD.selectedDate = null;
   UD.selectedTime = null;
+  UD.calYear  = new Date().getFullYear();
+  UD.calMonth = new Date().getMonth();
   document.getElementById('udNote').value = '';
 
-  udBuildCalendar();
-  udBuildTimeSlots();
+  udBuildCalendar();  // auto-selects today, sets UD.selectedDate
+  const isoToday = _udDateToISO(UD.selectedDate);
+  udFetchAndBuildSlots(d.id, isoToday);
 
   document.getElementById('udBookModal').classList.add('open');
 }
@@ -960,45 +965,56 @@ function udCloseModal(e) {
 /* ── Mini calendar ──────────────────────────────────────────────────────── */
 function udBuildCalendar() {
   const now   = new Date();
-  const year  = now.getFullYear();
-  const month = now.getMonth();
-  const today = now.getDate();
+  const year  = UD.calYear;
+  const month = UD.calMonth;
+  const todayY = now.getFullYear();
+  const todayM = now.getMonth();
+  const todayD = now.getDate();
 
   const monthNames = ['January','February','March','April','May','June',
                       'July','August','September','October','November','December'];
 
-  const firstDay   = new Date(year, month, 1).getDay();
+  const firstDay    = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
   const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
-  const headerHtml = dayNames.map(d =>
-    `<div class="ud-cal-day-name">${d}</div>`).join('');
+  const headerHtml = dayNames.map(d => `<div class="ud-cal-day-name">${d}</div>`).join('');
 
   let cells = '';
-  /* Empty cells before first day */
   for (let i = 0; i < firstDay; i++) cells += `<div class="ud-cal-day other-month"></div>`;
-  /* Day cells */
   for (let day = 1; day <= daysInMonth; day++) {
-    const isPast  = day < today;
-    const isToday = day === today;
-    let cls = 'ud-cal-day';
-    if (isPast) cls += ' unavail';
-    else cls += ' available';
-    if (isToday && !isPast) cls += ' selected';
-    if (isToday) UD.selectedDate = `${monthNames[month]} ${day}, ${year}`;
+    const isPast  = (year < todayY) || (year === todayY && month < todayM) ||
+                    (year === todayY && month === todayM && day < todayD);
+    const isToday = year === todayY && month === todayM && day === todayD;
+    let cls = 'ud-cal-day' + (isPast ? ' unavail' : ' available');
+    if (isToday) { cls += ' selected'; UD.selectedDate = `${monthNames[month]} ${day}, ${year}`; }
     cells += `<div class="${cls}" onclick="udSelectDate(this,'${monthNames[month]} ${day}, ${year}')">${day}</div>`;
   }
 
   document.getElementById('udCal').innerHTML = `
     <div class="ud-cal-header">
-      <button class="ud-cal-nav"><i class="ti ti-chevron-left"></i></button>
+      <button class="ud-cal-nav" onclick="udCalNav(-1)"><i class="ti ti-chevron-left"></i></button>
       <span class="ud-cal-month">${monthNames[month]} ${year}</span>
-      <button class="ud-cal-nav"><i class="ti ti-chevron-right"></i></button>
+      <button class="ud-cal-nav" onclick="udCalNav(1)"><i class="ti ti-chevron-right"></i></button>
     </div>
-    <div class="ud-cal-grid">
-      ${headerHtml}
-      ${cells}
-    </div>`;
+    <div class="ud-cal-grid">${headerHtml}${cells}</div>`;
+}
+
+function udCalNav(dir) {
+  UD.calMonth += dir;
+  if (UD.calMonth > 11) { UD.calMonth = 0;  UD.calYear++; }
+  if (UD.calMonth < 0)  { UD.calMonth = 11; UD.calYear--; }
+  // Don't allow navigating before current month
+  const now = new Date();
+  if (UD.calYear < now.getFullYear() ||
+      (UD.calYear === now.getFullYear() && UD.calMonth < now.getMonth())) {
+    UD.calYear = now.getFullYear(); UD.calMonth = now.getMonth();
+  }
+  UD.selectedDate = null;
+  UD.selectedTime = null;
+  udBuildCalendar();
+  document.getElementById('udTimeGrid').innerHTML =
+    '<div style="text-align:center;padding:12px;color:#94A3B8;font-size:13px;">Select a date to see available slots.</div>';
 }
 
 function udSelectDate(el, dateStr) {
@@ -1006,24 +1022,47 @@ function udSelectDate(el, dateStr) {
   document.querySelectorAll('.ud-cal-day').forEach(d => d.classList.remove('selected'));
   el.classList.add('selected');
   UD.selectedDate = dateStr;
+  const isoDate = _udDateToISO(dateStr);
+  if (isoDate) udFetchAndBuildSlots(UD.activeDoctorId, isoDate);
 }
 
-/* ── Time slots ─────────────────────────────────────────────────────────── */
-function udBuildTimeSlots() {
-  const slots  = ['09:00','10:00','11:00','14:00','15:00','16:00'];
-  const booked = ['11:00']; /* mock booked slot */
-  document.getElementById('udTimeGrid').innerHTML = slots.map(t => {
-    const isBk  = booked.includes(t);
-    const cls   = 'ud-time-slot' + (isBk ? ' booked' : '');
-    const click = isBk ? '' : `onclick="udSelectTime(this,'${t}')"`;
-    return `<div class="${cls}" ${click}>${t}</div>`;
-  }).join('');
+/* ── Time slots — fetched from /api/doctors/<id>/slots ──────────────────── */
+async function udFetchAndBuildSlots(doctorId, isoDate) {
+  const grid = document.getElementById('udTimeGrid');
+  if (!grid || !doctorId || !isoDate) return;
+  UD.selectedTime = null;
+  grid.innerHTML = '<div style="text-align:center;padding:12px;color:#94A3B8;font-size:13px;">Loading…</div>';
+
+  try {
+    const res  = await fetch(`/api/doctors/${doctorId}/slots?date=${isoDate}`);
+    const data = await res.json();
+    const slots = data.slots || [];
+
+    if (!slots.length) {
+      grid.innerHTML = '<div style="text-align:center;padding:12px;color:#94A3B8;font-size:13px;">No slots available this day.</div>';
+      return;
+    }
+    grid.innerHTML = slots.map(s => {
+      const cls   = 'ud-time-slot' + (s.available ? '' : ' booked');
+      const click = s.available ? `onclick="udSelectTime(this,'${s.time}')"` : '';
+      return `<div class="${cls}" ${click}>${s.time}</div>`;
+    }).join('');
+  } catch {
+    grid.innerHTML = '<div style="text-align:center;padding:12px;color:#94A3B8;font-size:13px;">Could not load slots.</div>';
+  }
 }
 
 function udSelectTime(el, time) {
   document.querySelectorAll('.ud-time-slot').forEach(s => s.classList.remove('selected'));
   el.classList.add('selected');
   UD.selectedTime = time;
+}
+
+function _udDateToISO(dateStr) {
+  if (!dateStr) return null;
+  const p = new Date(dateStr);
+  if (isNaN(p)) return null;
+  return [p.getFullYear(), String(p.getMonth()+1).padStart(2,'0'), String(p.getDate()).padStart(2,'0')].join('-');
 }
 
 /* ── Confirm booking — saves to database ────────────────────────────────── */
@@ -1037,18 +1076,11 @@ async function udConfirmBooking() {
     return;
   }
 
-  /* Convert "May 26, 2026" → "2026-05-26" using LOCAL date parts
-     (toISOString() shifts midnight local→UTC and returns the wrong day) */
-  const parsed = new Date(UD.selectedDate);
-  if (isNaN(parsed)) {
+  const isoDate = _udDateToISO(UD.selectedDate);
+  if (!isoDate) {
     udShowToast('Invalid date selected.', 'error');
     return;
   }
-  const isoDate = [
-    parsed.getFullYear(),
-    String(parsed.getMonth() + 1).padStart(2, '0'),
-    String(parsed.getDate()).padStart(2, '0'),
-  ].join('-');   // YYYY-MM-DD in local timezone
 
   /* Show loading on the confirm button */
   const btn = document.querySelector('.ud-btn-confirm');
