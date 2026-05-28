@@ -173,19 +173,24 @@ function udRefreshDynamicI18n() {
    ════════════════════════════════════════════════════════════════════════════ */
 async function udInitAds() {
   if (UD.isPro) return;
-  /* Try to load real ad */
   try {
     const res  = await api.get('/ads?placement=banner');
     const data = await res.json();
     if (data && data.ads && data.ads.length > 0) {
-      const ad = data.ads[0];
+      const ad  = data.ads[0];
       const img = document.getElementById('udAdImg');
       if (ad.image_url) {
         img.innerHTML = `<img src="${ad.image_url}" alt="Ad" />`;
       }
-      document.getElementById('udAdText').textContent =
-        (I18n.getLang() === 'km' ? 'ឧបត្ថម្ភ — ' : 'Sponsored — ') +
-        (ad.advertiser || 'Cambodia Medical Supplies');
+      const textEl = document.getElementById('udAdText');
+      const prefix = I18n.getLang() === 'km' ? 'ឧបត្ថម្ភ — ' : 'Sponsored — ';
+      textEl.textContent = ad.title
+        ? `${prefix}${ad.title}`
+        : `${prefix}${ad.advertiser || 'Cambodia Medical Supplies'}`;
+      if (ad.target_url) {
+        textEl.href = ad.target_url;
+        textEl.onclick = () => api.post(`/ads/${ad.id}/click`, {});
+      }
     }
   } catch { /* use default */ }
   document.getElementById('udAdBanner').classList.remove('ud-hidden');

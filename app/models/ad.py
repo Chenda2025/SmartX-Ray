@@ -42,6 +42,7 @@ class Ad(db.Model):
             "body":       self.body,
             "image_url":  self.image_url,
             "target_url": self.target_url,
+            "advertiser": self.advertiser,
             "placement":  self.placement,
         }
 
