@@ -48,6 +48,19 @@ def create_app(env: str | None = None) -> Flask:
     for folder_key in ("UPLOAD_FOLDER", "HEATMAP_FOLDER", "REPORT_FOLDER"):
         os.makedirs(app.config[folder_key], exist_ok=True)
 
+    # ── Startup column guard — ensure c005 columns exist without requiring
+    #    a full Alembic run (safe to call on every boot; IF NOT EXISTS). ────
+    with app.app_context():
+        try:
+            db.session.execute(db.text("""
+                ALTER TABLE appointments
+                    ADD COLUMN IF NOT EXISTS scan_id INTEGER
+                        REFERENCES scans(id) ON DELETE SET NULL
+            """))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()   # SQLite or already-migrated — ignore
+
     # ── Security headers ────────────────────────────────────────────────────
     @app.after_request
     def set_security_headers(response):
