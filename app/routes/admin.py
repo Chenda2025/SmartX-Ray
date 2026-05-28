@@ -155,6 +155,7 @@ def _build_flow_stats() -> dict:
         total_ad_clicks = _i(db.session.execute(
             db.text("SELECT COALESCE(SUM(total_clicks), 0) FROM ads")).scalar())
     except Exception:
+        db.session.rollback()
         active_ads = total_ad_views = total_ad_clicks = 0
     ad_ctr = round((total_ad_clicks / total_ad_views * 100) if total_ad_views > 0 else 0, 1)
 
@@ -184,6 +185,7 @@ def _build_flow_stats() -> dict:
         avg_ai_time_ms = round(float(db.session.execute(
             db.text("SELECT COALESCE(AVG(ai_time_ms), 0) FROM scans")).scalar() or 0))
     except Exception:
+        db.session.rollback()
         avg_ai_time_ms = 0
     high_severity_logs  = high_alerts
     upcoming_appointments = _i(Appointment.query.filter_by(status="confirmed").count())
