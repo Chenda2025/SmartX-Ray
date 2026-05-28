@@ -377,31 +377,31 @@ def doctor_dashboard():
     except Exception:
         total_patients = 0
 
-    # ── KPI: earnings this month ──────────────────────────────────────
+    # ── KPI: earnings this month (confirmed + completed — payment collected at booking) ──
     fee_col = _get_fee_col()
     try:
         earnings_month = db.session.query(
             func.sum(getattr(Appointment, fee_col))
         ).filter(
-            Appointment.doctor_id   == doctor.id,
-            Appointment.status      == "completed",
+            Appointment.doctor_id == doctor.id,
+            Appointment.status.in_(["confirmed", "completed"]),
             Appointment.appointment_date >= month_start,
         ).scalar() or 0.0
     except Exception:
         earnings_month = 0.0
 
-    # ── Earnings: all-time ────────────────────────────────────────────
+    # ── Earnings: all-time (confirmed + completed) ────────────────────
     try:
         earnings_total = db.session.query(
             func.sum(getattr(Appointment, fee_col))
         ).filter(
             Appointment.doctor_id == doctor.id,
-            Appointment.status    == "completed",
+            Appointment.status.in_(["confirmed", "completed"]),
         ).scalar() or 0.0
     except Exception:
         earnings_total = 0.0
 
-    # ── Earnings: pending (confirmed but not yet completed) ───────────
+    # ── Earnings: pending (confirmed, not yet consulted) ──────────────
     try:
         earnings_pending = db.session.query(
             func.sum(getattr(Appointment, fee_col))
@@ -723,8 +723,8 @@ def get_stats():
         earnings_month = db.session.query(
             func.sum(getattr(Appointment, fee_col))
         ).filter(
-            Appointment.doctor_id   == doctor.id,
-            Appointment.status      == "completed",
+            Appointment.doctor_id == doctor.id,
+            Appointment.status.in_(["confirmed", "completed"]),
             Appointment.appointment_date >= month_start,
         ).scalar() or 0.0
     except Exception:
@@ -735,7 +735,7 @@ def get_stats():
             func.sum(getattr(Appointment, fee_col))
         ).filter(
             Appointment.doctor_id == doctor.id,
-            Appointment.status    == "completed",
+            Appointment.status.in_(["confirmed", "completed"]),
         ).scalar() or 0.0
     except Exception:
         earnings_total = 0.0
