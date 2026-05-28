@@ -26,7 +26,7 @@
   <nav class="dd-nav-center">
     <a href="javascript:void(0)" class="active" data-i18n="dd_nav_dash" onclick="ddNavTo('top')">Dashboard</a>
     <a href="javascript:void(0)" data-i18n="dd_nav_appt" onclick="ddNavTo('appt-section')">Appointments</a>
-    <a href="javascript:void(0)" data-i18n="dd_nav_profile" onclick="ddNavTo('profile-section')">My Profile</a>
+    <a href="javascript:void(0)" data-i18n="dd_nav_profile" onclick="ddNavTo('profile-section')" style="display:none;">My Profile</a>
     <a href="javascript:void(0)" data-i18n="dd_nav_earn" onclick="ddNavTo('earnings-section')">Earnings</a>
   </nav>
 
@@ -43,7 +43,20 @@
     <button class="dd-bell"><i class="ti ti-bell"></i></button>
 
     <div class="dd-avatar-wrap">
-      <div class="dd-avatar" id="ddAvatar" onclick="ddToggleDropdown()">SM</div>
+      <!-- Avatar: shows photo if available, otherwise initials; click = open dropdown -->
+      <div class="dd-avatar-photo-wrap" style="position:relative;display:inline-block;">
+        <div class="dd-avatar" id="ddAvatar" onclick="ddToggleDropdown()"
+             style="overflow:hidden;position:relative;">SM</div>
+        <label for="ddPhotoInput" title="Change profile photo"
+               style="position:absolute;bottom:0;right:0;width:18px;height:18px;
+                      background:#6366F1;border-radius:50%;display:flex;align-items:center;
+                      justify-content:center;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.3);
+                      border:2px solid #fff;">
+          <i class="ti ti-camera" style="font-size:9px;color:#fff;pointer-events:none;"></i>
+        </label>
+        <input type="file" id="ddPhotoInput" accept=".jpg,.jpeg,.png,.webp"
+               style="display:none;" onchange="ddUploadPhoto(this)" />
+      </div>
       <div class="dd-dropdown" id="ddDropdown">
         <div class="dd-dropdown-info">
           <div class="dd-dropdown-name" id="ddDropName">Dr. Sophal Meas</div>
@@ -79,7 +92,7 @@
   <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_appt" onclick="ddNavTo('appt-section')">
     <i class="ti ti-calendar"></i><span>Appointments</span>
   </a>
-  <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_profile" onclick="ddNavTo('profile-section')">
+  <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_profile" onclick="ddNavTo('profile-section')" style="display:none;">
     <i class="ti ti-user"></i><span>Profile</span>
   </a>
   <a href="javascript:void(0)" class="dd-tab" data-i18n="dd_nav_earn" onclick="ddNavTo('earnings-section')">
@@ -347,89 +360,13 @@
         <div class="dd-schedule-date">25 May 2026</div>
       </div>
 
-      <div class="dd-timeline">
-
-        <!-- 09:00 Confirmed -->
-        <div class="dd-tl-row">
-          <div class="dd-tl-time">
-            <span class="dd-tl-hh">09:00</span>
-            <span class="dd-tl-ampm">AM</span>
-          </div>
-          <div class="dd-tl-connector confirmed">
-            <div class="dd-tl-dot confirmed"></div>
-            <div class="dd-tl-line confirmed"></div>
-          </div>
-          <div class="dd-appt-card confirmed">
-            <div class="dd-appt-top">
-              <div class="dd-appt-patient">
-                <div class="dd-appt-avatar" style="background:#ECFDF5;color:#10B981;">SC</div>
-                <div>
-                  <div class="dd-appt-name">Sopheap Chea</div>
-                  <div class="dd-appt-meta"><i class="ti ti-video"></i> Video consultation · RUPP</div>
-                </div>
-              </div>
-              <span class="dd-appt-pill confirmed" data-i18n="dd_confirmed">Confirmed</span>
-            </div>
-            <div class="dd-appt-note"><i class="ti ti-notes"></i> <em data-i18n="dd_note_chest">Note: chest pain follow-up</em></div>
-            <div class="dd-appt-actions">
-              <button class="dd-btn-join" onclick="ddShowToast('Opening video meeting…','info')"><i class="ti ti-video"></i> <span data-i18n="dd_join">Join Meeting</span></button>
-              <button class="dd-btn-detail" onclick="ddShowToast('Loading patient details…','info')"><span data-i18n="dd_view_det">View Details</span></button>
-            </div>
-          </div>
+      <!-- Timeline populated by JS from API -->
+      <div class="dd-timeline" id="ddTodayTimeline">
+        <div style="text-align:center;padding:2rem;color:var(--dd-muted);">
+          <span class="dd-spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:.4rem;"></span>
+          Loading schedule…
         </div>
-
-        <!-- 10:30 Upcoming -->
-        <div class="dd-tl-row">
-          <div class="dd-tl-time">
-            <span class="dd-tl-hh">10:30</span>
-            <span class="dd-tl-ampm">AM</span>
-          </div>
-          <div class="dd-tl-connector upcoming">
-            <div class="dd-tl-dot upcoming"></div>
-            <div class="dd-tl-line upcoming"></div>
-          </div>
-          <div class="dd-appt-card upcoming">
-            <div class="dd-appt-top">
-              <div class="dd-appt-patient">
-                <div class="dd-appt-avatar" style="background:#EEF2FF;color:#6366F1;">DH</div>
-                <div>
-                  <div class="dd-appt-name">Dara Heng</div>
-                  <div class="dd-appt-meta"><i class="ti ti-video"></i> Video consultation · IU</div>
-                </div>
-              </div>
-              <span class="dd-appt-pill upcoming" data-i18n="dd_upcoming">Upcoming</span>
-            </div>
-            <div class="dd-appt-actions">
-              <button class="dd-btn-join" onclick="ddShowToast('Meeting not yet active.','warning')"><i class="ti ti-video"></i> <span data-i18n="dd_join">Join Meeting</span></button>
-              <button class="dd-btn-cancel" onclick="ddShowToast('Appointment cancelled.','error')"><span data-i18n="dd_cancel">Cancel</span></button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 14:00 Completed -->
-        <div class="dd-tl-row">
-          <div class="dd-tl-time">
-            <span class="dd-tl-hh">02:00</span>
-            <span class="dd-tl-ampm">PM</span>
-          </div>
-          <div class="dd-tl-connector completed">
-            <div class="dd-tl-dot completed"></div>
-          </div>
-          <div class="dd-appt-card completed">
-            <div class="dd-appt-top">
-              <div class="dd-appt-patient">
-                <div class="dd-appt-avatar" style="background:#F1F5F9;color:#94A3B8;">MN</div>
-                <div>
-                  <div class="dd-appt-name dd-strikethrough">Maly Noun</div>
-                  <div class="dd-appt-meta">Video consultation · NUM</div>
-                </div>
-              </div>
-              <span class="dd-appt-pill completed" data-i18n="dd_completed">Completed</span>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /timeline -->
+      </div>
     </div><!-- /schedule-card -->
 
     <!-- Double panel: Appointments + Earnings -->
@@ -445,15 +382,18 @@
           <table class="dd-table">
             <thead>
               <tr>
+                <th style="width:34px;text-align:center;">#</th>
                 <th data-i18n="dd_col_patient">Patient</th>
                 <th data-i18n="dd_col_datetime">Date &amp; Time</th>
                 <th data-i18n="dd_col_note">Note</th>
+                <th data-i18n="dd_col_open_file">Open File</th>
+                <th data-i18n="dd_col_payment">Payment</th>
                 <th data-i18n="dd_col_status">Status</th>
                 <th data-i18n="dd_col_actions">Actions</th>
               </tr>
             </thead>
             <tbody id="ddUpcomingTbody">
-              <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--dd-muted);font-size:.85rem;">
+              <tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--dd-muted);font-size:.85rem;">
                 <span class="dd-spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:.4rem;"></span>Loading…
               </td></tr>
             </tbody>
@@ -497,8 +437,8 @@
       </div>
     </div><!-- /double-panel -->
 
-    <!-- ── My Profile (edit) — approved doctors complete/edit their info ── -->
-    <div class="dd-card dd-edit-form-card" id="profile-section">
+    <!-- ── My Profile (edit) — hidden from dashboard, accessible via dropdown ── -->
+    <div class="dd-card dd-edit-form-card" id="profile-section" style="display:none;">
       <div class="dd-card-header">
         <div class="dd-card-title" data-i18n="dd_my_profile_edit">My Profile</div>
         <span class="dd-edit-badge" data-i18n="dd_editing_enabled">Editing enabled</span>
@@ -550,56 +490,13 @@
       </button>
     </div><!-- /profile-section -->
 
-    <!-- Ratings & Reviews -->
-    <div class="dd-card dd-reviews-card" data-nav="profile-section">
+    <!-- Ratings & Reviews — populated by JS from API -->
+    <div class="dd-card dd-reviews-card">
       <div class="dd-card-title" data-i18n="dd_ratings_reviews">Ratings &amp; Reviews</div>
-      <div class="dd-reviews-grid">
-        <!-- Left: summary -->
-        <div class="dd-rating-summary">
-          <div class="dd-big-rating">4.8</div>
-          <div class="dd-stars-row">
-            <i class="ti ti-star-filled"></i>
-            <i class="ti ti-star-filled"></i>
-            <i class="ti ti-star-filled"></i>
-            <i class="ti ti-star-filled"></i>
-            <i class="ti ti-star-half-filled"></i>
-          </div>
-          <div class="dd-rating-count" data-i18n="dd_42_reviews">42 reviews total</div>
-          <!-- Star bars -->
-          <div class="dd-star-bars">
-            <div class="dd-star-bar"><span>5★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:67%"></div></div><span>28</span></div>
-            <div class="dd-star-bar"><span>4★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:24%"></div></div><span>10</span></div>
-            <div class="dd-star-bar"><span>3★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:7%"></div></div><span>3</span></div>
-            <div class="dd-star-bar"><span>2★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:2%"></div></div><span>1</span></div>
-            <div class="dd-star-bar"><span>1★</span><div class="dd-bar-track"><div class="dd-bar-fill" style="width:0%"></div></div><span>0</span></div>
-          </div>
-        </div>
-        <!-- Right: recent reviews -->
-        <div class="dd-reviews-list">
-          <div class="dd-review-card">
-            <div class="dd-review-top">
-              <div class="dd-review-patient"><div class="dd-pat-av sm" style="background:#EEF2FF;color:#6366F1;">SC</div><div><div class="dd-review-name">Sopheap Chea</div><div class="dd-review-date">20 May 2026</div></div></div>
-              <div class="dd-review-stars"><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i></div>
-            </div>
-            <p class="dd-review-text" data-i18n="dd_review1">Dr. Meas was very professional and thorough in the consultation.</p>
-            <div class="dd-review-source" data-i18n="dd_from_market">from SmartX-Ray Marketplace</div>
-          </div>
-          <div class="dd-review-card">
-            <div class="dd-review-top">
-              <div class="dd-review-patient"><div class="dd-pat-av sm" style="background:#ECFDF5;color:#10B981;">DH</div><div><div class="dd-review-name">Dara Heng</div><div class="dd-review-date">18 May 2026</div></div></div>
-              <div class="dd-review-stars"><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star"></i></div>
-            </div>
-            <p class="dd-review-text" data-i18n="dd_review2">Good advice, will consult again.</p>
-            <div class="dd-review-source" data-i18n="dd_from_market">from SmartX-Ray Marketplace</div>
-          </div>
-          <div class="dd-review-card">
-            <div class="dd-review-top">
-              <div class="dd-review-patient"><div class="dd-pat-av sm" style="background:#FEF3C7;color:#F59E0B;">VR</div><div><div class="dd-review-name">Vichet Ros</div><div class="dd-review-date">15 May 2026</div></div></div>
-              <div class="dd-review-stars"><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i><i class="ti ti-star-filled"></i></div>
-            </div>
-            <p class="dd-review-text" data-i18n="dd_review3">Highly recommended doctor.</p>
-            <div class="dd-review-source" data-i18n="dd_from_market">from SmartX-Ray Marketplace</div>
-          </div>
+      <div id="ddReviewsContainer">
+        <div style="text-align:center;padding:2rem;color:var(--dd-muted);">
+          <span class="dd-spinner" style="width:18px;height:18px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:.4rem;"></span>
+          Loading reviews…
         </div>
       </div>
     </div>
@@ -732,8 +629,32 @@
 <!-- Toast container -->
 <div class="dd-toast-container" id="ddToastContainer"></div>
 
-<!-- Spin animation -->
-<style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+<!-- Patient Info Drawer -->
+<div class="dd-pi-overlay" id="ddPatientInfoModal" onclick="if(event.target===this)ddClosePatientInfo()">
+  <div class="dd-pi-drawer">
+    <div class="dd-pi-header">
+      <div class="dd-pi-title"><i class="ti ti-user-circle"></i> Patient Information</div>
+      <button class="dd-pi-close" onclick="ddClosePatientInfo()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="dd-pi-body" id="ddPiModalContent"><!-- populated by JS --></div>
+  </div>
+</div>
+
+<!-- Spin + patient drawer animations -->
+<style>
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes ddSlideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.dd-pi-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:900;display:none;align-items:flex-start;justify-content:flex-end;}
+.dd-pi-overlay.open{display:flex;}
+.dd-pi-drawer{width:min(420px,100vw);height:100vh;background:var(--dd-card,#fff);display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,.12);animation:ddSlideIn .22s ease;}
+.dd-pi-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--dd-border,#E2E8F0);flex-shrink:0;}
+.dd-pi-title{font-size:.95rem;font-weight:700;color:var(--dd-text,#0F172A);display:flex;align-items:center;gap:8px;}
+.dd-pi-close{width:32px;height:32px;border:none;background:#F1F5F9;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--dd-muted,#94A3B8);}
+.dd-pi-close:hover{background:#E2E8F0;color:var(--dd-text,#0F172A);}
+.dd-pi-body{flex:1;overflow-y:auto;padding:20px;}
+.dd-btn-sm-info{width:28px;height:28px;border:1px solid #C7D2FE;background:#EEF2FF;border-radius:6px;color:#6366F1;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.85rem;}
+.dd-btn-sm-info:hover{background:#E0E7FF;}
+</style>
 
 <!-- i18n + scripts -->
 <script src="/static/js/i18n.js"></script>
@@ -817,6 +738,8 @@ Object.assign(TRANSLATIONS, {
   dd_col_patient:     { en:"Patient",                       km:"អ្នកជំងឺ" },
   dd_col_datetime:    { en:"Date & Time",                   km:"កាលបរិច្ឆេទ & ម៉ោង" },
   dd_col_note:        { en:"Note",                          km:"កំណត់ចំណាំ" },
+  dd_col_open_file:   { en:"Open File",                     km:"បើកឯកសារ" },
+  dd_col_payment:     { en:"Payment",                       km:"ការទូទាត់" },
   dd_col_status:      { en:"Status",                        km:"ស្ថានភាព" },
   dd_col_actions:     { en:"Actions",                       km:"សកម្មភាព" },
   dd_earnings_summary:{ en:"Earnings Summary",              km:"សង្ខេបចំណូល" },

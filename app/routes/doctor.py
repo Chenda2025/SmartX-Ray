@@ -20,7 +20,8 @@ from __future__ import annotations
 
 from datetime import date, datetime, timezone, timedelta
 
-from flask import Blueprint, g, jsonify, request
+import os
+from flask import Blueprint, current_app, g, jsonify, request
 from flask_jwt_extended import (
     create_access_token,
     create_refresh_token,
@@ -465,6 +466,21 @@ def doctor_dashboard():
         "experience_years": getattr(doctor, "experience_years", 0),
     }
 
+    # ── Star distribution for ratings chart ──────────────────────────
+    star_dist = {"1": 0, "2": 0, "3": 0, "4": 0, "5": 0}
+    try:
+        dist_rows = db.session.execute(text("""
+            SELECT CAST(rating AS INTEGER) AS stars, COUNT(*) AS cnt
+            FROM reviews
+            WHERE doctor_id = :did AND rating BETWEEN 1 AND 5
+            GROUP BY CAST(rating AS INTEGER)
+        """), {"did": doctor.id}).fetchall()
+        for row in dist_rows:
+            k = str(max(1, min(5, int(row[0] or 1))))
+            star_dist[k] = star_dist.get(k, 0) + int(row[1] or 0)
+    except Exception:
+        pass
+
     return jsonify({
         "doctor_profile": doc_profile,
         "kpi": {
@@ -473,14 +489,15 @@ def doctor_dashboard():
             "total_patients":      total_patients,
             "earnings_this_month": round(float(earnings_month), 2),
         },
-        "today_schedule": today_schedule,
-        "upcoming":        upcoming,
+        "today_schedule":   today_schedule,
+        "upcoming":         upcoming,
         "earnings_summary": {
-            "this_month":   round(float(earnings_month),  2),
-            "pending":      round(float(earnings_pending), 2),
+            "this_month":     round(float(earnings_month),  2),
+            "pending":        round(float(earnings_pending), 2),
             "total_all_time": round(float(earnings_total), 2),
         },
-        "recent_reviews": recent_reviews,
+        "recent_reviews":   recent_reviews,
+        "star_distribution": star_dist,
     }), 200
 
 
@@ -583,6 +600,54 @@ def update_profile():
 
     db.session.commit()
     return jsonify({"message": msg, "doctor": doctor.to_dict()}), 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /api/doctor/photo  — upload profile photo
+# ─────────────────────────────────────────────────────────────────────────────
+
+@doctor_bp.route("/photo", methods=["POST"])
+@jwt_required()
+def upload_photo():
+    """
+    Upload or replace the doctor's profile photo.
+    Accepts multipart/form-data with field name 'photo'.
+    Returns the public URL of the saved image.
+    """
+    from werkzeug.utils import secure_filename
+
+    user = _current_user()
+    if not user:
+        return jsonify({"error": "User not found."}), 404
+    doctor = _doctor_for_user(user)
+    if not doctor:
+        return jsonify({"error": "No doctor profile linked to this account."}), 404
+
+    if "photo" not in request.files:
+        return jsonify({"error": "No photo file uploaded."}), 400
+
+    file = request.files["photo"]
+    if not file or not file.filename:
+        return jsonify({"error": "Empty file."}), 400
+
+    ext = os.path.splitext(secure_filename(file.filename))[1].lower()
+    if ext not in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
+        return jsonify({"error": "Unsupported file type. Use JPG, PNG, or WEBP."}), 400
+
+    # Save to static/uploads/doctors/
+    save_dir = os.path.join(
+        current_app.root_path, "..", "static", "uploads", "doctors"
+    )
+    os.makedirs(save_dir, exist_ok=True)
+    filename = f"doctor_{doctor.id}{ext}"
+    file.save(os.path.join(save_dir, filename))
+
+    photo_url = f"/static/uploads/doctors/{filename}"
+    _safe_set(doctor, "photo_url",   photo_url)
+    _safe_set(doctor, "avatar_url",  photo_url)
+    db.session.commit()
+
+    return jsonify({"photo_url": photo_url, "doctor": doctor.to_dict()}), 200
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -757,11 +822,13 @@ def _format_appointment(a) -> dict:
         getattr(a, "patient_id", None)
         or getattr(a, "user_id",  None)
     )
-    patient_name = "—"
+    patient_name  = "—"
+    patient_email = ""
     if patient_id:
         patient = db.session.get(UserModel, patient_id)
         if patient:
-            patient_name = patient.full_name or patient.email
+            patient_name  = patient.full_name or patient.email
+            patient_email = patient.email or ""
 
     # Meeting link (new column or mock)
     meeting_link = getattr(a, "meeting_link", None)
@@ -813,7 +880,9 @@ def _format_appointment(a) -> dict:
 
     return {
         "appointment_id":  a.id,
+        "patient_id":      patient_id,
         "patient_name":    patient_name,
+        "patient_email":   patient_email,
         "scheduled_at":    scheduled_at_str,
         "date":            str(getattr(a, "appointment_date", None) or ""),
         "time":            getattr(a, "appointment_time", ""),

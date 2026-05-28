@@ -9,6 +9,8 @@ const DD = {
   state: 'approved',          // current dashboard state
   dropdownOpen: false,
   toastTimers: [],
+  todaySchedule: [],          // today's appointments (for patient info modal)
+  upcomingList:  [],          // upcoming appointments (for patient info modal)
 };
 
 /* ══════════════════════════════════════════════════════════════
@@ -69,9 +71,18 @@ function _ddPopulate(doc) {
   const initials = (doc.full_name || 'DR')
     .split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-  // Nav avatar + dropdown
+  // Nav avatar + dropdown — show photo if available, else initials
+  const photoUrl = doc.photo_url || doc.avatar_url || '';
   document.querySelectorAll('#ddAvatar, .dd-profile-avatar').forEach(el => {
-    el.textContent = initials;
+    if (photoUrl) {
+      el.textContent = '';
+      el.style.backgroundImage = `url('${photoUrl}')`;
+      el.style.backgroundSize  = 'cover';
+      el.style.backgroundPosition = 'center';
+    } else {
+      el.textContent = initials;
+      el.style.backgroundImage = '';
+    }
   });
   const nameEl = document.getElementById('ddDropName');
   const specEl = document.getElementById('ddDropSpec');
@@ -163,9 +174,16 @@ async function _ddLoadDashboard(token) {
       _ddSetText('ddEarnTotal',   `$${Number(es.total_all_time || 0).toFixed(2)}`);
     }
 
+    // ── Today's schedule timeline ────────────────────────────
+    DD.todaySchedule = data.today_schedule || [];
+    _ddRenderTodaySchedule(DD.todaySchedule);
+
     // ── Upcoming Appointments table ──────────────────────────
     const upcoming = data.upcoming || [];
     _ddRenderUpcoming(upcoming);
+
+    // ── Ratings & Reviews ────────────────────────────────────
+    _ddRenderReviews(data.doctor_profile, data.recent_reviews, data.star_distribution);
 
   } catch (_) { /* network error — keep loading placeholder */ }
 }
@@ -205,18 +223,19 @@ function _ddFmtDateTime(a) {
 }
 
 function _ddRenderUpcoming(list) {
+  DD.upcomingList = list;
   const tbody = document.getElementById('ddUpcomingTbody');
   if (!tbody) return;
 
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--dd-muted);font-size:.85rem;">
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:1.5rem;color:var(--dd-muted);font-size:.85rem;">
       <i class="ti ti-calendar-off" style="font-size:1.4rem;display:block;margin-bottom:.4rem;"></i>
       No upcoming appointments
     </td></tr>`;
     return;
   }
 
-  tbody.innerHTML = list.map(a => {
+  tbody.innerHTML = list.map((a, idx) => {
     const [fg, bg] = _ddColorFor(a.patient_name || '');
     const initials = _ddInitials(a.patient_name || '—');
     const dateStr  = _ddFmtDateTime(a);
@@ -226,37 +245,35 @@ function _ddRenderUpcoming(list) {
     const pillCls  = isPast ? 'upcoming' : 'confirmed';
     const pillLbl  = isPast ? 'Upcoming' : 'Confirmed';
 
-    // Attached scan badge + PDF link
-    let scanHtml = '';
+    // Open File column
+    let fileHtml = `<span style="color:var(--dd-muted);font-size:12px;">—</span>`;
     if (a.attached_scan) {
-      const sc      = a.attached_scan;
-      const isPneu  = sc.prediction === 'PNEUMONIA';
-      const color   = isPneu ? '#DC2626' : '#059669';
-      const bg      = isPneu ? '#FEF2F2' : '#ECFDF5';
-      const label   = isPneu ? 'Pneumonia' : 'Normal';
-      const conf    = parseFloat(sc.confidence || 0).toFixed(1);
-      const pdfBtn  = sc.report_url
-        ? `<a href="${_ddEsc(sc.report_url)}" target="_blank"
-              style="margin-left:6px;font-size:10px;color:#DC2626;text-decoration:none;
-                     background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:1px 5px;"
-              title="Download patient PDF report">
-             <i class="ti ti-file-type-pdf"></i> PDF
-           </a>`
-        : '';
-      scanHtml = `
-        <div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
-          <i class="ti ti-x-ray" style="font-size:12px;color:#6366F1;"></i>
-          <span style="font-size:10px;background:${bg};color:${color};
-                       border-radius:4px;padding:1px 6px;font-weight:600;">
-            ${label} ${conf}%
-          </span>
-          <span style="font-size:10px;color:#94A3B8;">#SCN-${String(sc.id).padStart(3,'0')}</span>
-          ${pdfBtn}
-        </div>`;
+      const sc     = a.attached_scan;
+      const isPneu = sc.prediction === 'PNEUMONIA';
+      const fcol   = isPneu ? '#DC2626' : '#059669';
+      const fbg    = isPneu ? '#FEF2F2' : '#ECFDF5';
+      const conf   = parseFloat(sc.confidence || 0).toFixed(0);
+      fileHtml = `<button onclick="ddOpenPatientInfo(${a.appointment_id})"
+        style="display:inline-flex;align-items:center;gap:4px;border:none;cursor:pointer;
+               background:${fbg};color:${fcol};border-radius:6px;padding:3px 8px;
+               font-size:11px;font-weight:600;">
+        <i class="ti ti-x-ray" style="font-size:12px;"></i>${isPneu?'Pneumonia':'Normal'} ${conf}%
+      </button>`;
     }
+
+    // Payment column
+    const fee = parseFloat(a.fee || 0).toFixed(2);
+    const pst = (a.payment_status || 'paid').toLowerCase();
+    const pcol = pst === 'paid' ? '#059669' : '#F59E0B';
+    const pbg  = pst === 'paid' ? '#ECFDF5' : '#FEF3C7';
+    const payHtml = `<div style="display:flex;flex-direction:column;gap:2px;">
+      <span style="font-weight:600;font-size:.85rem;">$${fee}</span>
+      <span style="font-size:10px;background:${pbg};color:${pcol};border-radius:4px;padding:1px 5px;font-weight:600;">${pst}</span>
+    </div>`;
 
     return `
     <tr>
+      <td style="color:var(--dd-muted);font-size:.8rem;text-align:center;">${idx + 1}</td>
       <td>
         <div class="dd-pat-cell">
           <div class="dd-pat-av" style="background:${bg};color:${fg};">${initials}</div>
@@ -264,21 +281,24 @@ function _ddRenderUpcoming(list) {
         </div>
       </td>
       <td>${dateStr}</td>
-      <td>
-        <span class="dd-note-text ${note === '—' ? 'muted' : ''}">${_ddEsc(note)}</span>
-        ${scanHtml}
-      </td>
+      <td><span class="dd-note-text ${note === '—' ? 'muted' : ''}">${_ddEsc(note)}</span></td>
+      <td>${fileHtml}</td>
+      <td>${payHtml}</td>
       <td><span class="dd-appt-pill ${pillCls}">${pillLbl}</span></td>
       <td>
         <div class="dd-tbl-actions">
           ${a.meeting_link
-            ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-sm-join" title="Join">
+            ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-sm-join" title="Access">
                  <i class="ti ti-video"></i>
                </a>`
-            : `<button class="dd-btn-sm-join" onclick="ddShowToast('Meeting link not ready yet','info')" title="Join">
+            : `<button class="dd-btn-sm-join" onclick="ddShowToast('Meeting link not ready yet','info')" title="Access">
                  <i class="ti ti-video"></i>
                </button>`
           }
+          <button class="dd-btn-sm-info" title="Full Info"
+            onclick="ddOpenPatientInfo(${a.appointment_id})">
+            <i class="ti ti-info-circle"></i>
+          </button>
           <button class="dd-btn-sm-cancel" title="Cancel"
             onclick="ddConfirmCancel(${a.appointment_id})">
             <i class="ti ti-x"></i>
@@ -806,6 +826,328 @@ function ddShowToast(message, type = 'info', duration = 3500) {
 function _ddDismissToast(toast) {
   toast.classList.add('out');
   setTimeout(() => toast.remove(), 220);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   TODAY'S SCHEDULE — real timeline render
+   ══════════════════════════════════════════════════════════════ */
+function _ddRenderTodaySchedule(list) {
+  const timeline = document.getElementById('ddTodayTimeline');
+  if (!timeline) return;
+
+  // Update date header to today
+  const dateEl = document.querySelector('.dd-schedule-date');
+  if (dateEl) {
+    dateEl.textContent = new Date().toLocaleDateString('en-US',
+      { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  if (!list || !list.length) {
+    timeline.innerHTML = `
+      <div style="text-align:center;padding:2.5rem 1rem;color:var(--dd-muted);">
+        <i class="ti ti-calendar-off" style="font-size:1.8rem;display:block;margin-bottom:.5rem;"></i>
+        <span style="font-size:.88rem;">No appointments scheduled for today</span>
+      </div>`;
+    return;
+  }
+
+  timeline.innerHTML = list.map((a, i) => {
+    const [fg, bg] = _ddColorFor(a.patient_name || '');
+    const initials  = _ddInitials(a.patient_name || '—');
+    const rawTime   = a.time || (a.scheduled_at || '').slice(11, 16) || '';
+    let hh = rawTime, ampm = '';
+    try {
+      const [h, m] = rawTime.split(':');
+      const hour = parseInt(h);
+      ampm = hour >= 12 ? 'PM' : 'AM';
+      hh = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m}`;
+    } catch (_) {}
+
+    const isDone    = a.status === 'completed' || a.status === 'cancelled';
+    const pillCls   = isDone ? a.status : (i === 0 ? 'confirmed' : 'upcoming');
+    const pillLbl   = isDone ? (a.status === 'completed' ? 'Completed' : 'Cancelled')
+                             : (i === 0 ? 'Confirmed' : 'Upcoming');
+    const note      = a.patient_note || '';
+
+    let scanBadge = '';
+    if (a.attached_scan) {
+      const sc = a.attached_scan;
+      const isPneu = sc.prediction === 'PNEUMONIA';
+      scanBadge = `<span style="font-size:10px;background:${isPneu?'#FEF2F2':'#ECFDF5'};
+        color:${isPneu?'#DC2626':'#059669'};border-radius:4px;padding:1px 6px;
+        font-weight:600;margin-left:6px;">${isPneu?'Pneumonia':'Normal'} ${parseFloat(sc.confidence||0).toFixed(0)}%</span>`;
+    }
+
+    const actionsHtml = isDone ? '' : `
+      <div class="dd-appt-actions">
+        ${a.meeting_link
+          ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank" class="dd-btn-join"><i class="ti ti-video"></i> <span>Join</span></a>`
+          : `<button class="dd-btn-join" onclick="ddShowToast('Meeting not ready','info')"><i class="ti ti-video"></i> <span>Join</span></button>`}
+        <button class="dd-btn-detail" onclick="ddOpenPatientInfo(${a.appointment_id})"><span>View Details</span></button>
+      </div>`;
+
+    return `
+    <div class="dd-tl-row">
+      <div class="dd-tl-time">
+        <span class="dd-tl-hh">${hh}</span>
+        <span class="dd-tl-ampm">${ampm}</span>
+      </div>
+      <div class="dd-tl-connector ${pillCls}">
+        <div class="dd-tl-dot ${pillCls}"></div>
+        ${i < list.length - 1 ? `<div class="dd-tl-line ${pillCls}"></div>` : ''}
+      </div>
+      <div class="dd-appt-card ${pillCls}">
+        <div class="dd-appt-top">
+          <div class="dd-appt-patient">
+            <div class="dd-appt-avatar" style="background:${bg};color:${fg};">${initials}</div>
+            <div>
+              <div class="dd-appt-name${isDone?' dd-strikethrough':''}">${_ddEsc(a.patient_name||'—')}</div>
+              <div class="dd-appt-meta"><i class="ti ti-video"></i> Video consultation${scanBadge}</div>
+            </div>
+          </div>
+          <span class="dd-appt-pill ${pillCls}">${pillLbl}</span>
+        </div>
+        ${note ? `<div class="dd-appt-note"><i class="ti ti-notes"></i> <em>${_ddEsc(note)}</em></div>` : ''}
+        ${actionsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RATINGS & REVIEWS — real data render
+   ══════════════════════════════════════════════════════════════ */
+function _ddRenderReviews(profile, reviews, dist) {
+  const container = document.getElementById('ddReviewsContainer');
+  if (!container) return;
+
+  const avg   = parseFloat(profile?.avg_rating   || 0);
+  const total = parseInt(profile?.total_reviews  || 0);
+
+  const starBarsHtml = [5,4,3,2,1].map(s => {
+    const cnt = (dist && dist[String(s)]) || 0;
+    const pct = total > 0 ? Math.round((cnt / total) * 100) : 0;
+    return `<div class="dd-star-bar">
+      <span>${s}★</span>
+      <div class="dd-bar-track"><div class="dd-bar-fill" style="width:${pct}%"></div></div>
+      <span>${cnt}</span>
+    </div>`;
+  }).join('');
+
+  const starsHtml = Array.from({length:5}, (_,i) => {
+    const filled = i < Math.floor(avg);
+    const half   = !filled && (i < avg);
+    return `<i class="ti ti-star${filled?'-filled':(half?'-half-filled':'')}"></i>`;
+  }).join('');
+
+  let reviewsHtml;
+  if (!reviews || !reviews.length) {
+    reviewsHtml = `<div style="text-align:center;padding:2rem;color:var(--dd-muted);">
+      <i class="ti ti-message-off" style="font-size:1.5rem;display:block;margin-bottom:.4rem;"></i>
+      <span style="font-size:.85rem;">No reviews yet</span>
+    </div>`;
+  } else {
+    const PALETTE = [
+      ['#6366F1','#EEF2FF'], ['#10B981','#ECFDF5'],
+      ['#F59E0B','#FEF3C7'], ['#EF4444','#FEF2F2'],
+    ];
+    reviewsHtml = reviews.map((r, i) => {
+      const [rfg, rbg] = PALETTE[i % PALETTE.length];
+      const ini  = _ddInitials(r.patient_name || 'P');
+      const rStar = Array.from({length:5}, (_,j) =>
+        `<i class="ti ti-star${j < Math.round(r.rating||0)?'-filled':''}"></i>`
+      ).join('');
+      const dStr = r.created_at
+        ? new Date(r.created_at).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'})
+        : '—';
+      return `<div class="dd-review-card">
+        <div class="dd-review-top">
+          <div class="dd-review-patient">
+            <div class="dd-pat-av sm" style="background:${rbg};color:${rfg};">${ini}</div>
+            <div><div class="dd-review-name">${_ddEsc(r.patient_name||'Patient')}</div><div class="dd-review-date">${dStr}</div></div>
+          </div>
+          <div class="dd-review-stars">${rStar}</div>
+        </div>
+        ${r.comment ? `<p class="dd-review-text">${_ddEsc(r.comment)}</p>` : ''}
+        <div class="dd-review-source">from SmartX-Ray Marketplace</div>
+      </div>`;
+    }).join('');
+  }
+
+  container.innerHTML = `
+    <div class="dd-reviews-grid">
+      <div class="dd-rating-summary">
+        <div class="dd-big-rating">${avg > 0 ? avg.toFixed(1) : '—'}</div>
+        <div class="dd-stars-row">${starsHtml}</div>
+        <div class="dd-rating-count">${total} review${total !== 1 ? 's' : ''} total</div>
+        <div class="dd-star-bars">${starBarsHtml}</div>
+      </div>
+      <div class="dd-reviews-list">${reviewsHtml}</div>
+    </div>`;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PATIENT INFO DRAWER
+   ══════════════════════════════════════════════════════════════ */
+function ddOpenPatientInfo(aptId) {
+  const allApts = [...(DD.todaySchedule || []), ...(DD.upcomingList || [])];
+  const a = allApts.find(x => x.appointment_id === aptId);
+  if (!a) { ddShowToast('Appointment details not found', 'error'); return; }
+
+  const modal = document.getElementById('ddPatientInfoModal');
+  const body  = document.getElementById('ddPiModalContent');
+  if (!modal || !body) return;
+
+  const [fg, bg]  = _ddColorFor(a.patient_name || '');
+  const initials  = _ddInitials(a.patient_name || '—');
+  const dateStr   = _ddFmtDateTime(a);
+  const fee       = parseFloat(a.fee || 0).toFixed(2);
+  const pst       = (a.payment_status || 'paid').toLowerCase();
+  const pcol      = pst === 'paid' ? '#059669' : '#F59E0B';
+  const note      = a.patient_note || '';
+  const email     = a.patient_email || '';
+
+  let scanSection = '';
+  if (a.attached_scan) {
+    const sc     = a.attached_scan;
+    const isPneu = sc.prediction === 'PNEUMONIA';
+    const scol   = isPneu ? '#DC2626' : '#059669';
+    const sbg    = isPneu ? '#FEF2F2' : '#ECFDF5';
+    const conf   = parseFloat(sc.confidence || 0).toFixed(1);
+    const imgHtml = sc.image_url
+      ? `<img src="${_ddEsc(sc.image_url)}" alt="X-ray"
+             style="width:100%;border-radius:8px;max-height:200px;object-fit:contain;background:#0F172A;" />`
+      : `<div style="background:#1E293B;border-radius:8px;height:100px;display:flex;
+             align-items:center;justify-content:center;color:#64748B;">
+           <i class="ti ti-x-ray" style="font-size:2rem;"></i>
+         </div>`;
+    const pdfBtn = sc.report_url
+      ? `<a href="${_ddEsc(sc.report_url)}" target="_blank"
+             style="display:inline-flex;align-items:center;gap:4px;font-size:.75rem;
+                    color:#DC2626;background:#FEF2F2;border:1px solid #FECACA;
+                    border-radius:6px;padding:4px 10px;text-decoration:none;font-weight:600;margin-top:8px;">
+           <i class="ti ti-file-type-pdf"></i> Download PDF Report
+         </a>` : '';
+    scanSection = `
+      <div style="margin-top:16px;">
+        <div style="font-size:.72rem;color:var(--dd-muted);font-weight:700;text-transform:uppercase;
+                    letter-spacing:.06em;margin-bottom:8px;">ATTACHED X-RAY SCAN</div>
+        ${imgHtml}
+        <div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">
+          <span style="background:${sbg};color:${scol};border-radius:6px;padding:3px 10px;
+                       font-size:.8rem;font-weight:700;">${isPneu?'PNEUMONIA':'NORMAL'} · ${conf}%</span>
+          <span style="font-size:.75rem;color:var(--dd-muted);">#SCN-${String(sc.id).padStart(3,'0')}</span>
+        </div>
+        ${pdfBtn}
+      </div>`;
+  }
+
+  body.innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <div style="width:52px;height:52px;border-radius:50%;background:${bg};color:${fg};
+                  font-weight:700;font-size:1.1rem;display:flex;align-items:center;
+                  justify-content:center;flex-shrink:0;">${initials}</div>
+      <div>
+        <div style="font-size:1rem;font-weight:700;color:var(--dd-text);">${_ddEsc(a.patient_name||'—')}</div>
+        ${email ? `<div style="font-size:.78rem;color:var(--dd-muted);">${_ddEsc(email)}</div>` : ''}
+        <div style="font-size:.78rem;color:var(--dd-muted);margin-top:2px;">${dateStr}</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--dd-bg,#F8FAFC);border-radius:8px;padding:10px 12px;">
+        <div style="font-size:.68rem;color:var(--dd-muted);font-weight:700;margin-bottom:3px;">PAYMENT</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--dd-text);">$${fee}</div>
+        <div style="font-size:.72rem;color:${pcol};font-weight:600;">${pst.toUpperCase()} · ${_ddEsc(a.payment_method||'ABA KHQR')}</div>
+      </div>
+      <div style="background:var(--dd-bg,#F8FAFC);border-radius:8px;padding:10px 12px;">
+        <div style="font-size:.68rem;color:var(--dd-muted);font-weight:700;margin-bottom:3px;">SESSION</div>
+        <div style="font-size:1rem;font-weight:700;color:var(--dd-text);">${a.duration_min||30} min</div>
+        <div style="font-size:.72rem;color:var(--dd-muted);">Video consultation</div>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px;">
+      <div style="font-size:.72rem;color:var(--dd-muted);font-weight:700;text-transform:uppercase;
+                  letter-spacing:.06em;margin-bottom:6px;">PATIENT NOTE</div>
+      <div style="background:var(--dd-bg,#F8FAFC);border-radius:8px;padding:10px 12px;
+                  font-size:.875rem;color:var(--dd-text);min-height:44px;line-height:1.55;">
+        ${note ? _ddEsc(note) : '<span style="color:var(--dd-muted);">No note provided</span>'}
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <div style="font-size:.72rem;color:var(--dd-muted);font-weight:700;text-transform:uppercase;
+                  letter-spacing:.06em;margin-bottom:6px;">MEETING LINK</div>
+      ${a.meeting_link
+        ? `<a href="${_ddEsc(a.meeting_link)}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:6px;background:#6366F1;color:#fff;
+                      border-radius:8px;padding:8px 16px;font-size:.875rem;font-weight:600;
+                      text-decoration:none;">
+             <i class="ti ti-video"></i> Join Meeting
+           </a>`
+        : '<span style="font-size:.85rem;color:var(--dd-muted);">Meeting link not available yet</span>'}
+    </div>
+    ${scanSection}`;
+
+  modal.classList.add('open');
+}
+
+function ddClosePatientInfo() {
+  const modal = document.getElementById('ddPatientInfoModal');
+  if (modal) modal.classList.remove('open');
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PROFILE PHOTO UPLOAD
+   ══════════════════════════════════════════════════════════════ */
+async function ddUploadPhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const token = localStorage.getItem('access_token');
+  if (!token) { ddShowToast('Not logged in.', 'error'); return; }
+
+  const form = new FormData();
+  form.append('photo', input.files[0]);
+
+  // Preview immediately while uploading
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.querySelectorAll('#ddAvatar, .dd-profile-avatar').forEach(el => {
+      el.textContent = '';
+      el.style.backgroundImage    = `url('${e.target.result}')`;
+      el.style.backgroundSize     = 'cover';
+      el.style.backgroundPosition = 'center';
+    });
+  };
+  reader.readAsDataURL(input.files[0]);
+
+  ddShowToast('Uploading photo…', 'info', 2000);
+
+  try {
+    const res  = await fetch('/api/doctor/photo', {
+      method:  'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body:    form,
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // Apply the server URL so it survives refresh
+      const url = data.photo_url;
+      document.querySelectorAll('#ddAvatar, .dd-profile-avatar').forEach(el => {
+        el.textContent = '';
+        el.style.backgroundImage    = `url('${url}?t=${Date.now()}')`;
+        el.style.backgroundSize     = 'cover';
+        el.style.backgroundPosition = 'center';
+      });
+      ddShowToast('Profile photo updated!', 'success');
+    } else {
+      ddShowToast(data.error || 'Upload failed.', 'error');
+    }
+  } catch {
+    ddShowToast('Network error. Please try again.', 'error');
+  } finally {
+    input.value = '';  // reset so same file can be re-selected
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════
