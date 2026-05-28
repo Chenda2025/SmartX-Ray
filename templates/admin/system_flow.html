@@ -106,11 +106,11 @@
 
 <!-- Dot navigation -->
 <div class="stepper-nav" id="stepperNav">
-  {% for n in range(1, 9) %}
+  {% for n in range(1, 10) %}
   <div class="stage-dot {% if n == 1 %}active{% endif %}" data-stage="{{ n - 1 }}" onclick="goToStage({{ n - 1 }})">
     <span>{{ n }}</span>
   </div>
-  {% if n < 8 %}<div class="stage-line"></div>{% endif %}
+  {% if n < 9 %}<div class="stage-line"></div>{% endif %}
   {% endfor %}
 </div>
 
@@ -710,7 +710,114 @@
       <i class="ti ti-chevron-left" style="font-size:13px"></i>
       <span data-i18n="sf_prev">Previous</span>
     </button>
-    <span class="stage-counter">Stage 8 of 8</span>
+    <span class="stage-counter">Stage 8 of 9</span>
+    <button class="sf-nav-btn primary" onclick="goToStage(currentStage+1)">
+      <span data-i18n="sf_next">Next</span>
+      <i class="ti ti-chevron-right" style="font-size:13px"></i>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ─────────────────────── STAGE 9 ─────────────────────────── -->
+<div class="stage-panel" id="stage-8">
+<div class="stage-card">
+  <div class="stage-card-header">
+    <span class="stage-badge">Stage 9</span>
+    <div style="flex:1">
+      <div class="stage-title-en">5 Business Models — How SmartX-Ray generates value</div>
+      <div class="stage-title-kh">គំរូអាជីវកម្ម ៥ — របៀប SmartX-Ray បង្កើតតម្លៃ</div>
+      <div class="stage-actors">
+        <span class="actor-tag admin"><i class="ti ti-shield" style="font-size:10px"></i> Admin</span>
+        <span class="actor-tag doctor"><i class="ti ti-stethoscope" style="font-size:10px"></i> Doctor</span>
+        <span class="actor-tag patient"><i class="ti ti-user" style="font-size:10px"></i> Patient</span>
+        <span class="actor-tag system"><i class="ti ti-cpu" style="font-size:10px"></i> System</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage-card-body">
+
+    <!-- Total revenue banner -->
+    <div style="display:flex; justify-content:space-between; align-items:center;
+                background:var(--color-background-success); border-radius:var(--border-radius-md);
+                padding:12px 16px; margin-bottom:14px; border:0.5px solid var(--color-border-success);">
+      <div>
+        <div style="font-size:11px; font-weight:600; color:var(--color-text-secondary); text-transform:uppercase; letter-spacing:.05em;">
+          <span class="lang-en">Total platform revenue</span>
+          <span class="lang-kh">ចំណូលវេទិកាសរុប</span>
+        </div>
+        <div style="font-size:22px; font-weight:700; color:var(--color-text-success);">
+          ${{ '%.2f'|format(stats.total_sub_revenue + stats.marketplace_revenue) }}
+        </div>
+      </div>
+      <div style="display:flex; gap:16px; text-align:center;">
+        <div>
+          <div style="font-size:16px; font-weight:700; color:var(--color-text-success);">${{ '%.2f'|format(stats.total_sub_revenue) }}</div>
+          <div style="font-size:10px; color:var(--color-text-secondary);" class="lang-en">Subscriptions</div>
+          <div style="font-size:10px; color:var(--color-text-secondary);" class="lang-kh">ការជាវ</div>
+        </div>
+        <div>
+          <div style="font-size:16px; font-weight:700; color:var(--color-text-success);">${{ '%.2f'|format(stats.marketplace_revenue) }}</div>
+          <div style="font-size:10px; color:var(--color-text-secondary);" class="lang-en">Consultations</div>
+          <div style="font-size:10px; color:var(--color-text-secondary);" class="lang-kh">ការពិគ្រោះ</div>
+        </div>
+        <div>
+          <div style="font-size:16px; font-weight:700; color:var(--color-text-info);">{{ stats.total_users }}</div>
+          <div style="font-size:10px; color:var(--color-text-secondary);" class="lang-en">Total users</div>
+          <div style="font-size:10px; color:var(--color-text-secondary);" class="lang-kh">អ្នកប្រើ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5 model summary rows -->
+    {% set models = [
+      ('01', 'ti-speakerphone', 'bci-amber',  'Advertising',        'ពាណិជ្ជកម្ម',
+       'Free-tier patients see banner ads. Admin manages placements with CTR tracking.',
+       'អ្នកប្រើឥតគិតថ្លៃឃើញ Banner Ads. Admin គ្រប់គ្រង CTR.',
+       stats.active_ads ~ ' active ads • ' ~ stats.ad_ctr ~ '% CTR • ' ~ stats.free_users ~ ' free users'),
+      ('02', 'ti-lock',        'bci-indigo', 'Freemium',            'ឥតគិតថ្លៃ → Pro',
+       'Free tier upgrades to Pro for unlimited scans, PDF export, and no ads.',
+       'Free tier upgrade ទៅ Pro: ស្កែនគ្មានដែន PDF គ្មាន Ads.',
+       stats.pro_users ~ ' Pro users • ' ~ stats.pro_pct ~ '% conversion'),
+      ('03', 'ti-credit-card', 'bci-green',  'Subscription',        'ការជាវ',
+       '$9.99/month or $79.99/year via ABA KHQR. Recurring revenue stream.',
+       '$9.99/ខែ ឬ $79.99/ឆ្នាំ តាម ABA KHQR. ចំណូលប្រចាំ.',
+       stats.monthly_subs ~ ' monthly • ' ~ stats.yearly_subs ~ ' yearly • $' ~ '%.2f'|format(stats.total_sub_revenue)),
+      ('04', 'ti-stethoscope', 'bci-teal',   'Marketplace',         'ទីផ្សារ',
+       'Connects patients with verified doctors. Platform earns commission per consultation.',
+       'ភ្ជាប់អ្នកជំងឺ-Doctor. វេទិការទទួលកំណែ per ការពិគ្រោះ.',
+       stats.active_doctors ~ ' doctors • ' ~ stats.total_appointments ~ ' bookings • $' ~ '%.0f'|format(stats.marketplace_revenue)),
+      ('05', 'ti-layout-dashboard', 'bci-red', 'On-Demand Ecosystem', 'ប្រព័ន្ធអេកូ On-Demand',
+       'Unified dashboard: AI scan + history + appointments + Telegram alerts in one workspace.',
+       'Dashboard រួម: AI ស្កែន + ប្រវត្តិ + ណាត់ជួប + Telegram ក្នុង Workspace តែមួយ.',
+       stats.total_scans ~ ' scans • ' ~ stats.scans_today ~ ' today • ' ~ stats.avg_ai_time_ms ~ 'ms avg AI')
+    ] %}
+
+    {% for num, icon, iconcls, name_en, name_kh, desc_en, desc_kh, live in models %}
+    <div class="event-card" style="align-items:flex-start;">
+      <div class="event-icon {{ iconcls }} " style="flex-shrink:0;">
+        <i class="ti {{ icon }}"></i>
+      </div>
+      <div class="event-body" style="flex:1; min-width:0;">
+        <p class="event-title">
+          <span style="font-size:10px; color:var(--color-text-tertiary); font-weight:700; margin-right:6px;">{{ num }}</span>
+          <span class="lang-en">{{ name_en }}</span>
+          <span class="lang-kh">{{ name_kh }}</span>
+        </p>
+        <p class="event-sub lang-en">{{ desc_en }}</p>
+        <p class="event-sub lang-kh">{{ desc_kh }}</p>
+        <span class="data-badge">{{ live }}</span>
+      </div>
+    </div>
+    {% endfor %}
+
+  </div>
+  <div class="stage-card-footer">
+    <button class="sf-nav-btn" onclick="goToStage(currentStage-1)">
+      <i class="ti ti-chevron-left" style="font-size:13px"></i>
+      <span data-i18n="sf_prev">Previous</span>
+    </button>
+    <span class="stage-counter">Stage 9 of 9</span>
     <button class="sf-nav-btn primary" disabled onclick="goToStage(currentStage+1)">
       <span data-i18n="sf_next">Next</span>
       <i class="ti ti-chevron-right" style="font-size:13px"></i>
