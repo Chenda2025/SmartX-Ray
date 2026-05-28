@@ -144,24 +144,89 @@ def _build_flow_stats() -> dict:
     yearly_subs          = _i(Subscription.query.filter_by(status="active", plan="yearly").count())
     subscription_revenue = round(monthly_subs * 9.99 + yearly_subs * 79.99, 2)
 
+    # ── Business Models extra stats ──────────────────────────────────────────
+
+    # Model 1: Advertising — ads table (raw SQL; table may not exist in dev)
+    try:
+        active_ads      = _i(db.session.execute(
+            db.text("SELECT COUNT(*) FROM ads WHERE is_active = TRUE")).scalar())
+        total_ad_views  = _i(db.session.execute(
+            db.text("SELECT COALESCE(SUM(total_views), 0) FROM ads")).scalar())
+        total_ad_clicks = _i(db.session.execute(
+            db.text("SELECT COALESCE(SUM(total_clicks), 0) FROM ads")).scalar())
+    except Exception:
+        active_ads = total_ad_views = total_ad_clicks = 0
+    ad_ctr = round((total_ad_clicks / total_ad_views * 100) if total_ad_views > 0 else 0, 1)
+
+    free_users  = max(0, total_patients - pro_patients)
+
+    # Model 2: Freemium
+    pro_users   = pro_patients
+    total_users = total_patients
+    pro_pct     = round((pro_users / total_users * 100) if total_users > 0 else 0, 1)
+
+    # Model 3: Subscription
+    monthly_revenue   = round(monthly_subs * 9.99, 2)
+    yearly_revenue    = round(yearly_subs * 79.99, 2)
+    total_sub_revenue = subscription_revenue
+
+    # Model 4: Marketplace
+    active_doctors       = approved_doctors
+    marketplace_revenue  = total_revenue
+    avg_doctor_rating    = avg_rating
+
+    # Model 5: On-Demand Ecosystem
+    from datetime import date as _date
+    scans_today = _i(Scan.query.filter(
+        db.func.date(Scan.created_at) == _date.today()
+    ).count())
+    try:
+        avg_ai_time_ms = round(float(db.session.execute(
+            db.text("SELECT COALESCE(AVG(ai_time_ms), 0) FROM scans")).scalar() or 0))
+    except Exception:
+        avg_ai_time_ms = 0
+    high_severity_logs  = high_alerts
+    upcoming_appointments = _i(Appointment.query.filter_by(status="confirmed").count())
+
     return {
-        "total_patients":           total_patients,
-        "pro_patients":             pro_patients,
-        "free_patients":            max(0, total_patients - pro_patients),
-        "approved_doctors":         approved_doctors,
-        "pending_doctors":          pending_doctors,
-        "rejected_doctors":         rejected_doctors,
-        "total_scans":              total_scans,
-        "high_severity_scans":      high_severity_scans,
-        "total_appointments":       total_appointments,
-        "confirmed_appointments":   confirmed_appointments,
-        "completed_appointments":   completed_appointments,
-        "total_revenue":            total_revenue,
-        "subscription_revenue":     subscription_revenue,
-        "total_reviews":            total_reviews,
-        "avg_rating":               avg_rating,
-        "high_alerts":              high_alerts,
-        "active_subscriptions":     active_subscriptions,
+        "total_patients":             total_patients,
+        "pro_patients":               pro_patients,
+        "free_patients":              free_users,
+        "approved_doctors":           approved_doctors,
+        "pending_doctors":            pending_doctors,
+        "rejected_doctors":           rejected_doctors,
+        "total_scans":                total_scans,
+        "high_severity_scans":        high_severity_scans,
+        "total_appointments":         total_appointments,
+        "confirmed_appointments":     confirmed_appointments,
+        "completed_appointments":     completed_appointments,
+        "total_revenue":              total_revenue,
+        "subscription_revenue":       subscription_revenue,
+        "total_reviews":              total_reviews,
+        "avg_rating":                 avg_rating,
+        "high_alerts":                high_alerts,
+        "active_subscriptions":       active_subscriptions,
+        # Business model stats
+        "active_ads":                 active_ads,
+        "total_ad_views":             total_ad_views,
+        "total_ad_clicks":            total_ad_clicks,
+        "ad_ctr":                     ad_ctr,
+        "free_users":                 free_users,
+        "pro_users":                  pro_users,
+        "total_users":                total_users,
+        "pro_pct":                    pro_pct,
+        "monthly_subs":               monthly_subs,
+        "yearly_subs":                yearly_subs,
+        "total_sub_revenue":          total_sub_revenue,
+        "monthly_revenue":            monthly_revenue,
+        "yearly_revenue":             yearly_revenue,
+        "active_doctors":             active_doctors,
+        "marketplace_revenue":        marketplace_revenue,
+        "avg_doctor_rating":          avg_doctor_rating,
+        "scans_today":                scans_today,
+        "avg_ai_time_ms":             avg_ai_time_ms,
+        "high_severity_logs":         high_severity_logs,
+        "upcoming_appointments":      upcoming_appointments,
     }
 
 
