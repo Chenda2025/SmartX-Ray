@@ -940,6 +940,8 @@ function udOpenBookModal(doctorId) {
   document.getElementById('mdDocName').textContent = d.full_name || '—';
   document.getElementById('mdDocSpec').textContent = d.specialty  || '—';
   document.getElementById('mdFee').textContent = `$${fee.toFixed(2)}`;
+  const abaEl = document.getElementById('mdAbaAmount');
+  if (abaEl) abaEl.textContent = `$${fee.toFixed(2)}`;
 
   /* Reset selections + calendar to current month */
   UD.selectedDate   = null;

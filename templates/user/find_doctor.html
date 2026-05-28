@@ -1083,7 +1083,7 @@ function fdToggleLang(){
   localStorage.setItem('lang',LANG);
   document.getElementById('fd-html').setAttribute('lang',LANG==='km'?'km':'en');
   document.getElementById('fdLangBtn').textContent=LANG==='km'?'English':'ខ្មែរ';
-  if(typeof applyLang==='function') applyLang(LANG);
+  if(typeof I18n!=='undefined') I18n.setLang(LANG);
   fdLoad(FD.page);
 }
 
@@ -1103,7 +1103,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(LANG==='km'){
     document.getElementById('fd-html').setAttribute('lang','km');
     document.getElementById('fdLangBtn').textContent='English';
-    if(typeof applyLang==='function') applyLang('km');
+    if(typeof I18n!=='undefined') I18n.setLang('km');
   }
   fdLoad(1);
 });
