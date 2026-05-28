@@ -792,7 +792,7 @@ function ddLogout() {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     sessionStorage.clear();
-    window.location.href = '/login';
+    window.location.href = '/doctor/login';
   }, 1200);
 }
 
