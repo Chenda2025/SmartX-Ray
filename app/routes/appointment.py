@@ -293,6 +293,18 @@ def book_appointment():
     duration_min = int(data.get("duration_min", 30))
     fee_amount   = float(doctor.rate_per_session or 15.00)
 
+    # ── Attached scan (optional) ──────────────────────────────────────
+    scan_id = data.get("scan_id")
+    if scan_id:
+        try:
+            scan_id = int(scan_id)
+            from app.models.scan import Scan as ScanModel
+            s = db.session.get(ScanModel, scan_id)
+            if not s or s.user_id != patient.id:
+                scan_id = None   # reject scans that don't belong to this patient
+        except (TypeError, ValueError):
+            scan_id = None
+
     # ── Create appointment ────────────────────────────────────────────
     apt = Appointment(
         user_id          = patient.id,       # backward compat (NOT NULL)
@@ -311,6 +323,7 @@ def book_appointment():
     _safe_set(apt, "fee_amount",     fee_amount)
     _safe_set(apt, "payment_method", "ABA KHQR")
     _safe_set(apt, "payment_status", "paid")
+    _safe_set(apt, "scan_id",        scan_id)
 
     db.session.add(apt)
     db.session.flush()   # get apt.id before commit
@@ -642,6 +655,55 @@ def leave_review(apt_id):
     }), 201
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# GET /api/appointments/<id>/scan-report  — doctor downloads patient's PDF
+# ─────────────────────────────────────────────────────────────────────────────
+
+@appointment_bp.route("/<int:apt_id>/scan-report", methods=["GET"])
+@doctor_required
+def download_attached_scan_report(apt_id):
+    """
+    Doctor downloads the PDF report attached to a patient's appointment.
+    Only the assigned doctor for this appointment can access it.
+    """
+    from app.models.report import Report
+    from flask import send_file, current_app
+    import os
+
+    doctor: Doctor = g.current_doctor
+    apt = db.session.get(Appointment, apt_id)
+    if not apt:
+        return jsonify({"error": "Appointment not found."}), 404
+    if apt.doctor_id != doctor.id:
+        return jsonify({"error": "Access denied."}), 403
+
+    scan_id = getattr(apt, "scan_id", None)
+    if not scan_id:
+        return jsonify({"error": "No scan attached to this appointment."}), 404
+
+    from app.models.scan import Scan as ScanModel
+    scan = db.session.get(ScanModel, scan_id)
+    if not scan or not scan.report_id:
+        return jsonify({"error": "No PDF report available for this scan."}), 404
+
+    report = db.session.get(Report, scan.report_id)
+    if not report:
+        return jsonify({"error": "Report not found."}), 404
+
+    abs_path = os.path.join(
+        current_app.root_path, "..", "static", report.file_path
+    )
+    if not os.path.exists(abs_path):
+        return jsonify({"error": "Report file not found on server."}), 404
+
+    report.download_count = (report.download_count or 0) + 1
+    db.session.commit()
+
+    return send_file(abs_path, mimetype="application/pdf",
+                     as_attachment=True,
+                     download_name=f"scan_report_apt{apt_id}.pdf")
+
+
 # ════════════════════════════════════════════════════════════════════════════
 #  SECTION C  —  PATIENT-SPECIFIC VIEWS
 #  GET /api/patient/appointments
@@ -772,6 +834,27 @@ def _format_apt_for_patient(a: Appointment) -> dict:
     # Can this appointment be joined right now?
     can_join = _can_join_now(a)
 
+    # Attached scan info
+    attached_scan = None
+    scan_id = getattr(a, "scan_id", None)
+    if scan_id:
+        try:
+            from app.models.scan import Scan as ScanModel
+            s = db.session.get(ScanModel, scan_id)
+            if s:
+                attached_scan = {
+                    "id":          s.id,
+                    "prediction":  s.prediction,
+                    "confidence":  round(s.confidence * 100, 2),
+                    "created_at":  s.created_at.isoformat() if s.created_at else None,
+                    "report_id":   s.report_id,
+                    "report_url":  f"/api/scan/report/{s.report_id}/download" if s.report_id else None,
+                    "image_url":   f"/static/{s.image_path}" if s.image_path else None,
+                    "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
+                }
+        except Exception:
+            pass
+
     return {
         "id":              a.id,
         "scheduled_at":    scheduled_str,
@@ -785,6 +868,7 @@ def _format_apt_for_patient(a: Appointment) -> dict:
         "payment_method":  getattr(a, "payment_method", "ABA KHQR"),
         "payment_status":  getattr(a, "payment_status", "paid"),
         "duration_min":    getattr(a, "duration_min", 30),
+        "attached_scan":   attached_scan,
         "doctor": {
             "id":        doctor.id        if doctor else None,
             "full_name": doctor.full_name if doctor else "—",

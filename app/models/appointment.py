@@ -26,6 +26,9 @@ class Appointment(db.Model):
     payment_method   = db.Column(db.String(50), default="ABA KHQR")
     payment_status   = db.Column(db.String(20), default="paid")
 
+    # Attached scan — added by migration c005
+    scan_id          = db.Column(db.Integer, db.ForeignKey("scans.id", ondelete="SET NULL"), nullable=True)
+
     created_at       = db.Column(
         db.DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

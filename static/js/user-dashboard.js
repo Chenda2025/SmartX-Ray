@@ -18,6 +18,7 @@ let UD = {
   selectedTime: null,
   calYear:      new Date().getFullYear(),
   calMonth:     new Date().getMonth(),
+  selectedScanId: null,
   activeDoctorId:    null,
   activeDoctorFee:   15,
   activeDoctorName:  '',
@@ -941,12 +942,14 @@ function udOpenBookModal(doctorId) {
   document.getElementById('mdFee').textContent = `$${fee.toFixed(2)}`;
 
   /* Reset selections + calendar to current month */
-  UD.selectedDate = null;
-  UD.selectedTime = null;
+  UD.selectedDate   = null;
+  UD.selectedTime   = null;
+  UD.selectedScanId = null;
   UD.calYear  = new Date().getFullYear();
   UD.calMonth = new Date().getMonth();
   document.getElementById('udNote').value = '';
 
+  udBuildScanPicker();
   udBuildCalendar();  // auto-selects today, sets UD.selectedDate
   const isoToday = _udDateToISO(UD.selectedDate);
   udFetchAndBuildSlots(d.id, isoToday);
@@ -956,6 +959,72 @@ function udOpenBookModal(doctorId) {
 
 function udCloseBookModal() {
   document.getElementById('udBookModal').classList.remove('open');
+}
+
+/* ── Scan picker — shows user's recent scans to attach to booking ────────── */
+function udBuildScanPicker() {
+  const container = document.getElementById('udScanPicker');
+  if (!container) return;
+
+  const scans = UD.allScans.slice(0, 5);   // show last 5 scans
+
+  if (!scans.length) {
+    container.innerHTML = `<div class="ud-scan-picker-empty">No X-ray scans yet — upload one first.</div>`;
+    return;
+  }
+
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  function fmtDate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+  }
+
+  // "None" option
+  let html = `
+    <div class="ud-scan-option-none selected" id="udScanOptNone"
+         onclick="udSelectScan(null)">
+      <i class="ti ti-x" style="font-size:14px;"></i>
+      No scan attached
+    </div>`;
+
+  scans.forEach(s => {
+    const isPneu = s.prediction === 'PNEUMONIA';
+    const badge  = isPneu
+      ? `<span class="ud-scan-option-badge pneumonia"><i class="ti ti-alert-triangle" style="font-size:10px;"></i> Pneumonia</span>`
+      : `<span class="ud-scan-option-badge normal"><i class="ti ti-check" style="font-size:10px;"></i> Normal</span>`;
+    const conf = parseFloat(s.confidence || 0).toFixed(1);
+    const date = fmtDate(s.created_at);
+    const pdfIcon = s.report_id
+      ? `<i class="ti ti-file-type-pdf" style="font-size:12px;color:#DC2626;" title="PDF available"></i>` : '';
+    html += `
+      <div class="ud-scan-option" id="udScanOpt${s.id}" onclick="udSelectScan(${s.id})">
+        <input type="radio" name="udScanRadio" value="${s.id}" />
+        <i class="ti ti-x-ray" style="font-size:16px;color:var(--indigo);flex-shrink:0;"></i>
+        <span>#SCN-${String(s.id).padStart(3,'0')}</span>
+        ${badge}
+        <span style="font-size:12px;color:var(--text-hint);">${conf}%</span>
+        ${pdfIcon}
+        <span class="ud-scan-option-meta">${date}</span>
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+function udSelectScan(scanId) {
+  UD.selectedScanId = scanId;
+  // Update visual selection
+  document.querySelectorAll('.ud-scan-option, .ud-scan-option-none')
+    .forEach(el => el.classList.remove('selected'));
+  const target = scanId
+    ? document.getElementById(`udScanOpt${scanId}`)
+    : document.getElementById('udScanOptNone');
+  if (target) {
+    target.classList.add('selected');
+    const radio = target.querySelector('input[type="radio"]');
+    if (radio) radio.checked = true;
+  }
 }
 
 function udCloseModal(e) {
@@ -1092,9 +1161,10 @@ async function udConfirmBooking() {
 
   try {
     const res  = await api.post('/appointments/book', {
-      doctor_id:   UD.activeDoctorId,
+      doctor_id:    UD.activeDoctorId,
       scheduled_at: `${isoDate}T${UD.selectedTime}:00+07:00`,
       note:         (document.getElementById('udNote')?.value || '').trim() || null,
+      scan_id:      UD.selectedScanId || null,
     });
     const data = await res.json();
 

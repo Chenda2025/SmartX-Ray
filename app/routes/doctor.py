@@ -790,6 +790,27 @@ def _format_appointment(a) -> dict:
         apt_time = getattr(a, "appointment_time", "00:00")
         scheduled_at_str = f"{apt_date}T{apt_time}" if apt_date else None
 
+    # Attached scan — patient may have included their X-ray for the doctor to review
+    attached_scan = None
+    scan_id = getattr(a, "scan_id", None)
+    if scan_id:
+        try:
+            from app.models.scan import Scan as ScanModel
+            s = db.session.get(ScanModel, scan_id)
+            if s:
+                attached_scan = {
+                    "id":          s.id,
+                    "prediction":  s.prediction,
+                    "confidence":  round(s.confidence * 100, 2),
+                    "created_at":  s.created_at.isoformat() if s.created_at else None,
+                    "image_url":   f"/static/{s.image_path}" if s.image_path else None,
+                    "heatmap_url": f"/static/{s.heatmap_path}" if s.heatmap_path else None,
+                    "report_id":   s.report_id,
+                    "report_url":  f"/api/appointments/{a.id}/scan-report" if s.report_id else None,
+                }
+        except Exception:
+            pass
+
     return {
         "appointment_id":  a.id,
         "patient_name":    patient_name,
@@ -803,6 +824,7 @@ def _format_appointment(a) -> dict:
         "payment_method":  getattr(a, "payment_method", "ABA KHQR"),
         "payment_status":  getattr(a, "payment_status", "paid"),
         "duration_min":    getattr(a, "duration_min", 30),
+        "attached_scan":   attached_scan,
     }
 
 

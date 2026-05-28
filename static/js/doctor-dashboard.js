@@ -226,6 +226,35 @@ function _ddRenderUpcoming(list) {
     const pillCls  = isPast ? 'upcoming' : 'confirmed';
     const pillLbl  = isPast ? 'Upcoming' : 'Confirmed';
 
+    // Attached scan badge + PDF link
+    let scanHtml = '';
+    if (a.attached_scan) {
+      const sc      = a.attached_scan;
+      const isPneu  = sc.prediction === 'PNEUMONIA';
+      const color   = isPneu ? '#DC2626' : '#059669';
+      const bg      = isPneu ? '#FEF2F2' : '#ECFDF5';
+      const label   = isPneu ? 'Pneumonia' : 'Normal';
+      const conf    = parseFloat(sc.confidence || 0).toFixed(1);
+      const pdfBtn  = sc.report_url
+        ? `<a href="${_ddEsc(sc.report_url)}" target="_blank"
+              style="margin-left:6px;font-size:10px;color:#DC2626;text-decoration:none;
+                     background:#FEF2F2;border:1px solid #FECACA;border-radius:4px;padding:1px 5px;"
+              title="Download patient PDF report">
+             <i class="ti ti-file-type-pdf"></i> PDF
+           </a>`
+        : '';
+      scanHtml = `
+        <div style="margin-top:4px;display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+          <i class="ti ti-x-ray" style="font-size:12px;color:#6366F1;"></i>
+          <span style="font-size:10px;background:${bg};color:${color};
+                       border-radius:4px;padding:1px 6px;font-weight:600;">
+            ${label} ${conf}%
+          </span>
+          <span style="font-size:10px;color:#94A3B8;">#SCN-${String(sc.id).padStart(3,'0')}</span>
+          ${pdfBtn}
+        </div>`;
+    }
+
     return `
     <tr>
       <td>
@@ -235,7 +264,10 @@ function _ddRenderUpcoming(list) {
         </div>
       </td>
       <td>${dateStr}</td>
-      <td><span class="dd-note-text ${note === '—' ? 'muted' : ''}">${_ddEsc(note)}</span></td>
+      <td>
+        <span class="dd-note-text ${note === '—' ? 'muted' : ''}">${_ddEsc(note)}</span>
+        ${scanHtml}
+      </td>
       <td><span class="dd-appt-pill ${pillCls}">${pillLbl}</span></td>
       <td>
         <div class="dd-tbl-actions">

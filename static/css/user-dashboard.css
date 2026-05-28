@@ -1962,6 +1962,38 @@ body.is-pro .ud-upgrade-banner { display: none !important; }
 .ud-time-slot.selected { background: var(--indigo); color: white; border-color: var(--indigo); }
 .ud-time-slot.booked  { background: #F1F5F9; color: var(--text-hint); text-decoration: line-through; cursor: default; }
 
+/* Scan picker in booking modal */
+.ud-scan-picker { margin-bottom: 14px; }
+.ud-scan-picker-empty {
+  font-size: 12px; color: var(--text-hint);
+  padding: 8px 0;
+}
+.ud-scan-option {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: var(--r-input); cursor: pointer;
+  transition: border-color .15s, background .15s;
+  margin-bottom: 6px; font-size: 13px;
+}
+.ud-scan-option:hover { border-color: var(--indigo); background: var(--indigo-light); }
+.ud-scan-option.selected { border-color: var(--indigo); background: var(--indigo-light); }
+.ud-scan-option input[type="radio"] { accent-color: var(--indigo); flex-shrink: 0; }
+.ud-scan-option-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600;
+}
+.ud-scan-option-badge.pneumonia { background:#FEF2F2; color:#DC2626; }
+.ud-scan-option-badge.normal    { background:#ECFDF5; color:#059669; }
+.ud-scan-option-meta { color: var(--text-hint); font-size: 11px; margin-left: auto; }
+.ud-scan-option-none {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1.5px solid var(--border);
+  border-radius: var(--r-input); cursor: pointer;
+  font-size: 13px; color: var(--text-hint);
+  transition: border-color .15s; margin-bottom: 6px;
+}
+.ud-scan-option-none.selected { border-color: var(--indigo); }
+
 /* Note textarea */
 .ud-note-ta {
   width: 100%;
