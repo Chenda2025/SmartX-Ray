@@ -217,6 +217,36 @@ def alert_new_appointment(appointment, patient, doctor) -> None:
     send_telegram_alert(msg)
 
 
+def alert_pro_upgrade(user, plan: str, amount_cents: int, is_mock: bool = False) -> None:
+    """
+    Bilingual Telegram alert when a user upgrades to Pro.
+    Called from mock_upgrade and the Stripe webhook checkout.session.completed.
+    """
+    ts       = _ts()
+    plan_lbl = "Yearly / ប្រចាំឆ្នាំ" if plan == "yearly" else "Monthly / ប្រចាំខែ"
+    amount   = amount_cents / 100
+    source   = "Demo / សាកល្បង" if is_mock else "Stripe"
+    msg = (
+        "⭐ <b>NEW PRO UPGRADE</b>\n"
+        "⭐ <b>ការដំឡើងទៅ Pro ថ្មី</b>\n"
+        "─────────────────────────\n\n"
+        "👤 <b>User / អ្នកប្រើ:</b>  {name}\n"
+        "📧 <b>Email:</b>  <code>{email}</code>\n"
+        "💎 <b>Plan / គម្រោង:</b>  {plan}\n"
+        "💵 <b>Amount / ចំនួន:</b>  ${amount:.2f}\n"
+        "💳 <b>Source / ប្រភព:</b>  {source}\n\n"
+        "🕐 <b>Time / ពេលវេលា:</b>  {ts}"
+    ).format(
+        name   = getattr(user, "full_name", None) or getattr(user, "email", "—"),
+        email  = getattr(user, "email", "—"),
+        plan   = plan_lbl,
+        amount = amount,
+        source = source,
+        ts     = ts,
+    )
+    send_telegram_alert(msg)
+
+
 def alert_high_severity_scan(scan, user) -> None:
     """
     Re-export of the existing high-severity scan alert.

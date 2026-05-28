@@ -110,6 +110,14 @@ def mock_upgrade():
         db.session.add(sub)
 
     db.session.commit()
+
+    # Telegram alert
+    try:
+        from app.utils.notifications import alert_pro_upgrade
+        alert_pro_upgrade(user, plan=plan, amount_cents=amount, is_mock=True)
+    except Exception:
+        pass
+
     return jsonify({
         "message": "Upgraded to Pro successfully.",
         "tier":    "pro",
@@ -182,6 +190,14 @@ def _handle_stripe_event(event: dict) -> None:
         db.session.add(sub)
         user.tier = "pro"
         db.session.commit()
+
+        # Telegram alert for real Stripe upgrade
+        try:
+            from app.utils.notifications import alert_pro_upgrade
+            amount_cents = int(obj.get("amount_total") or (7999 if plan == "yearly" else 999))
+            alert_pro_upgrade(user, plan=plan, amount_cents=amount_cents, is_mock=False)
+        except Exception:
+            pass
 
     elif etype in ("customer.subscription.updated", "customer.subscription.deleted"):
         stripe_sub_id = obj["id"]
